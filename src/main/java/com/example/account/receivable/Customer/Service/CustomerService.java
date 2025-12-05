@@ -9,6 +9,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.example.account.receivable.Company.Entity.Company;
+import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDunningCreditSettingsDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerEftDTO;
@@ -53,6 +56,7 @@ public class CustomerService {
     private final CustomerVatRepository customerVatRepository;
     private final CustomerDunningCreditSettingsRepository customerDunningCreditSettingsRepository;
     private final InvoiceRepository invoiceRepository;
+    private final CompanyRepository companyRepository;
 
     public CustomerService(
             CustomerRepository customerRepository,
@@ -62,7 +66,8 @@ public class CustomerService {
             CustomerEftRepository customerEftRepository,
             CustomerVatRepository customerVatRepository,
             CustomerDunningCreditSettingsRepository customerDunningCreditSettingsRepository,
-            InvoiceRepository invoiceRepository
+            InvoiceRepository invoiceRepository,
+            CompanyRepository companyRepository
 
     ) {
         this.customerRepository = customerRepository;
@@ -73,6 +78,7 @@ public class CustomerService {
         this.customerVatRepository = customerVatRepository;
         this.customerDunningCreditSettingsRepository = customerDunningCreditSettingsRepository;
         this.invoiceRepository = invoiceRepository;
+        this.companyRepository = companyRepository;
     }
 
 
@@ -93,7 +99,9 @@ public class CustomerService {
 
 
     // Method to create a new customer
-    public Customer createCustomer(CustomerDTO customerDTO) {
+    public Customer createCustomer(Long companyId , CustomerDTO customerDTO) {
+        Company company = companyRepository.findById(companyId)
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
         //EMAIL DUPLICATE CHECK
         customerRepository.findByEmail(customerDTO.getEmail())
@@ -104,13 +112,14 @@ public class CustomerService {
         Long randomNumber = (long) (100000 + new Random().nextInt(900000));
         
         Customer customer = new Customer();
+        customer.setCompany(company);
         customer.setCustomerName(customerDTO.getCustomerName());
         customer.setCustomerId(randomNumber);
         customer.setEmail(customerDTO.getEmail());
         customer.setCustomerType(customerDTO.getCustomerType());
 
         return customerRepository.save(customer);
-    }
+    }                                                       
 
 
     // Method to save customer address

@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "company_financial_settings")
 @Data
@@ -18,7 +20,8 @@ public class CompanyFinancialSettings {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "company_id", nullable = false, unique = true)
+    @JsonIgnore
+    @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
     @Column(name = "fiscal_year_start_month")

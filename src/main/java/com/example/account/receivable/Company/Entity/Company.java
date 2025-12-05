@@ -6,9 +6,11 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.example.account.receivable.Customer.Entity.Customer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "companies")
@@ -32,52 +34,19 @@ public class Company {
     @Column(name = "company_code")
     private String companyCode;
 
-    @Column(name = "country")
-    private String country;     // e.g. "IN"
-
     @Column(name = "base_currency")
     private String baseCurrency; // e.g. "INR"
 
     @Column(name = "time_zone")
     private String timeZone;    // e.g. "Asia/Kolkata"
 
-    // Head office address
-    @Column(name = "address_line1")
-    private String addressLine1;
-
-    @Column(name = "city")
-    private String city;
-
-    @Column(name = "state_province")
-    private String stateProvince;
-
-    @Column(name = "postal_code")
-    private String postalCode;
-
-    @Column(name = "address_country")
-    private String addressCountry;
-
-    // Primary contact
-    @Column(name = "primary_contact_name")
-    private String primaryContactName;
-
-    @Column(name = "primary_contact_email")
-    private String primaryContactEmail;
-
-    @Column(name = "primary_contact_phone")
-    private String primaryContactPhone;
-
-    @Column(name = "website")
-    private String website;
-
-    @Column(name = "primary_contact_country")
-    private String primaryContactCountry;
+    @Column(name = "country")
+    private String country;     // e.g. "IN"
 
     @Builder.Default
     @JsonIgnore
     @Column(name = "is_deleted", nullable = false)
     private boolean deleted = false;
-
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -87,13 +56,24 @@ public class Company {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-
     // Relationships
-
     @OneToOne(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private CompanyFinancialSettings financialSettings;
 
     @OneToOne(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private CompanyPaymentSettings paymentSettings;
+
+    @OneToOne(mappedBy = "company" , cascade = CascadeType.ALL)
+    private CompanyAddress companyAddress;
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    private List<Customer> customer;
+
+    @OneToMany(mappedBy = "company" , cascade = CascadeType.ALL)
+    private List<CompanyBankAccount> bankAccounts;
+
+    @OneToMany(mappedBy = "company" , cascade = CascadeType.ALL)
+    private List<CompanyUser> users;
+
 }
 

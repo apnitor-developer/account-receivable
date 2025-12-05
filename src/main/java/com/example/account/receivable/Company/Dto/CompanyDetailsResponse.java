@@ -23,18 +23,6 @@ public class CompanyDetailsResponse {
     private String baseCurrency;
     private String timeZone;
 
-    private String addressLine1;
-    private String city;
-    private String stateProvince;
-    private String postalCode;
-    private String addressCountry;
-
-    private String primaryContactName;
-    private String primaryContactEmail;
-    private String primaryContactPhone;
-    private String website;
-    private String primaryContactCountry;
-
     // Nested financial
     private FinancialDto financial;
 
@@ -90,9 +78,32 @@ public class CompanyDetailsResponse {
         private Boolean isDefault;
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class AddressDTO {
+
+        private Long id;
+
+        private String addressLine1;
+        private String city;
+        private String stateProvince;
+        private String postalCode;
+        private String addressCountry;
+
+        private String primaryContactName;
+        private String primaryContactEmail;
+        private String primaryContactPhone;
+
+        private String website;
+        private String primaryContactCountry;
+    }
+
     // Factory method to build response from entities
     public static CompanyDetailsResponse fromEntities(
             Company company,
+            CompanyAddress address,
             CompanyFinancialSettings financial,
             CompanyPaymentSettings payment,
             List<CompanyBankAccount> accounts,
@@ -142,6 +153,24 @@ public class CompanyDetailsResponse {
                                         .build())
                                 .collect(Collectors.toList());
 
+
+            AddressDTO addressDto = null;
+
+            if (address != null) {
+                addressDto = AddressDTO.builder()
+                        .addressLine1(address.getAddressLine1())
+                        .city(address.getCity())
+                        .stateProvince(address.getStateProvince())
+                        .postalCode(address.getPostalCode())
+                        .addressCountry(address.getAddressCountry())
+                        .primaryContactName(address.getPrimaryContactName())
+                        .primaryContactEmail(address.getPrimaryContactEmail())
+                        .primaryContactPhone(address.getPrimaryContactPhone())
+                        .website(address.getWebsite())
+                        .primaryContactCountry(address.getPrimaryContactCountry())
+                        .build();
+            }
+
         return CompanyDetailsResponse.builder()
                 .id(company.getId())
                 .legalName(company.getLegalName())
@@ -150,16 +179,16 @@ public class CompanyDetailsResponse {
                 .country(company.getCountry())
                 .baseCurrency(company.getBaseCurrency())
                 .timeZone(company.getTimeZone())
-                .addressLine1(company.getAddressLine1())
-                .city(company.getCity())
-                .stateProvince(company.getStateProvince())
-                .postalCode(company.getPostalCode())
-                .addressCountry(company.getAddressCountry())
-                .primaryContactName(company.getPrimaryContactName())
-                .primaryContactEmail(company.getPrimaryContactEmail())
-                .primaryContactPhone(company.getPrimaryContactPhone())
-                .website(company.getWebsite())
-                .primaryContactCountry(company.getPrimaryContactCountry())
+                // .addressLine1(company.getAddressLine1())
+                // .city(company.getCity())
+                // .stateProvince(company.getStateProvince())
+                // .postalCode(company.getPostalCode())
+                // .addressCountry(company.getAddressCountry())
+                // .primaryContactName(company.getPrimaryContactName())
+                // .primaryContactEmail(company.getPrimaryContactEmail())
+                // .primaryContactPhone(company.getPrimaryContactPhone())
+                // .website(company.getWebsite())
+                // .primaryContactCountry(company.getPrimaryContactCountry())
                 .financial(financialDto)
                 .payment(paymentDto)
                 .bankAccounts(accountDtos)

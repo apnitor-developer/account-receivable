@@ -1,12 +1,8 @@
 package com.example.account.receivable.Company.Dto;
-
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class CompanyProfileRequest {
-
-    @NotBlank
     private String legalName;
 
     private String tradeName;
