@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,6 +31,7 @@ public class Invoice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "invoice_number", nullable = false, unique = true, length = 32)
     private String invoiceNumber;
 
     private LocalDate invoiceDate;
@@ -43,6 +45,9 @@ public class Invoice {
     private BigDecimal totalAmount;
 
     private String note;
+
+    @Column(name = "is_generated")     
+    private Boolean generated;
 
     @Builder.Default
     private boolean active = true;

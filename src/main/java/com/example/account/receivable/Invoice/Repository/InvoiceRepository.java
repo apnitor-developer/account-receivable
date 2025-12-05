@@ -1,6 +1,7 @@
 package com.example.account.receivable.Invoice.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,4 +14,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
     List<Invoice> findByCustomerIdAndDeletedFalse(Long customerId);
 
     List<Invoice> findByCustomerId(Long customerId);
+
+    // 🔹 check if an invoice number already exists (manual or generated)
+    boolean existsByInvoiceNumber(String invoiceNumber);
+
+    // 🔹 get the last invoice like "INV-XXXX", ordered descending
+    Optional<Invoice> findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc(String prefix);
 }

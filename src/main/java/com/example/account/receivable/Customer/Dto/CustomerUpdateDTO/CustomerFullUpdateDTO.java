@@ -9,7 +9,7 @@ public class CustomerFullUpdateDTO {
 
     // MAIN CUSTOMER DATA (all nullable)
     private String customerName;
-    private String customerId;
+    private Long customerId;
     private String email;
     private String customerType;
 
