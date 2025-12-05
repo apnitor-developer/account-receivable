@@ -18,11 +18,10 @@ public class InvoiceDto {
     private LocalDate dueDate; 
     private String note;
 
-    private BigDecimal subTotal;
-
+    //main invoice amount
+    private BigDecimal rate;
+    
     private BigDecimal taxAmount;
-
-    private BigDecimal totalAmount;
 
     // Line items
     // private List<InvoiceItemDto> items;

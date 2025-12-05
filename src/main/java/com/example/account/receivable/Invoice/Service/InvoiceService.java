@@ -1,7 +1,7 @@
 package com.example.account.receivable.Invoice.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.math.RoundingMode;
 import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -15,11 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
-import com.example.account.receivable.Invoice.Dto.InvoiceItemDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
-import com.example.account.receivable.Invoice.Entity.InvoiceItem;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
-import com.example.account.receivable.ProductAndService.Entity.ProductAndService;
 import com.example.account.receivable.ProductAndService.Repository.ProductAndServiceRepository;
 
 import jakarta.transaction.Transactional;
@@ -28,7 +25,6 @@ import jakarta.transaction.Transactional;
 public class InvoiceService {
     private final CustomerRepository customerRepository;
     private final InvoiceRepository invoiceRepository;
-    private final ProductAndServiceRepository productRepository;
 
     private static final String INVOICE_PREFIX = "INV-";
     private static final int INVOICE_NUMBER_WIDTH = 4;  // 0001 – 9999
@@ -40,7 +36,6 @@ public class InvoiceService {
     ) {
         this.customerRepository = customerRepository;
         this.invoiceRepository = invoiceRepository;
-        this.productRepository = productRepository;
     }
 
     @Transactional
@@ -74,22 +69,41 @@ public class InvoiceService {
             invoiceNumber = manual;
         }
 
-        // Create Invoice
+        // 3. Validate and use rate & tax
+        if (dto.getRate() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Rate is required"
+            );
+        }
+
+        BigDecimal rate = dto.getRate();
+
+        // Tax can be required or optional depending on your rule
+        BigDecimal taxAmount = dto.getTaxAmount() != null
+                ? dto.getTaxAmount()
+                : BigDecimal.ZERO;
+
+        // Total = rate + tax
+        BigDecimal totalAmount = rate.add(taxAmount);
+
+        // 4. Build invoice
         Invoice invoice = Invoice.builder()
-                .invoiceNumber(invoiceNumber)  
+                .invoiceNumber(invoiceNumber)
                 .invoiceDate(dto.getInvoiceDate())
                 .dueDate(dto.getDueDate())
                 .note(dto.getNote())
+                // reuse existing fields in entity:
+                .subTotal(rate)          // treat subTotal as the "rate"
+                .taxAmount(taxAmount)    // tax from dto
+                .totalAmount(totalAmount)
                 .customer(customer)
                 .deleted(false)
                 .active(true)
                 .generated(generatedFlag)
                 .build();
 
-        BigDecimal subTotal = BigDecimal.ZERO;
-        BigDecimal totalTax = BigDecimal.ZERO;
-
-        List<InvoiceItem> invoiceItems = new ArrayList<>();
+        // List<InvoiceItem> invoiceItems = new ArrayList<>();
 
         // // Loop through Items
         // if (dto.getItems() != null) {
@@ -117,14 +131,6 @@ public class InvoiceService {
         //     }
         // }
 
-        BigDecimal discount = BigDecimal.ZERO; // future logic
-        BigDecimal total = subTotal.subtract(discount).add(totalTax);
-
-        invoice.setSubTotal(subTotal);
-        invoice.setTaxAmount(totalTax);
-        invoice.setTotalAmount(total);
-        invoice.setItems(invoiceItems);
-
         try {
             return invoiceRepository.save(invoice);
         } catch (DataIntegrityViolationException ex) {
@@ -135,6 +141,8 @@ public class InvoiceService {
             );
         }
     }
+
+    
 
     private String generateUniqueInvoiceNumber() {
         String prefix = INVOICE_PREFIX;
@@ -194,20 +202,6 @@ public class InvoiceService {
         }
 
         return candidate;
-    }
-
-    // Helper: Calculate tax based on taxType
-    private BigDecimal calculateTax(BigDecimal lineTotal, String taxType) {
-        if (taxType == null) return BigDecimal.ZERO;
-
-        switch (taxType.toUpperCase()) {
-            case "GST5":
-                return lineTotal.multiply(BigDecimal.valueOf(0.05));
-            case "GST18":
-                return lineTotal.multiply(BigDecimal.valueOf(0.18));
-            default:
-                return BigDecimal.ZERO;
-        }
     }
 
     // Get all Invoices
