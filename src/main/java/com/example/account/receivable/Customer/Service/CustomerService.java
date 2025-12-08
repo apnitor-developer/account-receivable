@@ -1,17 +1,35 @@
 package com.example.account.receivable.Customer.Service;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Pageable;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
+import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerCsv;
+import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerCsv.RowError;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDunningCreditSettingsDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerEftDTO;
@@ -498,5 +516,368 @@ public class CustomerService {
 
         return customerRepository.save(customer);
     }
+
+    @Transactional
+    public CustomerCsv importCustomersFromCsv(Long companyId, MultipartFile file) {
+    if (file == null || file.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded file is empty");
+    }
+
+    Company company = companyRepository.findById(companyId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
+
+    int total = 0;
+    int success = 0;
+    List<RowError> errors = new ArrayList<>();
+
+    try (Reader reader = new BufferedReader(
+            new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
+        CSVParser parser = CSVFormat.DEFAULT
+                .withFirstRecordAsHeader()
+                .withIgnoreHeaderCase()
+                .withTrim()
+                .withIgnoreEmptyLines()
+                .parse(reader);
+
+        HeaderMapper headerMapper = new HeaderMapper(parser.getHeaderMap().keySet());
+
+        for (CSVRecord record : parser) {
+            total++;
+            long rowNumber = record.getRecordNumber(); // 1 = first data row
+
+            try {
+                importSingleCustomerRecord(company, record, headerMapper);
+                success++;
+            } catch (DuplicateCustomerException ex) {
+                errors.add(RowError.builder()
+                        .rowNumber(rowNumber)
+                        .message("Duplicate customer: " + ex.getMessage())
+                        .build());
+            } catch (IllegalArgumentException ex) {
+                errors.add(RowError.builder()
+                        .rowNumber(rowNumber)
+                        .message("Validation error: " + ex.getMessage())
+                        .build());
+            } catch (Exception ex) {
+                errors.add(RowError.builder()
+                        .rowNumber(rowNumber)
+                        .message("Unexpected error: " + ex.getMessage())
+                        .build());
+            }
+        }
+
+    } catch (IOException e) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unable to read CSV file", e);
+    }
+
+    int failure = total - success;
+
+    return CustomerCsv.builder()
+            .totalRows(total)
+            .successCount(success)
+            .failureCount(failure)
+            .errors(errors)
+            .build();
+}
+private void importSingleCustomerRecord(
+        Company company,
+        CSVRecord record,
+        HeaderMapper headers
+) {
+    // ---- BASIC CUSTOMER DATA ----
+    String email = headers.get(record, "email");
+    String name = headers.get(record, "customerName");
+    String customerType = headers.get(record, "customerType");
+
+    if (email == null || email.isBlank()) {
+        throw new IllegalArgumentException("Email is required");
+    }
+    if (name == null || name.isBlank()) {
+        throw new IllegalArgumentException("Customer name is required");
+    }
+
+    // Duplicate check by email
+    customerRepository.findByEmail(email)
+            .ifPresent(existing -> {
+                throw new DuplicateCustomerException(
+                        "Customer already exists with email: " + email
+                );
+            });
+
+    Long randomNumber = (long) (100000 + new Random().nextInt(900000));
+
+    Customer customer = new Customer();
+    customer.setCompany(company);
+    customer.setCustomerName(name);
+    customer.setCustomerId(randomNumber);
+    customer.setEmail(email);
+    customer.setCustomerType(customerType);
+    customer.setDeleted(false);
+
+    customer = customerRepository.save(customer);
+
+    // ---- ADDRESS (OPTIONAL) ----
+    String addressLine1 = headers.get(record, "addressLine1");
+    String city = headers.get(record, "city");
+    String postalCode = headers.get(record, "postalCode");
+    String country = headers.get(record, "country");
+    String stateProvince = headers.get(record, "stateProvince");
+
+    if (anyNonBlank(addressLine1, city, postalCode, country, stateProvince)) {
+        CustomerAddress addr = new CustomerAddress();
+        addr.setCustomer(customer);
+        addr.setAddressLine1(addressLine1);
+        addr.setCity(city);
+        addr.setPostalCode(postalCode);
+        addr.setCountry(country);
+        addr.setStateProvince(stateProvince);
+        customerAddressRepository.save(addr);
+    }
+
+    // ---- CASH APPLICATION (OPTIONAL) ----
+    Boolean applyPayments       = headers.getBoolean(record, "applyPayments");
+    Boolean autoApplyPayments   = headers.getBoolean(record, "autoApplyPayments");
+    Double toleranceAmount      = headers.getDouble(record, "toleranceAmount");
+    Double tolerancePercentage  = headers.getDouble(record, "tolerancePercentage");
+    Boolean shipCreditCheck     = headers.getBoolean(record, "shipCreditCheck");
+
+    if (applyPayments != null || autoApplyPayments != null
+            || toleranceAmount != null || tolerancePercentage != null
+            || shipCreditCheck != null) {
+
+        CashApplication cash = new CashApplication();
+        cash.setCustomer(customer);
+        cash.setApplyPayments(applyPayments != null && applyPayments);
+        cash.setAutoApplyPayments(autoApplyPayments != null && autoApplyPayments);
+        cash.setToleranceAmount(toleranceAmount);
+        cash.setTolerancePercentage(tolerancePercentage);
+        cash.setShipCreditCheck(shipCreditCheck != null && shipCreditCheck);
+        customerCashApplicationRepository.save(cash);
+    }
+
+    // ---- STATEMENT (OPTIONAL) ----
+    Boolean sendStatements      = headers.getBoolean(record, "sendStatements");
+    Boolean stmtAutoApply       = headers.getBoolean(record, "statementAutoApplyPayments");
+    Double stmtTolerancePercent = headers.getDouble(record, "statementTolerancePercentage");
+    Double minimumAmount        = headers.getDouble(record, "statementMinimumAmount");
+
+    if (sendStatements != null || stmtAutoApply != null
+            || stmtTolerancePercent != null || minimumAmount != null) {
+
+        CustomerStatement stmt = new CustomerStatement();
+        stmt.setCustomer(customer);
+        stmt.setSendStatements(sendStatements != null && sendStatements);
+        stmt.setAutoApplyPayments(stmtAutoApply != null && stmtAutoApply);
+        stmt.setTolerancePercentage(stmtTolerancePercent);
+        stmt.setMinimumAmount(minimumAmount);
+        customerStatementRepository.save(stmt);
+    }
+
+    // ---- EFT (OPTIONAL) ----
+    String bankName            = headers.get(record, "bankName");
+    String ibanAccountNumber   = headers.get(record, "ibanAccountNumber");
+    String bankIdentifierCode  = headers.get(record, "bankIdentifierCode");
+    Boolean enableAchPayments  = headers.getBoolean(record, "enableAchPayments");
+
+    if (anyNonBlank(bankName, ibanAccountNumber, bankIdentifierCode)
+            || enableAchPayments != null) {
+
+        CustomerEFT eft = new CustomerEFT();
+        eft.setCustomer(customer);
+        eft.setBankName(bankName);
+        eft.setIbanAccountNumber(ibanAccountNumber);
+        eft.setBankIdentifierCode(bankIdentifierCode);
+        eft.setEnableAchPayments(enableAchPayments != null && enableAchPayments);
+        customerEftRepository.save(eft);
+    }
+
+    // ---- VAT (OPTIONAL) ----
+    String taxId        = headers.get(record, "taxIdentificationNumber");
+    String taxAgency    = headers.get(record, "taxAgencyName");
+    Boolean enableVat   = headers.getBoolean(record, "enableVatCodes");
+
+    if (anyNonBlank(taxId, taxAgency) || enableVat != null) {
+        CustomerVAT vat = new CustomerVAT();
+        vat.setCustomer(customer);
+        vat.setTaxIdentificationNumber(taxId);
+        vat.setTaxAgencyName(taxAgency);
+        vat.setEnableVatCodes(enableVat != null && enableVat);
+        customerVatRepository.save(vat);
+    }
+
+    // ---- DUNNING / CREDIT (OPTIONAL) ----
+    Boolean placeOnCreditHold  = headers.getBoolean(record, "placeOnCreditHold");
+    Double creditLimit         = headers.getDouble(record, "creditLimit");
+    String dunningLevel        = headers.get(record, "dunningLevel");
+    String pastDue             = headers.get(record, "pastDue");
+    String level1              = headers.get(record, "level1");
+    String level2              = headers.get(record, "level2");
+    String level3              = headers.get(record, "level3");
+    String level4              = headers.get(record, "level4");
+
+    if (placeOnCreditHold != null || creditLimit != null ||
+            anyNonBlank(dunningLevel, pastDue, level1, level2, level3, level4)) {
+
+        CustomerDunningCreditSettings dc = new CustomerDunningCreditSettings();
+        dc.setCustomer(customer);
+        dc.setPlaceOnCreditHold(placeOnCreditHold != null && placeOnCreditHold);
+        dc.setCreditLimit(creditLimit);
+        dc.setDunningLevel(dunningLevel);
+        dc.setPastDue(pastDue);
+        dc.setLevel1(level1);
+        dc.setLevel2(level2);
+        dc.setLevel3(level3);
+        dc.setLevel4(level4);
+        customerDunningCreditSettingsRepository.save(dc);
+    }
+}
+
+private static class HeaderMapper {
+
+    private final Map<String, String> canonicalToCsvHeader;
+
+    // Known aliases → canonical field names
+    private static final Map<String, String> ALIASES;
+
+    static {
+        Map<String, String> m = new HashMap<>();
+
+        // Customer
+        m.put("customername", "customerName");
+        m.put("name", "customerName");
+        m.put("customer_name", "customerName");
+
+        m.put("email", "email");
+        m.put("emailaddress", "email");
+
+        m.put("customertype", "customerType");
+        m.put("customer_type", "customerType");
+
+        // Address
+        m.put("address", "addressLine1");
+        m.put("addressline1", "addressLine1");
+        m.put("street", "addressLine1");
+
+        m.put("city", "city");
+        m.put("postalcode", "postalCode");
+        m.put("zipcode", "postalCode");
+        m.put("zip", "postalCode");
+
+        m.put("country", "country");
+        m.put("state", "stateProvince");
+        m.put("stateprovince", "stateProvince");
+
+        // VAT / Tax
+        m.put("taxnumber", "taxIdentificationNumber");
+        m.put("taxno", "taxIdentificationNumber");
+        m.put("taxidentificationnumber", "taxIdentificationNumber");
+
+        m.put("taxagency", "taxAgencyName");
+        m.put("taxagencyname", "taxAgencyName");
+
+        // EFT
+        m.put("bankname", "bankName");
+        m.put("iban", "ibanAccountNumber");
+        m.put("ibanaccountnumber", "ibanAccountNumber");
+        m.put("bankidentifiercode", "bankIdentifierCode");
+        m.put("bic", "bankIdentifierCode");
+
+        // Booleans examples
+        m.put("enablevatcodes", "enableVatCodes");
+        m.put("enableachpayments", "enableAchPayments");
+        m.put("applypayments", "applyPayments");
+        m.put("autoapplypayments", "autoApplyPayments");
+        m.put("shipcreditcheck", "shipCreditCheck");
+        m.put("sendstatements", "sendStatements");
+
+        // Statement-specific
+        m.put("statementautoapplypayments", "statementAutoApplyPayments");
+        m.put("statementtolerancepercentage", "statementTolerancePercentage");
+        m.put("statementminimumamount", "statementMinimumAmount");
+
+        // Dunning
+        m.put("placeoncredithold", "placeOnCreditHold");
+        m.put("creditlimit", "creditLimit");
+        m.put("dunninglevel", "dunningLevel");
+        m.put("pastdue", "pastDue");
+        m.put("level1", "level1");
+        m.put("level2", "level2");
+        m.put("level3", "level3");
+        m.put("level4", "level4");
+
+        ALIASES = Collections.unmodifiableMap(m);
+    }
+
+    HeaderMapper(Set<String> csvHeaders) {
+        this.canonicalToCsvHeader = csvHeaders.stream()
+                .collect(Collectors.toMap(
+                        this::toCanonicalFromCsvHeader,
+                        h -> h,
+                        // if multiple match same canonical, keep the first
+                        (existing, replacement) -> existing
+                ));
+    }
+
+    private String toCanonicalFromCsvHeader(String header) {
+        String normalized = normalize(header);
+        return ALIASES.getOrDefault(normalized, normalized);
+    }
+
+    private static String normalize(String s) {
+        if (s == null) return "";
+        return s.trim()
+                .toLowerCase()
+                .replace(" ", "")
+                .replace("_", "")
+                .replace("-", "");
+    }
+
+    // Get raw string
+    public String get(CSVRecord record, String canonicalField) {
+        String header = canonicalToCsvHeader.get(canonicalField);
+        if (header == null) return null;
+
+        String value = record.get(header);
+        if (value == null) return null;
+
+        value = value.trim();
+        return value.isEmpty() ? null : value;
+    }
+
+    public Boolean getBoolean(CSVRecord record, String canonicalField) {
+        String value = get(record, canonicalField);
+        if (value == null) return null;
+
+        String v = value.trim().toLowerCase();
+        if (v.isEmpty()) return null;
+        if (v.equals("true") || v.equals("yes") || v.equals("y") || v.equals("1")) return true;
+        if (v.equals("false") || v.equals("no") || v.equals("n") || v.equals("0")) return false;
+
+        throw new IllegalArgumentException("Invalid boolean value '" + value + "' for field " + canonicalField);
+    }
+
+    public Double getDouble(CSVRecord record, String canonicalField) {
+        String value = get(record, canonicalField);
+        if (value == null) return null;
+        try {
+            return Double.valueOf(value);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Invalid number value '" + value + "' for field " + canonicalField);
+        }
+    }
+}
+
+private boolean anyNonBlank(String... values) {
+    if (values == null) return false;
+    for (String v : values) {
+        if (v != null && !v.trim().isEmpty()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 
 }

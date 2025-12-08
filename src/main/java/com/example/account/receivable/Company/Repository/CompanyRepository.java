@@ -13,7 +13,6 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     boolean existsByLegalName(String legalName);
     boolean existsByCompanyCode(String companyCode);
 
-        // ✅ only non-deleted for listing and fetching
     Page<Company> findByDeletedFalse(Pageable pageable);
 
     Optional<Company> findByIdAndDeletedFalse(Long companyId);

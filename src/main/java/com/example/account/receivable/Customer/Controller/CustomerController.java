@@ -1,9 +1,14 @@
 package com.example.account.receivable.Customer.Controller;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.example.account.receivable.Common.ApiResponse;
+import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerCsv;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDunningCreditSettingsDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerEftDTO;
@@ -193,6 +198,25 @@ public class CustomerController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+            @PostMapping(
+            value = "/import-csv",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ApiResponse<CustomerCsv>> importCustomersCsv(
+            @RequestParam("companyId") Long companyId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        CustomerCsv result = customerService.importCustomersFromCsv(companyId, file);
+
+        ApiResponse<CustomerCsv> body = ApiResponse.successResponse(
+                200,
+                "Customer CSV processed successfully",
+                result
+        );
+
+        return ResponseEntity.ok(body);
     }
 }
 
