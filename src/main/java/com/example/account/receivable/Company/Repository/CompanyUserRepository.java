@@ -14,6 +14,7 @@ public interface CompanyUserRepository extends JpaRepository<CompanyUser, Long> 
 
     // single user by company + email (for duplicate check / upsert)
     Optional<CompanyUser> findByCompany_IdAndEmail(Long companyId, String email);
+    CompanyUser findByEmail(String email);
 }
 
 

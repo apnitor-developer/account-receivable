@@ -3,9 +3,13 @@ package com.example.account.receivable.Company.Controller;
 import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Entity.CompanyAddress;
+import com.example.account.receivable.Company.Entity.CompanyUser;
 import com.example.account.receivable.Company.Service.CompanyService;
 import com.example.account.receivable.Common.ApiResponse;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.data.domain.*;
 import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
@@ -37,23 +41,36 @@ public class CompanyController {
                 return ResponseEntity.ok(body);
         }
 
-        // STEP 4 – users
-        @PostMapping("/{id}/users")
-        public ResponseEntity<ApiResponse<Company>> saveCompanyUsers(
-                @PathVariable Long id,
-                @RequestBody ManageUsersRequest request) {
+        // Create Company Users 
+        @PostMapping("/{companyId}/users")
+        public ResponseEntity<ApiResponse<CompanyUser>> saveCompanyUsers(
+                @PathVariable("companyId") Long companyId,
+                @RequestBody CompanyUserRequest request
+        ) {
+                CompanyUser details = companyService.createCompanyUser(companyId , request);
 
-                companyService.upsertCompanyUsers(id, request);
-
-                Company details = companyService.getCompanyDetails(id);
-
-                ApiResponse<Company> body =
+                ApiResponse<CompanyUser> body =
                         ApiResponse.successResponse(
                                 HttpStatus.OK.value(),
                                 "Company users saved successfully",
                                 details
                         );
 
+                return ResponseEntity.ok(body);
+        }
+
+
+        //Get Company Users list
+        @GetMapping("/users/{companyId}")
+        public ResponseEntity<ApiResponse<List<CompanyUser>>> getCompanyUsers(
+                @PathVariable("companyId") Long companyId
+        ){
+                List<CompanyUser> users = companyService.getcompanyUsers(companyId);
+
+                ApiResponse<List<CompanyUser>> body = ApiResponse.successResponse(
+                        200, 
+                        "Company Users retreived successully", 
+                        users);
                 return ResponseEntity.ok(body);
         }
 

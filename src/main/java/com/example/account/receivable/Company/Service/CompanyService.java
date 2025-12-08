@@ -126,63 +126,63 @@ public class CompanyService {
 
 
 
-    @Transactional
-    public void upsertCompanyUsers(Long companyId, ManageUsersRequest request) {
-        Company company = getCompanyOrThrow(companyId);
+    // @Transactional
+    // public void upsertCompanyUsers(Long companyId, ManageUsersRequest request) {
+    //     Company company = getCompanyOrThrow(companyId);
 
-        if (request == null || request.getUsers() == null || request.getUsers().isEmpty()) {
-            return;
-        }
+    //     if (request == null || request.getUsers() == null || request.getUsers().isEmpty()) {
+    //         return;
+    //     }
 
-        for (CompanyUserRequest dto : request.getUsers()) {
+    //     for (CompanyUserRequest dto : request.getUsers()) {
 
-            // 1. Resolve role
-            var role = roleRepository.findById(dto.getRoleId())
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Role not found: " + dto.getRoleId()
-                    ));
+    //         // 1. Resolve role
+    //         var role = roleRepository.findById(dto.getRoleId())
+    //                 .orElseThrow(() -> new IllegalArgumentException(
+    //                         "Role not found: " + dto.getRoleId()
+    //                 ));
 
-            CompanyUser entity;
+    //         CompanyUser entity;
 
-            if (dto.getId() != null) {
-                // 2a. UPDATE existing user
-                entity = companyUserRepository.findById(dto.getId())
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "User not found: " + dto.getId()
-                        ));
+    //         if (dto.getId() != null) {
+    //             // 2a. UPDATE existing user
+    //             entity = companyUserRepository.findById(dto.getId())
+    //                     .orElseThrow(() -> new IllegalArgumentException(
+    //                             "User not found: " + dto.getId()
+    //                     ));
 
-                // Safety: ensure user belongs to this company
-                if (!entity.getCompany().getId().equals(companyId)) {
-                    throw new IllegalArgumentException(
-                            "User " + dto.getId() + " does not belong to company " + companyId
-                    );
-                }
+    //             // Safety: ensure user belongs to this company
+    //             if (!entity.getCompany().getId().equals(companyId)) {
+    //                 throw new IllegalArgumentException(
+    //                         "User " + dto.getId() + " does not belong to company " + companyId
+    //                 );
+    //             }
 
-            } else {
-                // 2b. CREATE new user
+    //         } else {
+    //             // 2b. CREATE new user
 
-                // Optional: prevent duplicate email for same company
-                companyUserRepository.findByCompany_IdAndEmail(companyId, dto.getEmail())
-                        .ifPresent(existing -> {
-                            throw new IllegalArgumentException(
-                                    "User with email " + dto.getEmail()
-                                            + " already exists for company " + companyId
-                            );
-                        });
+    //             // Optional: prevent duplicate email for same company
+    //             companyUserRepository.findByCompany_IdAndEmail(companyId, dto.getEmail())
+    //                     .ifPresent(existing -> {
+    //                         throw new IllegalArgumentException(
+    //                                 "User with email " + dto.getEmail()
+    //                                         + " already exists for company " + companyId
+    //                         );
+    //                     });
 
-                entity = new CompanyUser();
-                entity.setCompany(company);
-            }
+    //             entity = new CompanyUser();
+    //             entity.setCompany(company);
+    //         }
 
-            // 3. Copy fields
-            entity.setName(dto.getName());
-            entity.setEmail(dto.getEmail());
-            entity.setRole(role);
-            entity.setStatus(dto.getStatus());
+    //         // 3. Copy fields
+    //         entity.setName(dto.getName());
+    //         entity.setEmail(dto.getEmail());
+    //         entity.setRole(role);
+    //         entity.setStatus(dto.getStatus());
 
-            companyUserRepository.save(entity);
-        }
-    }
+    //         companyUserRepository.save(entity);
+    //     }
+    // }
 
 
     // STEP 2 – create/update financial settings (POST)
@@ -219,10 +219,66 @@ public class CompanyService {
     }
 
 
+
+
+    //create company users
+    public CompanyUser createCompanyUser(Long companyId , CompanyUserRequest dto){
+
+        //check company
+        Company company = getCompanyDetails(companyId);
+
+        CompanyUser existingUser = companyUserRepository.findByEmail(dto.getEmail());
+        if (existingUser != null) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,   // 409
+                "User already exists with this email"
+            );
+        }
+        
+
+        //Check Role 
+        Role role = roleRepository.findById(dto.getRoleId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Role not found"
+                    ));
+
+        CompanyUser user =  CompanyUser.builder()
+                            .company(company)
+                            .role(role)
+                            .name(dto.getName())
+                            .email(dto.getEmail())
+                            .status(dto.getStatus())
+                            .build();
+
+        return companyUserRepository.save(user);
+
+    }
+
+
+
+    //Get User List
+    public List<CompanyUser> getcompanyUsers(Long companyId) {
+        List<CompanyUser> users = companyUserRepository.findByCompany_Id(companyId);
+
+        if(users.isEmpty()){
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND, 
+                "No user found for this company"
+            );
+        }
+
+        return users;
+    }
+
+
+
     public Page<Company> getAllCompanies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return companyRepository.findByDeletedFalse(pageable);    
     }
+
+
 
     public CompanyDetailsResponse toDetailsResponse(Company company) {
         Long companyId = company.getId();
@@ -369,7 +425,7 @@ public class CompanyService {
         if (request.getUsers() != null && !request.getUsers().isEmpty()) {
             ManageUsersRequest manageUsersRequest = new ManageUsersRequest();
             manageUsersRequest.setUsers(request.getUsers());
-            upsertCompanyUsers(companyId, manageUsersRequest);
+            // upsertCompanyUsers(companyId, manageUsersRequest);
         }
 
         return getCompanyDetails(companyId);

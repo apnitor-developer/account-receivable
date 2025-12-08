@@ -2,6 +2,7 @@ package com.example.account.receivable.CommonEntity;
 
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -27,10 +28,12 @@ public class CompanyCustomers {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 }
