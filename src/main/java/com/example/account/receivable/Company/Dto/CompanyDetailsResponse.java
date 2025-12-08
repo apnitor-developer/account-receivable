@@ -154,21 +154,7 @@ public class CompanyDetailsResponse {
                                 .collect(Collectors.toList());
 
 
-            AddressDTO addressDto = null;
-
             if (address != null) {
-                addressDto = AddressDTO.builder()
-                        .addressLine1(address.getAddressLine1())
-                        .city(address.getCity())
-                        .stateProvince(address.getStateProvince())
-                        .postalCode(address.getPostalCode())
-                        .addressCountry(address.getAddressCountry())
-                        .primaryContactName(address.getPrimaryContactName())
-                        .primaryContactEmail(address.getPrimaryContactEmail())
-                        .primaryContactPhone(address.getPrimaryContactPhone())
-                        .website(address.getWebsite())
-                        .primaryContactCountry(address.getPrimaryContactCountry())
-                        .build();
             }
 
         return CompanyDetailsResponse.builder()

@@ -43,6 +43,22 @@ public class InvoiceController {
         return ResponseEntity.status(201).body(response);
     }
 
+    //Send Invoice
+    @PostMapping("/send/{invoiceId}")
+    public ResponseEntity<ApiResponse<String>> sendInvoice(
+            @PathVariable Long invoiceId
+    ) {
+        invoiceService.sendInvoiceEmail(invoiceId);
+
+        ApiResponse<String> res = ApiResponse.successResponse(
+                200,
+                "Invoice sent successfully",
+                "sent"
+        );
+
+        return ResponseEntity.ok(res);
+    }
+
 
     //Get All Invoices
     @GetMapping()

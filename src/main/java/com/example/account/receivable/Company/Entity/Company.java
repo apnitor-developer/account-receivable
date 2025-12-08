@@ -6,10 +6,12 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.example.account.receivable.CommonEntity.CompanyCustomers;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -66,14 +68,14 @@ public class Company {
     @OneToOne(mappedBy = "company" , cascade = CascadeType.ALL)
     private CompanyAddress companyAddress;
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
-    private List<Customer> customer;
-
     @OneToMany(mappedBy = "company" , cascade = CascadeType.ALL)
     private List<CompanyBankAccount> bankAccounts;
 
     @OneToMany(mappedBy = "company" , cascade = CascadeType.ALL)
     private List<CompanyUser> users;
+
+    @OneToMany(mappedBy = "company" , cascade = CascadeType.ALL)
+    private List<CompanyCustomers> companyCustomers = new ArrayList<>();
 
 }
 

@@ -1,7 +1,6 @@
 package com.example.account.receivable.Invoice.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -12,6 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.account.receivable.Common.EmailService;
+import com.example.account.receivable.Common.InvoiceTemplateService;
+import com.example.account.receivable.Common.PdfGeneratorService;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
@@ -28,15 +30,45 @@ public class InvoiceService {
 
     private static final String INVOICE_PREFIX = "INV-";
     private static final int INVOICE_NUMBER_WIDTH = 4;  // 0001 – 9999
+    private final EmailService emailService;
+    private final InvoiceTemplateService invoiceTemplateService;
+    private final PdfGeneratorService pdfGeneratorService;
 
     public InvoiceService(
             CustomerRepository customerRepository,
             InvoiceRepository invoiceRepository,
-            ProductAndServiceRepository productRepository
+            ProductAndServiceRepository productRepository,
+            EmailService emailService,
+            InvoiceTemplateService invoiceTemplateService,
+            PdfGeneratorService pdfGeneratorService
     ) {
         this.customerRepository = customerRepository;
         this.invoiceRepository = invoiceRepository;
+        this.emailService = emailService;
+        this.invoiceTemplateService = invoiceTemplateService;
+        this.pdfGeneratorService = pdfGeneratorService;
     }
+
+    
+    public void sendInvoiceEmail(Long invoiceId) {
+    Invoice invoice = invoiceRepository.findById(invoiceId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
+
+    String html = invoiceTemplateService.generateHtml(invoice);
+    System.out.println( "Invoice html" + html);
+
+    byte[] pdf = pdfGeneratorService.generatePdf(html);
+    System.out.println( "Invoice pdf" + pdf);
+
+    String customerEmail = invoice.getCustomer().getEmail();
+    System.out.println("Customer email" + customerEmail);
+    
+    String subject = "Invoice " + invoice.getInvoiceNumber();
+    System.out.println( "Subject" + subject);
+
+    emailService.sendWithAttachment(customerEmail, subject, html, pdf);
+}
+
 
     @Transactional
     public Invoice createInvoice(Long customerId, InvoiceDto dto) {
@@ -142,7 +174,7 @@ public class InvoiceService {
         }
     }
 
-    
+
 
     private String generateUniqueInvoiceNumber() {
         String prefix = INVOICE_PREFIX;
