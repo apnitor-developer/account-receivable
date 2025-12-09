@@ -60,6 +60,23 @@ public class InvoiceController {
     }
 
 
+    //Get OPEN and PARTIAL invoices
+    @GetMapping("/unpaid/{customerId}")
+    public ResponseEntity<ApiResponse<List<Invoice>>> getOpenInvoices(
+        @PathVariable("customerId") Long customerId
+    ){
+        List<Invoice> invoices = invoiceService.getOpenInvoices(customerId);
+
+        ApiResponse<List<Invoice>> response = ApiResponse.successResponse(
+            200, 
+            "Customer unpaid Invoices retrived successfully",
+            invoices
+        );
+        return ResponseEntity.status(200).body(response);
+    }
+
+
+
     //Get All Invoices
     @GetMapping()
     public ResponseEntity<ApiResponse <Page<Invoice>>> getAllInvoices(

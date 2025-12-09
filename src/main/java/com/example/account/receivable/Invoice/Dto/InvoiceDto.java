@@ -17,12 +17,10 @@ public class InvoiceDto {
     private LocalDate invoiceDate;    
     private LocalDate dueDate; 
     private String note;
-
+    private String description;
+    
     //main invoice amount
     private BigDecimal rate;
     
     private BigDecimal taxAmount;
-
-    // Line items
-    // private List<InvoiceItemDto> items;
 }

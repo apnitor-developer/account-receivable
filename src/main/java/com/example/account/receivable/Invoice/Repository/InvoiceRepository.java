@@ -15,9 +15,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
 
     List<Invoice> findByCustomerId(Long customerId);
 
-    // 🔹 check if an invoice number already exists (manual or generated)
+    // Get Invoices List based on the Status(OPEN , PARTIAL , PAID)
+    List<Invoice> findByCustomerIdAndStatusIn(Long customerId, List<String> statuses);
+
+    // Check if an invoice number already exists (manual or generated)
     boolean existsByInvoiceNumber(String invoiceNumber);
 
-    // 🔹 get the last invoice like "INV-XXXX", ordered descending
+    // Get the last invoice like "INV-XXXX", ordered descending
     Optional<Invoice> findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc(String prefix);
 }

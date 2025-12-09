@@ -51,23 +51,39 @@ public class InvoiceService {
 
     
     public void sendInvoiceEmail(Long invoiceId) {
-    Invoice invoice = invoiceRepository.findById(invoiceId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
 
-    String html = invoiceTemplateService.generateHtml(invoice);
-    System.out.println( "Invoice html" + html);
+        String html = invoiceTemplateService.generateHtml(invoice);
+        System.out.println( "Invoice html" + html);
 
-    byte[] pdf = pdfGeneratorService.generatePdf(html);
-    System.out.println( "Invoice pdf" + pdf);
+        byte[] pdf = pdfGeneratorService.generatePdf(html);
+        System.out.println( "Invoice pdf" + pdf);
 
-    String customerEmail = invoice.getCustomer().getEmail();
-    System.out.println("Customer email" + customerEmail);
-    
-    String subject = "Invoice " + invoice.getInvoiceNumber();
-    System.out.println( "Subject" + subject);
+        String customerEmail = invoice.getCustomer().getEmail();
+        System.out.println("Customer email" + customerEmail);
+        
+        String subject = "Invoice " + invoice.getInvoiceNumber();
+        System.out.println( "Subject" + subject);
 
-    emailService.sendWithAttachment(customerEmail, subject, html, pdf);
-}
+        emailService.sendWithAttachment(customerEmail, subject, html, pdf);
+
+    }
+
+
+    //Get Customer Open Invoices
+    public List<Invoice> getOpenInvoices(Long customerId){
+
+        Customer customer = customerRepository.findById(customerId)
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+
+        // Fetch only unpaid invoices
+        List<String> statuses = List.of("OPEN", "PARTIAL");
+
+        return invoiceRepository.findByCustomerIdAndStatusIn(customerId, statuses);
+    }
+
+
 
 
     @Transactional
@@ -124,44 +140,18 @@ public class InvoiceService {
                 .invoiceNumber(invoiceNumber)
                 .invoiceDate(dto.getInvoiceDate())
                 .dueDate(dto.getDueDate())
+                .description(dto.getDescription())
                 .note(dto.getNote())
-                // reuse existing fields in entity:
                 .subTotal(rate)          // treat subTotal as the "rate"
                 .taxAmount(taxAmount)    // tax from dto
                 .totalAmount(totalAmount)
+                .balanceDue(totalAmount)
                 .customer(customer)
                 .deleted(false)
                 .active(true)
                 .generated(generatedFlag)
                 .build();
 
-        // List<InvoiceItem> invoiceItems = new ArrayList<>();
-
-        // // Loop through Items
-        // if (dto.getItems() != null) {
-        //     for (InvoiceItemDto itemDto : dto.getItems()) {
-        //         ProductAndService product = productRepository.findById(itemDto.getProductId())
-        //                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
-
-        //         BigDecimal rate = new BigDecimal(product.getPrice());
-        //         BigDecimal amount = rate.multiply(BigDecimal.valueOf(itemDto.getQuantity()));
-
-        //         BigDecimal tax = calculateTax(amount, itemDto.getTaxType());
-
-        //         InvoiceItem item = new InvoiceItem();
-        //         item.setProduct(product);
-        //         item.setInvoice(invoice);
-        //         item.setDescription(itemDto.getDescription());
-        //         item.setQuantity(itemDto.getQuantity());
-        //         item.setRate(rate);
-        //         item.setTaxAmount(tax);
-
-        //         invoiceItems.add(item);
-
-        //         subTotal = subTotal.add(amount);
-        //         totalTax = totalTax.add(tax);
-        //     }
-        // }
 
         try {
             return invoiceRepository.save(invoice);

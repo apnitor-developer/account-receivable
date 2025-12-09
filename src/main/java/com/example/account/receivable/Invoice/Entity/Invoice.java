@@ -1,6 +1,8 @@
 package com.example.account.receivable.Invoice.Entity;
 
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -44,6 +46,20 @@ public class Invoice {
 
     private BigDecimal totalAmount;
 
+    private String description;
+
+    @Column(name = "balance_due", nullable = false)
+    private BigDecimal balanceDue;  // Default value should be set to the total amount initially
+
+    // New field for invoice status (OPEN, PARTIAL, PAID)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private String status = "OPEN";  // Initial status is OPEN
+
+    // Optional: Track the date of the last payment
+    @Column(name = "last_payment_date")
+    private LocalDate lastPaymentDate;
+
     private String note;
 
     @Column(name = "is_generated")     
@@ -55,13 +71,9 @@ public class Invoice {
     @Builder.Default
     private boolean deleted = false;
 
-    // Relationship: invoice belongs to a customer
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "customer_id")   
     private Customer customer;
-
-    // One invoice has many items
-    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
-    private List<InvoiceItem> items;
 }
 
