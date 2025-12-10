@@ -114,23 +114,26 @@ public class PaymentService {
         // Load all selected invoices
         List<Invoice> invoices = invoiceRepository.findAllById(request.getInvoiceIds());
 
-        // (Optional) sort by due date / oldest first
-        // invoices.sort(Comparator.comparing(Invoice::getDueDate));
-
         for (Invoice invoice : invoices) {
 
             if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) break;
 
             BigDecimal invoiceBalance = invoice.getBalanceDue();
-
-            // how much we can apply?
             BigDecimal appliedAmount = invoiceBalance.min(remainingPayment);
 
-            // save PaymentApplication record
+            // OPEN AMOUNT = invoiceBalance BEFORE applying payment
+            BigDecimal openAmountBefore = invoiceBalance;
+
+            //new balance
+            BigDecimal balance = invoiceBalance.subtract(appliedAmount);
+            System.out.println("newbalance" + balance);
+
             PaymentApplication pa = PaymentApplication.builder()
                     .payment(payment)
                     .invoice(invoice)
                     .appliedAmount(appliedAmount)
+                    .openAmount(openAmountBefore)    // ← storing in DB
+                    .newBalance(invoiceBalance)
                     .build();
 
             paymentApplicationRepository.save(pa);

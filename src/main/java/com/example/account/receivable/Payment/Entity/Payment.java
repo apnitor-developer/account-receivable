@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -43,6 +44,7 @@ public class Payment {
     private String notes;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 

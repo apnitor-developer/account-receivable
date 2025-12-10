@@ -40,4 +40,8 @@ public class PaymentApplication {
 
     @Column(nullable = false)
     private BigDecimal appliedAmount;
+
+    private BigDecimal openAmount;
+
+    private BigDecimal newBalance;
 }
