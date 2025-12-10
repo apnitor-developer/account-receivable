@@ -19,7 +19,6 @@ import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
-import com.example.account.receivable.ProductAndService.Repository.ProductAndServiceRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -37,7 +36,6 @@ public class InvoiceService {
     public InvoiceService(
             CustomerRepository customerRepository,
             InvoiceRepository invoiceRepository,
-            ProductAndServiceRepository productRepository,
             EmailService emailService,
             InvoiceTemplateService invoiceTemplateService,
             PdfGeneratorService pdfGeneratorService

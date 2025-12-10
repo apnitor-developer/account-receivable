@@ -72,7 +72,6 @@ public class Invoice {
     private boolean deleted = false;
 
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "customer_id")   
     private Customer customer;
 }
