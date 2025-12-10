@@ -15,7 +15,6 @@ import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
-import com.example.account.receivable.Payment.Dto.InvoicePaymentDto;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
 import com.example.account.receivable.Payment.Entity.Payment;
 import com.example.account.receivable.Payment.Entity.PaymentApplication;

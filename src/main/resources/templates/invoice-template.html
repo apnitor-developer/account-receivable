@@ -3,56 +3,88 @@
 <head>
     <title>Invoice</title>
     <style>
-        body { font-family: Arial; padding: 20px; color: #333; }
-        h1 { text-align: right; }
-        .section { margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 10px; }
+        body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+        .header { width: 100%; margin-bottom: 30px; }
+        .right { text-align: right; }
+        .section-title { font-size: 18px; margin-top: 30px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; border: 1px solid #ddd; }
         th { background: #f5f5f5; }
+        .text-right { text-align:right; }
+        .summary-table td { border: none; padding: 5px; }
     </style>
 </head>
 
 <body>
 
-<h1>Invoice</h1>
+    <!-- HEADER -->
+    <div class="header">
+        <h1 class="right">INVOICE</h1>
 
-<div>
-    <strong>Invoice Number:</strong> 
-    <span th:text="${invoice.invoiceNumber}"></span><br />
+        <p><strong>Invoice Number:</strong> <span th:text="${invoice.invoiceNumber}"></span></p>
+        <p><strong>Date:</strong> <span th:text="${invoice.invoiceDate}"></span></p>
+        <p><strong>Due Date:</strong> <span th:text="${invoice.dueDate}"></span></p>
+    </div>
 
-    <strong>Date:</strong> 
-    <span th:text="${invoice.invoiceDate}"></span><br />
-</div>
+    <!-- CUSTOMER INFO -->
+    <div>
+        <h3 class="section-title">Bill To</h3>
+        <p><strong th:text="${invoice.customer.customerName}"></strong></p>
+        <p th:text="${invoice.customer.email}"></p>
+    </div>
 
-<div class="section">
-    <h3>Bill To</h3>
-    <p th:text="${invoice.customer.customerName}"></p>
-    <p th:text="${invoice.customer.email}"></p>
-</div>
+    <!-- ITEMS TABLE -->
+    <div>
+        <h3 class="section-title">Invoice Items</h3>
 
-<div class="section">
-    <h3>Invoice Details</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Tax</th>
+                    <th>Amount</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${invoice.items}">
+                    <td th:text="${item.itemName} + ' - ' + ${item.description}"></td>
+                    <td th:text="${item.quantity}"></td>
+                    <td th:text="${item.rate}"></td>
+                    <td th:text="${item.taxAmount}"></td>
+                    <td th:text="${item.amount}"></td>
+                    <td th:text="${item.total}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-    <table>
-        <thead>
-        <tr>
-            <th>Description</th>
-            <th>Rate</th>
-            <th>Tax</th>
-            <th>Total</th>
-        </tr>
-        </thead>
+    <!-- SUMMARY -->
+    <div class="right" style="margin-top: 30px; width: 40%; float: right;">
+        <table class="summary-table">
+            <tr>
+                <td><strong>Subtotal:</strong></td>
+                <td th:text="${invoice.subTotal}"></td>
+            </tr>
+            <tr>
+                <td><strong>Total Amount:</strong></td>
+                <td th:text="${invoice.totalAmount}"></td>
+            </tr>
+            <tr>
+                <td><strong>Balance Due:</strong></td>
+                <td th:text="${invoice.balanceDue}"></td>
+            </tr>
+        </table>
+    </div>
 
-        <tbody>
-        <tr>
-            <td th:text="${invoice.note}"></td>
-            <td th:text="${invoice.subTotal}"></td>
-            <td th:text="${invoice.taxAmount}"></td>
-            <td th:text="${invoice.totalAmount}"></td>
-        </tr>
-        </tbody>
-    </table>
-</div>
+    <div style="clear:both;"></div>
+
+    <!-- FOOTER MESSAGE -->
+    <p style="margin-top: 60px; text-align:center;">
+        Thank you for your business!
+    </p>
 
 </body>
 </html>

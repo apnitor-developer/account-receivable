@@ -1,6 +1,7 @@
 package com.example.account.receivable.Invoice.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -17,7 +18,10 @@ import com.example.account.receivable.Common.PdfGeneratorService;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
+import com.example.account.receivable.Invoice.Dto.InvoiceItemDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Entity.InvoiceItem;
+import com.example.account.receivable.Invoice.Repository.InvoiceItemRepo;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
 import jakarta.transaction.Transactional;
@@ -26,6 +30,7 @@ import jakarta.transaction.Transactional;
 public class InvoiceService {
     private final CustomerRepository customerRepository;
     private final InvoiceRepository invoiceRepository;
+    private final InvoiceItemRepo invoiceItemRepo;
 
     private static final String INVOICE_PREFIX = "INV-";
     private static final int INVOICE_NUMBER_WIDTH = 4;  // 0001 – 9999
@@ -38,13 +43,15 @@ public class InvoiceService {
             InvoiceRepository invoiceRepository,
             EmailService emailService,
             InvoiceTemplateService invoiceTemplateService,
-            PdfGeneratorService pdfGeneratorService
+            PdfGeneratorService pdfGeneratorService,
+            InvoiceItemRepo invoiceItemRepo
     ) {
         this.customerRepository = customerRepository;
         this.invoiceRepository = invoiceRepository;
         this.emailService = emailService;
         this.invoiceTemplateService = invoiceTemplateService;
         this.pdfGeneratorService = pdfGeneratorService;
+        this.invoiceItemRepo = invoiceItemRepo;
     }
 
     
@@ -90,12 +97,11 @@ public class InvoiceService {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-        // --- Resolve invoice number ---
-        boolean generatedFlag = Boolean.TRUE.equals(dto.getGenerated());
 
+        // Resolve invoice number
         String invoiceNumber;
-
         boolean auto = Boolean.TRUE.equals(dto.getGenerated());
+
         if (auto) {
             invoiceNumber = generateUniqueInvoiceNumber();
         } else {
@@ -115,44 +121,81 @@ public class InvoiceService {
             invoiceNumber = manual;
         }
 
-        // 3. Validate and use rate & tax
-        if (dto.getRate() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Rate is required"
-            );
-        }
 
-        BigDecimal rate = dto.getRate();
+        BigDecimal subTotal = BigDecimal.ZERO;
+        BigDecimal taxTotal = BigDecimal.ZERO;
 
-        // Tax can be required or optional depending on your rule
-        BigDecimal taxAmount = dto.getTaxAmount() != null
-                ? dto.getTaxAmount()
-                : BigDecimal.ZERO;
 
-        // Total = rate + tax
-        BigDecimal totalAmount = rate.add(taxAmount);
-
-        // 4. Build invoice
+        // Create invoice (without totals yet)
         Invoice invoice = Invoice.builder()
                 .invoiceNumber(invoiceNumber)
                 .invoiceDate(dto.getInvoiceDate())
                 .dueDate(dto.getDueDate())
-                .description(dto.getDescription())
                 .note(dto.getNote())
-                .subTotal(rate)          // treat subTotal as the "rate"
-                .taxAmount(taxAmount)    // tax from dto
-                .totalAmount(totalAmount)
-                .balanceDue(totalAmount)
+                .status("OPEN")
+                .generated(dto.getGenerated())
                 .customer(customer)
-                .deleted(false)
                 .active(true)
-                .generated(generatedFlag)
+                .deleted(false)
                 .build();
 
 
+        List<InvoiceItem> items = new ArrayList<>();
+
+
+        for (InvoiceItemDto itemDto : dto.getItems()) {
+
+            BigDecimal qty = BigDecimal.valueOf(itemDto.getQuantity());
+            BigDecimal amount = itemDto.getRate().multiply(qty);
+
+            // Convert tax
+            BigDecimal taxPercent = BigDecimal.ZERO;
+
+            if (itemDto.getTax() != null && !itemDto.getTax().equalsIgnoreCase("none")) {
+                String clean = itemDto.getTax().replace("%", ""); // "10%" -> "10"
+                taxPercent = new BigDecimal(clean);
+            }
+
+            BigDecimal taxAmount = amount.multiply(taxPercent).divide(BigDecimal.valueOf(100));
+            BigDecimal total = amount.add(taxAmount);
+
+            subTotal = subTotal.add(amount);
+            taxTotal = taxTotal.add(taxAmount);
+
+            InvoiceItem item = InvoiceItem.builder()
+                    .itemName(itemDto.getItemName())
+                    .description(itemDto.getDescription())
+                    .quantity(itemDto.getQuantity())
+                    .rate(itemDto.getRate())
+                    .amount(amount)
+                    .taxAmount(taxAmount)
+                    .total(total)
+                    .invoice(invoice)
+                    .build();
+
+            items.add(item);
+        }
+
+        invoiceItemRepo.saveAll(items);
+
+        // Compute TOTAL invoice values
+        BigDecimal totalAmount = subTotal.add(taxTotal);
+
+        invoice.setSubTotal(subTotal);
+        invoice.setTotalAmount(totalAmount);
+        invoice.setBalanceDue(totalAmount);
+
+        //Now save the invoice
+        invoice = invoiceRepository.save(invoice);
+
+        // Now that invoice has an ID, attach items
+        for (InvoiceItem item : items) {
+            item.setInvoice(invoice);
+        }
+        invoiceItemRepo.saveAll(items);
+
         try {
-            return invoiceRepository.save(invoice);
+            return invoice;
         } catch (DataIntegrityViolationException ex) {
             // Extra safety if two requests race for same number
             throw new ResponseStatusException(
@@ -164,6 +207,7 @@ public class InvoiceService {
 
 
 
+    //Generate invoice number
     private String generateUniqueInvoiceNumber() {
         String prefix = INVOICE_PREFIX;
 

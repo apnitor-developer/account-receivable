@@ -1,11 +1,11 @@
 package com.example.account.receivable.Invoice.Entity;
 
 import com.example.account.receivable.Customer.Entity.Customer;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -42,11 +42,11 @@ public class Invoice {
 
     private BigDecimal subTotal;
 
-    private BigDecimal taxAmount;
+    // private BigDecimal taxAmount;
 
     private BigDecimal totalAmount;
 
-    private String description;
+    // private String description;
 
     @Column(name = "balance_due", nullable = false)
     private BigDecimal balanceDue;  // Default value should be set to the total amount initially
@@ -74,5 +74,8 @@ public class Invoice {
     @ManyToOne
     @JoinColumn(name = "customer_id")   
     private Customer customer;
+
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
+    private List<InvoiceItem> items;
 }
 
