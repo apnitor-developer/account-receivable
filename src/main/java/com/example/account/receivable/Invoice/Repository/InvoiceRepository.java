@@ -1,5 +1,6 @@
 package com.example.account.receivable.Invoice.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,4 +24,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
 
     // Get the last invoice like "INV-XXXX", ordered descending
     Optional<Invoice> findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc(String prefix);
+
+
+    //For calculating the Aging
+    List<Invoice> findByActiveTrueAndDeletedFalseAndBalanceDueGreaterThan(BigDecimal balanceDue);
 }
