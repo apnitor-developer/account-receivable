@@ -30,6 +30,7 @@ import com.example.account.receivable.CommomRepository.CompanyCustomerRepository
 import com.example.account.receivable.CommonEntity.CompanyCustomers;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
+import com.example.account.receivable.Customer.Dto.CompanyResponseDto.CustomerResponseDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerCsv;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerCsv.RowError;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDTO;
@@ -113,15 +114,51 @@ public class CustomerService {
     }
 
     //Get Single Customer
-    public Customer getSingleCustomer(Long customerId) {
+    public CustomerResponseDTO getSingleCustomer(Long customerId) {
+
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-        return customer;
+        CustomerResponseDTO dto = new CustomerResponseDTO();
+
+        // Copy basic fields
+        dto.setId(customer.getId());
+        dto.setCustomerName(customer.getCustomerName());
+        dto.setCustomerId(customer.getCustomerId());
+        dto.setEmail(customer.getEmail());
+        dto.setCustomerType(customer.getCustomerType());
+        dto.setDeleted(customer.isDeleted());
+        dto.setCreatedAt(customer.getCreatedAt());
+        dto.setUpdatedAt(customer.getUpdatedAt());
+
+        // Copy relations
+        dto.setAddress(customer.getAddress());
+        dto.setCashApplication(customer.getCashApplication());
+        dto.setStatement(customer.getStatement());
+        dto.setEft(customer.getEft());
+        dto.setVat(customer.getVat());
+        dto.setDunning(customer.getDunning());
+
+        // Find Company using company_customers table
+        CompanyCustomers companyRelation = customer.getCompanyCompanies()
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        if (companyRelation != null) {
+            dto.setCompanyId(companyRelation.getCompany().getId());
+            dto.setCompanyName(companyRelation.getCompany().getLegalName());
+
+        } else {
+            dto.setCompanyName(null);
+        }
+
+        return dto;
     }
 
 
 
+ 
     // Method to create a new customer
     @Transactional
     public Customer createCustomer(Long companyId , CustomerDTO customerDTO) {

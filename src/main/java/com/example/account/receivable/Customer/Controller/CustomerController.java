@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.account.receivable.Common.ApiResponse;
+import com.example.account.receivable.Customer.Dto.CompanyResponseDto.CustomerResponseDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerCsv;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDunningCreditSettingsDTO;
@@ -126,9 +127,9 @@ public class CustomerController {
 
     //Get Single Customer
     @GetMapping("/{customerId}")
-    public ResponseEntity<ApiResponse<Customer>> getSingleCustomer(@PathVariable Long customerId) {
-        Customer customer = customerService.getSingleCustomer(customerId);
-        ApiResponse<Customer> response = ApiResponse.successResponse(
+    public ResponseEntity<ApiResponse<CustomerResponseDTO>> getSingleCustomer(@PathVariable Long customerId) {
+        CustomerResponseDTO customer = customerService.getSingleCustomer(customerId);
+        ApiResponse<CustomerResponseDTO> response = ApiResponse.successResponse(
             200, 
             "Customer Retreived Successfully", 
             customer
