@@ -1,6 +1,11 @@
 package com.example.account.receivable.Company.Entity;
 
 
+import java.time.Instant;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
@@ -31,6 +36,14 @@ public class CompanyPaymentSettings {
 
     @Column(name = "remittance_instructions")
     private String remittanceInstructions;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     @OneToOne
     @JsonIgnore

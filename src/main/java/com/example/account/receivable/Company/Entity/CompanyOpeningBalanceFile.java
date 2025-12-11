@@ -4,7 +4,11 @@ package com.example.account.receivable.Company.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "company_opening_balance_files")
@@ -39,5 +43,13 @@ public class CompanyOpeningBalanceFile {
 
     @Column(name = "uploaded_at", nullable = false)
     private OffsetDateTime uploadedAt;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 }
 

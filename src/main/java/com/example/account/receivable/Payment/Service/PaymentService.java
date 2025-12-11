@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.domain.Sort;
+
 
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
@@ -163,7 +165,7 @@ public class PaymentService {
 
     //Get All Payments
     public Page<Payment> getAllPayments(int page , int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size , Sort.by("paymentDate").descending());
         return paymentRepository.findAll(pageable);
     }
 }

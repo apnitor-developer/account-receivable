@@ -1,8 +1,12 @@
 package com.example.account.receivable.Payment.Entity;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -42,6 +46,14 @@ public class Payment {
     private LocalDate paymentDate;
 
     private String notes;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     @ManyToOne
     @JsonIgnore

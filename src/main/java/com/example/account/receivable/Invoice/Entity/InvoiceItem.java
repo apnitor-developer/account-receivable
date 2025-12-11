@@ -1,9 +1,14 @@
 package com.example.account.receivable.Invoice.Entity;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -35,6 +40,14 @@ public class InvoiceItem {
     private BigDecimal amount;    // quantity × rate
     private BigDecimal taxAmount; // amount × tax%
     private BigDecimal total;     // amount + taxAmount
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     @ManyToOne
     @JsonIgnore

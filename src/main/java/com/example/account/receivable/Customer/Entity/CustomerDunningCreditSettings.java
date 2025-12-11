@@ -1,5 +1,10 @@
 package com.example.account.receivable.Customer.Entity;
 
+import java.time.Instant;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
@@ -21,6 +26,14 @@ public class CustomerDunningCreditSettings {
     private String level2;
     private String level3;
     private String level4;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     @OneToOne
     @JsonIgnore

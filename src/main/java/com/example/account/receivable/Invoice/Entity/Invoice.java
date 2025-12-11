@@ -3,8 +3,12 @@ package com.example.account.receivable.Invoice.Entity;
 import com.example.account.receivable.Customer.Entity.Customer;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -70,6 +74,14 @@ public class Invoice {
 
     @Builder.Default
     private boolean deleted = false;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")   
