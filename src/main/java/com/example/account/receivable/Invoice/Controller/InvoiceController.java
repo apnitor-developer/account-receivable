@@ -1,6 +1,7 @@
 package com.example.account.receivable.Invoice.Controller;
 
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -118,6 +119,22 @@ public class InvoiceController {
             "Invoices Retreived Successfully", 
             invoice
         );
+        return ResponseEntity.status(200).body(response);
+    }
+
+
+    //Get Pending Amount of all the invoices
+    @GetMapping("/{customerId}/pending-amount")
+    public ResponseEntity<ApiResponse<BigDecimal>> getPendingAmount(@PathVariable Long customerId) {
+
+        BigDecimal pendingAmount = invoiceService.getCustomerPendingAmount(customerId);
+
+        ApiResponse<BigDecimal> response = ApiResponse.successResponse(
+            200, 
+            "Invoices Retreived Successfully", 
+            pendingAmount
+        );
+
         return ResponseEntity.status(200).body(response);
     }
 

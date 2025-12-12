@@ -28,4 +28,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
 
     //For calculating the Aging
     List<Invoice> findByActiveTrueAndDeletedFalseAndBalanceDueGreaterThan(BigDecimal balanceDue);
+
+    //Use this function to calculate the allbalance dues of the invoices
+    List<Invoice> findByCustomerIdAndBalanceDueGreaterThan(Long customerId, BigDecimal balance);
+
 }

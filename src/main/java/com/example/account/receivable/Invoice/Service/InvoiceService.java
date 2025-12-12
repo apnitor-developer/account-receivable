@@ -1,6 +1,7 @@
 package com.example.account.receivable.Invoice.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -285,4 +286,27 @@ public class InvoiceService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found with this Id"));
         return invoice;
     }
+
+
+
+    //Get Total Pending Amount of all the invoices.
+    public BigDecimal getCustomerPendingAmount(Long customerId) {
+
+        customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        List<Invoice> invoices =
+                invoiceRepository.findByCustomerIdAndBalanceDueGreaterThan(
+                        customerId, BigDecimal.ZERO
+                );
+
+        LocalDate today = LocalDate.now();
+
+        return invoices.stream()
+                .filter(inv -> inv.getDueDate() != null &&
+                            inv.getDueDate().isBefore(today))
+                .map(Invoice::getBalanceDue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
 }

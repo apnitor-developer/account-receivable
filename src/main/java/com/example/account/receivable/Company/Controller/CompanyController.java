@@ -5,6 +5,7 @@ import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Entity.CompanyAddress;
 import com.example.account.receivable.Company.Entity.CompanyUser;
 import com.example.account.receivable.Company.Service.CompanyService;
+import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -201,6 +202,22 @@ public class CompanyController {
         );
 
         return ResponseEntity.ok(body);
+        }
+
+
+        //Get company Customer
+        @GetMapping("/{companyId}/customers")
+        public ResponseEntity<ApiResponse<List<Customer>>> getCompanyCustomers(
+                @PathVariable("companyId") Long companyId
+        ){
+                List<Customer> customers = companyService.getCompanyCustomers(companyId);
+                ApiResponse<List<Customer>> response = ApiResponse.successResponse(
+                        200, 
+                        "Customers retreived successfully", 
+                        customers
+                );
+                return ResponseEntity.status(200).body(response);
+
         }
 
         // DELETE (soft delete) company

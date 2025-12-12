@@ -1,9 +1,11 @@
 package com.example.account.receivable.Company.Service;
 
 
+import com.example.account.receivable.CommomRepository.CompanyCustomerRepository;
 import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.*;
 import com.example.account.receivable.Company.Repository.*;
+import com.example.account.receivable.Customer.Entity.Customer;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,9 @@ public class CompanyService {
 
     private final CompanyUserRepository companyUserRepository;  
     private final RoleRepository roleRepository;
-    private final CompanyAddressRepository companyAddressRepository;          
+    private final CompanyAddressRepository companyAddressRepository;   
+    private final CompanyCustomerRepository companyCustomerRepository;
+       
 
     private final CompanyRepository companyRepository;
     private final CompanyFinancialSettingsRepository financialRepo;
@@ -44,16 +48,6 @@ public class CompanyService {
                 .country(request.getCountry())
                 .baseCurrency(request.getBaseCurrency())
                 .timeZone(request.getTimeZone())
-                // .addressLine1(request.getAddressLine1())
-                // .city(request.getCity())
-                // .stateProvince(request.getStateProvince())
-                // .postalCode(request.getPostalCode())
-                // .addressCountry(request.getAddressCountry())
-                // .primaryContactName(request.getPrimaryContactName())
-                // .primaryContactEmail(request.getPrimaryContactEmail())
-                // .primaryContactPhone(request.getPrimaryContactPhone())
-                // .website(request.getWebsite())
-                // .primaryContactCountry(request.getPrimaryContactCountry())
                 .build();
 
         return companyRepository.save(company);
@@ -125,66 +119,6 @@ public class CompanyService {
     }
 
 
-
-    // @Transactional
-    // public void upsertCompanyUsers(Long companyId, ManageUsersRequest request) {
-    //     Company company = getCompanyOrThrow(companyId);
-
-    //     if (request == null || request.getUsers() == null || request.getUsers().isEmpty()) {
-    //         return;
-    //     }
-
-    //     for (CompanyUserRequest dto : request.getUsers()) {
-
-    //         // 1. Resolve role
-    //         var role = roleRepository.findById(dto.getRoleId())
-    //                 .orElseThrow(() -> new IllegalArgumentException(
-    //                         "Role not found: " + dto.getRoleId()
-    //                 ));
-
-    //         CompanyUser entity;
-
-    //         if (dto.getId() != null) {
-    //             // 2a. UPDATE existing user
-    //             entity = companyUserRepository.findById(dto.getId())
-    //                     .orElseThrow(() -> new IllegalArgumentException(
-    //                             "User not found: " + dto.getId()
-    //                     ));
-
-    //             // Safety: ensure user belongs to this company
-    //             if (!entity.getCompany().getId().equals(companyId)) {
-    //                 throw new IllegalArgumentException(
-    //                         "User " + dto.getId() + " does not belong to company " + companyId
-    //                 );
-    //             }
-
-    //         } else {
-    //             // 2b. CREATE new user
-
-    //             // Optional: prevent duplicate email for same company
-    //             companyUserRepository.findByCompany_IdAndEmail(companyId, dto.getEmail())
-    //                     .ifPresent(existing -> {
-    //                         throw new IllegalArgumentException(
-    //                                 "User with email " + dto.getEmail()
-    //                                         + " already exists for company " + companyId
-    //                         );
-    //                     });
-
-    //             entity = new CompanyUser();
-    //             entity.setCompany(company);
-    //         }
-
-    //         // 3. Copy fields
-    //         entity.setName(dto.getName());
-    //         entity.setEmail(dto.getEmail());
-    //         entity.setRole(role);
-    //         entity.setStatus(dto.getStatus());
-
-    //         companyUserRepository.save(entity);
-    //     }
-    // }
-
-
     // STEP 2 – create/update financial settings (POST)
     @Transactional
     public void upsertFinancialSettings(Long companyId, FinancialSettingsRequest request) {
@@ -210,6 +144,9 @@ public class CompanyService {
         financialRepo.save(settings);
     }
 
+
+
+    //Get Company Details
     public Company getCompanyDetails(Long companyId) {
         return companyRepository.findByIdAndDeletedFalse(companyId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -217,6 +154,20 @@ public class CompanyService {
                         "Company not found"
                 ));
     }
+
+
+
+    //Get Company Customers
+    public List<Customer> getCompanyCustomers(Long companyId) {
+
+        // Validate company exists
+        getCompanyDetails(companyId);
+
+        List<Customer> customers = companyCustomerRepository.findCustomersByCompanyId(companyId);
+
+        return customers;
+    }
+
 
 
 
