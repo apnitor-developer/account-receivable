@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.account.receivable.Common.EmailService;
 import com.example.account.receivable.Common.InvoiceTemplateService;
 import com.example.account.receivable.Common.PdfGeneratorService;
+import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
@@ -32,6 +33,7 @@ public class InvoiceService {
     private final CustomerRepository customerRepository;
     private final InvoiceRepository invoiceRepository;
     private final InvoiceItemRepo invoiceItemRepo;
+    private final CompanyRepository companyRepository;
 
     private static final String INVOICE_PREFIX = "INV-";
     private static final int INVOICE_NUMBER_WIDTH = 4;  // 0001 – 9999
@@ -45,7 +47,8 @@ public class InvoiceService {
             EmailService emailService,
             InvoiceTemplateService invoiceTemplateService,
             PdfGeneratorService pdfGeneratorService,
-            InvoiceItemRepo invoiceItemRepo
+            InvoiceItemRepo invoiceItemRepo,
+            CompanyRepository companyRepository
     ) {
         this.customerRepository = customerRepository;
         this.invoiceRepository = invoiceRepository;
@@ -53,6 +56,7 @@ public class InvoiceService {
         this.invoiceTemplateService = invoiceTemplateService;
         this.pdfGeneratorService = pdfGeneratorService;
         this.invoiceItemRepo = invoiceItemRepo;
+        this.companyRepository = companyRepository;
     }
 
     
@@ -307,6 +311,20 @@ public class InvoiceService {
                             inv.getDueDate().isBefore(today))
                 .map(Invoice::getBalanceDue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+
+
+    //Calculate Total Pending Amount of the Company
+    public BigDecimal getCompanyPendingAmount(Long companyId) {
+
+        // Validate company exists (optional but recommended)
+        companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Company not found"
+                ));
+
+        return invoiceRepository.getCompanyTotalPendingAmount(companyId);
     }
 
 }

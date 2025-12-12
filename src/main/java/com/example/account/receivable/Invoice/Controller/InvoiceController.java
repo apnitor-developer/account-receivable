@@ -123,9 +123,9 @@ public class InvoiceController {
     }
 
 
-    //Get Pending Amount of all the invoices
-    @GetMapping("/{customerId}/pending-amount")
-    public ResponseEntity<ApiResponse<BigDecimal>> getPendingAmount(@PathVariable Long customerId) {
+    //Get Pending Amount of all the invoices of the Customer
+    @GetMapping("/{customerId}/pending-amount-customer")
+    public ResponseEntity<ApiResponse<BigDecimal>> getCustomerPendingAmount(@PathVariable Long customerId) {
 
         BigDecimal pendingAmount = invoiceService.getCustomerPendingAmount(customerId);
 
@@ -136,6 +136,23 @@ public class InvoiceController {
         );
 
         return ResponseEntity.status(200).body(response);
+    }
+
+
+    //Get Total Pending Amount of all Company
+    @GetMapping("/{companyId}/pending-amount-company")
+    public ResponseEntity<ApiResponse<BigDecimal>> getCompanyPendingAmount(
+            @PathVariable Long companyId
+    ) {
+        BigDecimal pendingAmount = invoiceService.getCompanyPendingAmount(companyId);
+
+        ApiResponse<BigDecimal> response = ApiResponse.successResponse(
+                200,
+                "Company pending amount retrieved successfully",
+                pendingAmount
+        );
+
+        return ResponseEntity.ok(response);
     }
 
 }
