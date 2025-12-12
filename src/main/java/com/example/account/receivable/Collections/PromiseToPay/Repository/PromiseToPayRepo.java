@@ -14,5 +14,7 @@ public interface PromiseToPayRepo extends JpaRepository<PromiseToPay, Long> {
 
     List<PromiseToPay> findByStatus(PromiseStatus status);
 
+    List<PromiseToPay> findByStatusIn(List<PromiseStatus> statuses);
+
     List<PromiseToPay> findByPromiseDateBeforeAndStatus(LocalDate date, PromiseStatus status);
 }

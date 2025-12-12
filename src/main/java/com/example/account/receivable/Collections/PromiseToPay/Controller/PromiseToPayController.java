@@ -1,6 +1,9 @@
 package com.example.account.receivable.Collections.PromiseToPay.Controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +31,19 @@ public class PromiseToPayController {
         ApiResponse<PromiseToPayResponse> body = ApiResponse.successResponse(
             201, 
             "Promise to pay created successfully", 
+            response
+        );
+        return ResponseEntity.status(201).body(body);
+    }
+
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<PromiseToPayResponse>>> getAllPromiseToPay(){
+        List<PromiseToPayResponse> response = promiseToPayService.getAllPromiseToPay();
+
+        ApiResponse<List<PromiseToPayResponse>> body = ApiResponse.successResponse(
+            200, 
+            "Promise to pay retreived successfully", 
             response
         );
         return ResponseEntity.status(201).body(body);
