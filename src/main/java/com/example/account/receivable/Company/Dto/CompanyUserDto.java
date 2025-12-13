@@ -14,7 +14,6 @@ public class CompanyUserDto {
     private Long id;
     private String name;
     private String email;
-    private String status;
     private Long roleId;
     private String roleName;
 
@@ -23,7 +22,6 @@ public class CompanyUserDto {
                 .id(cu.getId())
                 .name(cu.getName())
                 .email(cu.getEmail())
-                .status(cu.getStatus())
                 .roleId(cu.getRole().getId())
                 .roleName(cu.getRole().getName())
                 .build();

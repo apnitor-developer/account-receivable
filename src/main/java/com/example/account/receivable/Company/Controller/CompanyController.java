@@ -9,6 +9,7 @@ import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.data.domain.*;
@@ -234,4 +235,18 @@ public class CompanyController {
 
                 return ResponseEntity.ok(body);
         }
+
+
+        //Accept Invitaion By the link
+        @GetMapping("/company/users/accept")
+        public ResponseEntity<Void> acceptInvite(@RequestParam String email) {
+
+                companyService.acceptInvitation(email);
+
+                return ResponseEntity
+                        .status(HttpStatus.FOUND) // 302 redirect
+                        .location(URI.create("https://22e817869728.ngrok-free.app/admin/dashboard"))
+                        .build();
+        }
+
 }

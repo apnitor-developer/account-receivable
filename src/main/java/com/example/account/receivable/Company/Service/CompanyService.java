@@ -2,6 +2,8 @@ package com.example.account.receivable.Company.Service;
 
 
 import com.example.account.receivable.CommomRepository.CompanyCustomerRepository;
+import com.example.account.receivable.Common.EmailService;
+import com.example.account.receivable.Common.EmailTemplateService;
 import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.*;
 import com.example.account.receivable.Company.Repository.*;
@@ -35,7 +37,10 @@ public class CompanyService {
     private final CompanyFinancialSettingsRepository financialRepo;
     private final CompanyPaymentSettingsRepository paymentRepo;
     private final CompanyBankAccountRepository bankAccountRepo;
-    private final CompanyOpeningBalanceFileRepository openingBalanceFileRepository; 
+    private final CompanyOpeningBalanceFileRepository openingBalanceFileRepository;
+    
+    private final EmailTemplateService emailTemplateService;
+    private final EmailService emailService; 
 
 
     // STEP 1 – create company
@@ -173,38 +178,50 @@ public class CompanyService {
 
 
     //create company users
-    public CompanyUser createCompanyUser(Long companyId , CompanyUserRequest dto){
+    public CompanyUser createCompanyUser(Long companyId, CompanyUserRequest dto) {
 
-        //check company
         Company company = getCompanyDetails(companyId);
 
-        CompanyUser existingUser = companyUserRepository.findByEmail(dto.getEmail());
-        if (existingUser != null) {
-            throw new ResponseStatusException(
-                HttpStatus.CONFLICT,   // 409
-                "User already exists with this email"
-            );
+        if (companyUserRepository.findByEmail(dto.getEmail()) != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists");
         }
-        
 
-        //Check Role 
         Role role = roleRepository.findById(dto.getRoleId())
-                    .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Role not found"
-                    ));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Role not found"));
 
-        CompanyUser user =  CompanyUser.builder()
-                            .company(company)
-                            .role(role)
-                            .name(dto.getName())
-                            .email(dto.getEmail())
-                            .status(dto.getStatus())
-                            .build();
+        CompanyUser user = CompanyUser.builder()
+                .company(company)
+                .role(role)
+                .name(dto.getName())
+                .email(dto.getEmail())
+                .status(CompanyUserStatus.INVITED)
+                .build();
 
-        return companyUserRepository.save(user);
+        CompanyUser savedUser = companyUserRepository.save(user);
 
+        // 🔗 Invite link (backend endpoint)
+        String inviteLink =
+            "https://cade7ea1a7ff.ngrok-free.app/api/companies/company/users/accept?email="
+            + savedUser.getEmail();
+
+        String emailHtml = emailTemplateService.buildInviteEmail(
+                savedUser.getName(),
+                company.getLegalName(),
+                inviteLink
+        );
+
+        emailService.sendWithAttachment(
+                savedUser.getEmail(),
+                "You're invited to join " + company.getLegalName(),
+                emailHtml,
+                null
+        );
+
+        return savedUser;
     }
+
+
 
 
 
@@ -321,6 +338,24 @@ public class CompanyService {
     }
 
 
+    @Transactional
+    public void acceptInvitation(String email) {
+
+        CompanyUser user = companyUserRepository.findByEmail(email);
+
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid invite");
+        }
+
+        if (user.getStatus() == CompanyUserStatus.INVITED) {
+            user.setStatus(CompanyUserStatus.ACTIVE);
+            companyUserRepository.save(user);
+        }
+    }
+
+
+
+
     // updateCompanyBasic kept for future if you re-enable PUT
     @Transactional
     public Company updateCompanyBasic(Long id, CompanyProfileRequest request) {
@@ -331,16 +366,7 @@ public class CompanyService {
         company.setCountry(request.getCountry());
         company.setBaseCurrency(request.getBaseCurrency());
         company.setTimeZone(request.getTimeZone());
-        // company.setAddressLine1(request.getAddressLine1());
-        // company.setCity(request.getCity());
-        // company.setStateProvince(request.getStateProvince());
-        // company.setPostalCode(request.getPostalCode());
-        // company.setAddressCountry(request.getAddressCountry());
-        // company.setPrimaryContactName(request.getPrimaryContactName());
-        // company.setPrimaryContactEmail(request.getPrimaryContactEmail());
-        // company.setPrimaryContactPhone(request.getPrimaryContactPhone());
-        // company.setWebsite(request.getWebsite());
-        // company.setPrimaryContactCountry(request.getPrimaryContactCountry());
+
         return companyRepository.save(company);
     }
 
@@ -391,17 +417,6 @@ public class CompanyService {
         if (p.getBaseCurrency() != null)         company.setBaseCurrency(p.getBaseCurrency());
         if (p.getTimeZone() != null)             company.setTimeZone(p.getTimeZone());
 
-        // if (p.getAddressLine1() != null)         company.setAddressLine1(p.getAddressLine1());
-        // if (p.getCity() != null)                 company.setCity(p.getCity());
-        // if (p.getStateProvince() != null)        company.setStateProvince(p.getStateProvince());
-        // if (p.getPostalCode() != null)           company.setPostalCode(p.getPostalCode());
-        // if (p.getAddressCountry() != null)       company.setAddressCountry(p.getAddressCountry());
-
-        // if (p.getPrimaryContactName() != null)   company.setPrimaryContactName(p.getPrimaryContactName());
-        // if (p.getPrimaryContactEmail() != null)  company.setPrimaryContactEmail(p.getPrimaryContactEmail());
-        // if (p.getPrimaryContactPhone() != null)  company.setPrimaryContactPhone(p.getPrimaryContactPhone());
-        // if (p.getWebsite() != null)              company.setWebsite(p.getWebsite());
-        // if (p.getPrimaryContactCountry() != null) company.setPrimaryContactCountry(p.getPrimaryContactCountry());
     }
 
 

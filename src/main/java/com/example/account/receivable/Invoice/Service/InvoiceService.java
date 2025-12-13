@@ -65,16 +65,12 @@ public class InvoiceService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
 
         String html = invoiceTemplateService.generateHtml(invoice);
-        System.out.println( "Invoice html" + html);
 
         byte[] pdf = pdfGeneratorService.generatePdf(html);
-        System.out.println( "Invoice pdf" + pdf);
 
         String customerEmail = invoice.getCustomer().getEmail();
-        System.out.println("Customer email" + customerEmail);
         
         String subject = "Invoice " + invoice.getInvoiceNumber();
-        System.out.println( "Subject" + subject);
 
         emailService.sendWithAttachment(customerEmail, subject, html, pdf);
 

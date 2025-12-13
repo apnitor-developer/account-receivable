@@ -37,8 +37,9 @@ public class CompanyUser {
     @Column(nullable = false, length = 150)
     private String email;
 
-    @Column(nullable = false, length = 20)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CompanyUserStatus status;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
