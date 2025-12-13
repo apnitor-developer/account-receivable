@@ -1,6 +1,7 @@
 package com.example.account.receivable.Invoice.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,7 +39,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
 
 
     //Calculate Total Pending Amount of the company
-
     @Query("""
         SELECT COALESCE(SUM(i.balanceDue), 0)
         FROM Invoice i
@@ -50,5 +50,27 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
           AND i.dueDate <= CURRENT_DATE
     """)
     BigDecimal getCompanyTotalPendingAmount(@Param("companyId") Long companyId);
+
+
+    long countByDeletedFalse();
+
+    long countByBalanceDueGreaterThan(BigDecimal amount);
+
+    @Query("""
+        SELECT COALESCE(SUM(i.balanceDue), 0)
+        FROM Invoice i
+        WHERE i.balanceDue > 0
+        AND i.deleted = false
+    """)
+    BigDecimal getTotalReceivables();
+
+    @Query("""
+        SELECT COALESCE(SUM(i.balanceDue), 0)
+        FROM Invoice i
+        WHERE i.balanceDue > 0
+        AND i.deleted = false
+        AND i.dueDate >= :today
+    """)
+    BigDecimal getCurrentReceivables(@Param("today") LocalDate today);
 
 }

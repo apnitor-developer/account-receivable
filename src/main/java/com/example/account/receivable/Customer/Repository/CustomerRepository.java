@@ -10,4 +10,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Page<Customer> findByDeletedFalse(Pageable pageable);
     Optional<Customer> findByEmail(String email);
     Optional<Customer> findByIdAndDeletedFalse(Long id);
+
+    //Count Total Customers
+    long countByDeletedFalse();
+
 }
