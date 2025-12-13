@@ -1,8 +1,11 @@
 package com.example.account.receivable.Collections.PromiseToPay.Service;
 
+import java.lang.module.ResolutionException;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.account.receivable.Collections.PromiseToPay.DTO.RequestDTO.PromiseToPayRequest;
 import com.example.account.receivable.Collections.PromiseToPay.DTO.ResponseDTO.PromiseToPayResponse;
@@ -29,12 +32,12 @@ public class PromiseToPayService {
                 System.out.println("Promise to pay Request" + request);
 
                 Customer customer = customerRepository.findById(request.getCustomerId())
-                        .orElseThrow(() -> new RuntimeException("Customer not found"));
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
                 Invoice invoice = null;
                 if (request.getInvoiceId() != null) {
                 invoice = invoiceRepository.findById(request.getInvoiceId())
-                        .orElseThrow(() -> new RuntimeException("Invoice not found"));
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
                 }
 
                 PromiseToPay promise = PromiseToPay.builder()
@@ -88,6 +91,43 @@ public class PromiseToPayService {
                                 p.getNotes()
                         ))
                         .toList();
+        }
+
+
+
+        // Get Promise To Pay for a specific customer
+        public List<PromiseToPayResponse> getPromiseToPayByCustomer(Long customerId) {
+
+        customerRepository.findById(customerId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+
+        List<PromiseStatus> allowedStatuses = List.of(
+                PromiseStatus.PENDING,
+                PromiseStatus.DUE_TODAY,
+                PromiseStatus.BROKEN
+        );
+
+        List<PromiseToPay> promises =
+                promiseToPayRepository.findByCustomerId(customerId)
+                        .stream()
+                        .filter(p -> allowedStatuses.contains(p.getStatus()))
+                        .toList();
+
+        return promises.stream()
+                .map(p -> new PromiseToPayResponse(
+                        p.getId(),
+                        p.getCustomer() != null
+                                ? p.getCustomer().getCustomerName()
+                                : null,
+                        p.getInvoice() != null
+                                ? p.getInvoice().getInvoiceNumber()
+                                : null,
+                        p.getAmountPromised(),
+                        p.getPromiseDate(),
+                        p.getStatus(),
+                        p.getNotes()
+                ))
+                .toList();
         }
 
 }

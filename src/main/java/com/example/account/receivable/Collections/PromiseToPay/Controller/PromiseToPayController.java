@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +38,7 @@ public class PromiseToPayController {
     }
 
 
+    //Get All Promise to Pay for all the customers
     @GetMapping
     public ResponseEntity<ApiResponse<List<PromiseToPayResponse>>> getAllPromiseToPay(){
         List<PromiseToPayResponse> response = promiseToPayService.getAllPromiseToPay();
@@ -46,7 +48,26 @@ public class PromiseToPayController {
             "Promise to pay retreived successfully", 
             response
         );
-        return ResponseEntity.status(201).body(body);
+        return ResponseEntity.status(200).body(body);
+    }
+
+
+    //Get Promise to pay for a particualr customer
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<ApiResponse<List<PromiseToPayResponse>>> 
+    getPromiseToPayByCustomer(@PathVariable Long customerId) {
+
+        List<PromiseToPayResponse> response =
+                promiseToPayService.getPromiseToPayByCustomer(customerId);
+
+        ApiResponse<List<PromiseToPayResponse>> body =
+                ApiResponse.successResponse(
+                        200,
+                        "Customer promise to pay retrieved successfully",
+                        response
+                );
+
+        return ResponseEntity.status(200).body(body);
     }
 }
 
