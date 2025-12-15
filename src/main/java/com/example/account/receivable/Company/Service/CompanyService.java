@@ -200,7 +200,7 @@ public class CompanyService {
 
         CompanyUser savedUser = companyUserRepository.save(user);
 
-        // 🔗 Invite link (backend endpoint)
+        // Invite link (backend endpoint)
         String inviteLink =
             "https://cade7ea1a7ff.ngrok-free.app/api/companies/company/users/accept?email="
             + savedUser.getEmail();

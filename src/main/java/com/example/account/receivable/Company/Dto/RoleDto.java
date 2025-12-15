@@ -4,14 +4,11 @@ import java.util.Set;
 
 import com.example.account.receivable.Common.Premission.Permission;
 
-import lombok.*;
+import lombok.Data;
 
 @Data
-@AllArgsConstructor
-public class RoleResponse {
-    private Long id;
+public class RoleDto {
     private String name;
     private String description;
     private Set<Permission> permissions;
 }
-
