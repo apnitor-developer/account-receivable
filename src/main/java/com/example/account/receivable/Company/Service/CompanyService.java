@@ -202,7 +202,7 @@ public class CompanyService {
 
         // Invite link (backend endpoint)
         String inviteLink =
-            "https://cade7ea1a7ff.ngrok-free.app/api/companies/company/users/accept?email="
+            "https://82d87ae852f1.ngrok-free.app/api/companies/company/users/accept?email="
             + savedUser.getEmail();
 
         String emailHtml = emailTemplateService.buildInviteEmail(

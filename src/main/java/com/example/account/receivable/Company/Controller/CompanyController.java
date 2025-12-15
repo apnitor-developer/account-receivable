@@ -245,7 +245,7 @@ public class CompanyController {
 
                 return ResponseEntity
                         .status(HttpStatus.FOUND) // 302 redirect
-                        .location(URI.create("https://22e817869728.ngrok-free.app/admin/dashboard"))
+                        .location(URI.create("https://75b2b321a71e.ngrok-free.app/admin/dashboard"))
                         .build();
         }
 
