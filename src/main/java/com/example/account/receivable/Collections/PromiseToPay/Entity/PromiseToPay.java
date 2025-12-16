@@ -6,7 +6,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.account.receivable.Customer.Entity.Customer;
-import com.example.account.receivable.Invoice.Entity.Invoice;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -30,9 +29,9 @@ public class PromiseToPay {
     private Customer customer;
 
     // Optional: Promise linked to a specific invoice
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invoice_id")
-    private Invoice invoice;
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "invoice_id")
+    // private Invoice invoice;
 
     @Column(nullable = false)
     private BigDecimal amountPromised;

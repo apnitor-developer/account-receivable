@@ -32,4 +32,17 @@ public interface PromiseToPayRepo extends JpaRepository<PromiseToPay, Long> {
             @Param("statuses") List<PromiseStatus> statuses,
             @Param("today") LocalDate today
     );
-}
+
+
+
+  List<PromiseToPay> findByPromiseDateAndStatus(
+      LocalDate promiseDate,
+      PromiseStatus status
+  );
+
+  List<PromiseToPay> findByPromiseDateBeforeAndStatusIn(
+      LocalDate date,
+      List<PromiseStatus> statuses
+  );
+
+} 

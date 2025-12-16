@@ -1,6 +1,7 @@
 package com.example.account.receivable.Collections.PromiseToPay.Service;
 
 import java.lang.module.ResolutionException;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -14,8 +15,6 @@ import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseToP
 import com.example.account.receivable.Collections.PromiseToPay.Repository.PromiseToPayRepo;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
-import com.example.account.receivable.Invoice.Entity.Invoice;
-import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +24,6 @@ public class PromiseToPayService {
 
         private final PromiseToPayRepo promiseToPayRepository;
         private final CustomerRepository customerRepository;
-        private final InvoiceRepository invoiceRepository;
 
         public PromiseToPayResponse createPromise(PromiseToPayRequest request) {
 
@@ -34,19 +32,35 @@ public class PromiseToPayService {
                 Customer customer = customerRepository.findById(request.getCustomerId())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-                Invoice invoice = null;
-                if (request.getInvoiceId() != null) {
-                invoice = invoiceRepository.findById(request.getInvoiceId())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
+                // Invoice invoice = null;
+                // if (request.getInvoiceId() != null) {
+                // invoice = invoiceRepository.findById(request.getInvoiceId())
+                //         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
+                // }
+
+
+                LocalDate today = LocalDate.now();
+
+                PromiseStatus status;
+
+                if (request.getPromiseDate().isEqual(today)) {
+                        status = PromiseStatus.DUE_TODAY;
+                } else if (request.getPromiseDate().isAfter(today)) {
+                        status = PromiseStatus.PENDING;
+                } else {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Promise date cannot be in the past"
+                        );
                 }
 
                 PromiseToPay promise = PromiseToPay.builder()
                         .customer(customer)
-                        .invoice(invoice)
+                        // .invoice(invoice)
                         .amountPromised(request.getAmountPromised())
                         .promiseDate(request.getPromiseDate())
                         .notes(request.getNotes())
-                        .status(PromiseStatus.PENDING)
+                        .status(status)
                         .build();
 
                 PromiseToPay saved = promiseToPayRepository.save(promise);
@@ -54,7 +68,7 @@ public class PromiseToPayService {
                 return new PromiseToPayResponse(
                         saved.getId(),
                         customer.getCustomerName(),
-                        invoice != null ? invoice.getInvoiceNumber() : null,
+                        // invoice != null ? invoice.getInvoiceNumber() : null,
                         saved.getAmountPromised(),
                         saved.getPromiseDate(),
                         saved.getStatus(),
@@ -82,9 +96,9 @@ public class PromiseToPayService {
                                 p.getCustomer() != null
                                         ? p.getCustomer().getCustomerName()
                                         : null,
-                                p.getInvoice() != null
-                                        ? p.getInvoice().getInvoiceNumber()
-                                        : null,
+                                // p.getInvoice() != null
+                                //         ? p.getInvoice().getInvoiceNumber()
+                                //         : null,
                                 p.getAmountPromised(),
                                 p.getPromiseDate(),
                                 p.getStatus(),
@@ -98,36 +112,37 @@ public class PromiseToPayService {
         // Get Promise To Pay for a specific customer
         public List<PromiseToPayResponse> getPromiseToPayByCustomer(Long customerId) {
 
-        customerRepository.findById(customerId)
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+                customerRepository.findById(customerId)
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-        List<PromiseStatus> allowedStatuses = List.of(
-                PromiseStatus.PENDING,
-                PromiseStatus.DUE_TODAY,
-                PromiseStatus.BROKEN
-        );
+                List<PromiseStatus> allowedStatuses = List.of(
+                        PromiseStatus.PENDING,
+                        PromiseStatus.DUE_TODAY,
+                        PromiseStatus.BROKEN
+                );
+                
 
-        List<PromiseToPay> promises =
-                promiseToPayRepository.findByCustomerId(customerId)
-                        .stream()
-                        .filter(p -> allowedStatuses.contains(p.getStatus()))
+                List<PromiseToPay> promises =
+                        promiseToPayRepository.findByCustomerId(customerId)
+                                .stream()
+                                .filter(p -> allowedStatuses.contains(p.getStatus()))
+                                .toList();
+
+                return promises.stream()
+                        .map(p -> new PromiseToPayResponse(
+                                p.getId(),
+                                p.getCustomer() != null
+                                        ? p.getCustomer().getCustomerName()
+                                        : null,
+                                // p.getInvoice() != null
+                                //         ? p.getInvoice().getInvoiceNumber()
+                                //         : null,
+                                p.getAmountPromised(),
+                                p.getPromiseDate(),
+                                p.getStatus(),
+                                p.getNotes()
+                        ))
                         .toList();
-
-        return promises.stream()
-                .map(p -> new PromiseToPayResponse(
-                        p.getId(),
-                        p.getCustomer() != null
-                                ? p.getCustomer().getCustomerName()
-                                : null,
-                        p.getInvoice() != null
-                                ? p.getInvoice().getInvoiceNumber()
-                                : null,
-                        p.getAmountPromised(),
-                        p.getPromiseDate(),
-                        p.getStatus(),
-                        p.getNotes()
-                ))
-                .toList();
         }
 
 }

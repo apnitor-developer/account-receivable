@@ -16,7 +16,7 @@ public class PromiseToPayResponse {
 
     private Long id;
     private String customerName;
-    private String invoiceNumber;
+    // private String invoiceNumber;
     private BigDecimal amountPromised;
     private LocalDate promiseDate;
     private PromiseStatus status;

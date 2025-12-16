@@ -46,11 +46,7 @@ public class Invoice {
 
     private BigDecimal subTotal;
 
-    // private BigDecimal taxAmount;
-
     private BigDecimal totalAmount;
-
-    // private String description;
 
     @Column(name = "balance_due", nullable = false)
     private BigDecimal balanceDue;  // Default value should be set to the total amount initially
