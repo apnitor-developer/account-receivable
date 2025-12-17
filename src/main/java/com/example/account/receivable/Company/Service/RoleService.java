@@ -2,8 +2,8 @@ package com.example.account.receivable.Company.Service;
 
 import com.example.account.receivable.Company.Dto.RoleDto;
 import com.example.account.receivable.Company.Dto.RoleResponse;
-import com.example.account.receivable.Company.Entity.Role;
-import com.example.account.receivable.Company.Repository.RoleRepository;
+import com.example.account.receivable.User.entity.Role;
+import com.example.account.receivable.User.repository.RoleRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

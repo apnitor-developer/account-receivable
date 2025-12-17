@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.example.account.receivable.Company.Entity.*;
+import com.example.account.receivable.User.entity.Users;
 
 @Data
 @NoArgsConstructor
@@ -31,7 +32,7 @@ public class CompanyDetailsResponse {
 
     // List of bank accounts
     private List<BankAccountDto> bankAccounts;
-    private List<CompanyUserDto> users;
+    private List<UsersDto> users;
 
     // ---- Nested DTOs ----
 
@@ -83,9 +84,7 @@ public class CompanyDetailsResponse {
     @AllArgsConstructor
     @Builder
     public static class AddressDTO {
-
         private Long id;
-
         private String addressLine1;
         private String city;
         private String stateProvince;
@@ -107,7 +106,7 @@ public class CompanyDetailsResponse {
             CompanyFinancialSettings financial,
             CompanyPaymentSettings payment,
             List<CompanyBankAccount> accounts,
-             List<CompanyUser> users
+             List<Users> users
     ) {
         FinancialDto financialDto = null;
         if (financial != null) {
@@ -137,8 +136,6 @@ public class CompanyDetailsResponse {
                     .build();
         }
 
-         List<CompanyUserDto> userDtos = users == null ? List.of() :
-            users.stream().map(CompanyUserDto::from).collect(Collectors.toList());
 
         List<BankAccountDto> accountDtos =
                 accounts == null ? List.of() :
@@ -165,20 +162,9 @@ public class CompanyDetailsResponse {
                 .country(company.getCountry())
                 .baseCurrency(company.getBaseCurrency())
                 .timeZone(company.getTimeZone())
-                // .addressLine1(company.getAddressLine1())
-                // .city(company.getCity())
-                // .stateProvince(company.getStateProvince())
-                // .postalCode(company.getPostalCode())
-                // .addressCountry(company.getAddressCountry())
-                // .primaryContactName(company.getPrimaryContactName())
-                // .primaryContactEmail(company.getPrimaryContactEmail())
-                // .primaryContactPhone(company.getPrimaryContactPhone())
-                // .website(company.getWebsite())
-                // .primaryContactCountry(company.getPrimaryContactCountry())
                 .financial(financialDto)
                 .payment(paymentDto)
                 .bankAccounts(accountDtos)
-                .users(userDtos)
                 .build();
     }
 }

@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.account.receivable.CommonEntity.CompanyCustomers;
+import com.example.account.receivable.User.entity.Users;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.Instant;
@@ -58,6 +59,12 @@ public class Company {
     private Instant updatedAt;
 
     // Relationships
+
+    // One-to-many relationship with UserCompany
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<UserCompany> userCompanies = new ArrayList<>();
+
     @OneToOne(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private CompanyFinancialSettings financialSettings;
 
@@ -71,10 +78,7 @@ public class Company {
     private List<CompanyBankAccount> bankAccounts;
 
     @OneToMany(mappedBy = "company" , cascade = CascadeType.ALL)
-    private List<CompanyUser> users;
-
-    @OneToMany(mappedBy = "company" , cascade = CascadeType.ALL)
     private List<CompanyCustomers> companyCustomers = new ArrayList<>();
-
 }
+
 

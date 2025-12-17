@@ -3,9 +3,9 @@ package com.example.account.receivable.Company.Controller;
 import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Entity.CompanyAddress;
-import com.example.account.receivable.Company.Entity.CompanyUser;
 import com.example.account.receivable.Company.Service.CompanyService;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.Common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -45,13 +45,13 @@ public class CompanyController {
 
         // Create Company Users 
         @PostMapping("/{companyId}/users")
-        public ResponseEntity<ApiResponse<CompanyUser>> saveCompanyUsers(
+        public ResponseEntity<ApiResponse<Users>> saveCompanyUsers(
                 @PathVariable("companyId") Long companyId,
                 @RequestBody CompanyUserRequest request
         ) {
-                CompanyUser details = companyService.createCompanyUser(companyId , request);
+                Users details = companyService.createCompanyUser(companyId , request);
 
-                ApiResponse<CompanyUser> body =
+                ApiResponse<Users> body =
                         ApiResponse.successResponse(
                                 HttpStatus.OK.value(),
                                 "Company users saved successfully",
@@ -64,12 +64,12 @@ public class CompanyController {
 
         //Get Company Users list
         @GetMapping("/users/{companyId}")
-        public ResponseEntity<ApiResponse<List<CompanyUser>>> getCompanyUsers(
+        public ResponseEntity<ApiResponse<List<Users>>> getCompanyUsers(
                 @PathVariable("companyId") Long companyId
         ){
-                List<CompanyUser> users = companyService.getcompanyUsers(companyId);
+                List<Users> users = companyService.getcompanyUsers(companyId);
 
-                ApiResponse<List<CompanyUser>> body = ApiResponse.successResponse(
+                ApiResponse<List<Users>> body = ApiResponse.successResponse(
                         200, 
                         "Company Users retreived successully", 
                         users);
@@ -98,11 +98,12 @@ public class CompanyController {
         }
 
         // STEP 1 – create company
-        @PostMapping
+        @PostMapping("/{userId}")
         public ResponseEntity<ApiResponse<CompanyResponse>> createCompany(
+                @PathVariable("userId") Long userId,
                 @Validated @RequestBody CompanyProfileRequest request) {
 
-                Company company = companyService.createCompanyStep1(request);
+                Company company = companyService.createCompanyStep1(userId , request);
                 CompanyResponse dto = CompanyResponse.fromEntity(company);
 
                 ApiResponse<CompanyResponse> body =
@@ -189,13 +190,14 @@ public class CompanyController {
         }
 
         
-        // GET companies with pagination
-        @GetMapping()
+        // GET companies by user with pagination
+        @GetMapping("/user/{userId}")
         public ResponseEntity<ApiResponse<Page<Company>>> getallCompany(
+                @PathVariable Long userId,
                 @RequestParam(defaultValue = "0") int page,
                 @RequestParam(defaultValue = "10") int size
         ){
-        Page<Company> detail = companyService.getAllCompanies(page, size);
+        Page<Company> detail = companyService.getAllCompanies(userId , page, size);
         ApiResponse<Page<Company>> body = ApiResponse.successResponse(
                 200,
                 "Company fetched successfully",

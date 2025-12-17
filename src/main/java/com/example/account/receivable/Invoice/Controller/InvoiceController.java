@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.account.receivable.Common.ApiResponse;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
+import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendingAmountResponseDTO;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Service.InvoiceService;
 
@@ -136,6 +137,21 @@ public class InvoiceController {
         );
 
         return ResponseEntity.status(200).body(response);
+    }
+
+
+    // API to get all customers with pending amounts (balanceDue > 0)
+    @GetMapping("/with-pending-amounts")
+    public ResponseEntity<ApiResponse<List<CustomerWithPendingAmountResponseDTO>>> getCustomersWithPendingAmounts() {
+        List<CustomerWithPendingAmountResponseDTO> customers = invoiceService.getCustomersWithPendingAmount();
+
+        ApiResponse<List<CustomerWithPendingAmountResponseDTO>> response = ApiResponse.successResponse(
+                200, 
+                "Customers with pending amounts retrieved successfully", 
+                customers
+        );
+
+        return ResponseEntity.ok(response);
     }
 
 

@@ -1,4 +1,4 @@
-package com.example.account.receivable.Company.Entity;
+package com.example.account.receivable.User.entity;
 
 import java.util.Set;
 
@@ -17,21 +17,22 @@ public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;             
+    private Long id;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String name;          
+    private String name;
 
     @Column(length = 255)
     private String description;
-
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "role_permissions",
         joinColumns = @JoinColumn(name = "role_id")
     )
+    @Column(name = "permissions", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     private Set<Permission> permissions;
 }
+
 

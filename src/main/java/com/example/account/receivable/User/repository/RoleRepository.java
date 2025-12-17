@@ -1,9 +1,9 @@
-package com.example.account.receivable.Company.Repository;
+package com.example.account.receivable.User.repository;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.account.receivable.Company.Entity.Role;
+import com.example.account.receivable.User.entity.Role;
 
 import java.util.Optional;
 

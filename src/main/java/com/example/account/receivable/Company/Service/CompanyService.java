@@ -8,6 +8,13 @@ import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.*;
 import com.example.account.receivable.Company.Repository.*;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.User.entity.UserStatus;
+import com.example.account.receivable.User.entity.Role;
+import com.example.account.receivable.User.entity.UserRole;
+import com.example.account.receivable.User.entity.Users;
+import com.example.account.receivable.User.repository.RoleRepository;
+import com.example.account.receivable.User.repository.UserRoleRepository;
+import com.example.account.receivable.User.repository.UsersRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +23,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Set;
+
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -27,7 +36,7 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public class CompanyService {
 
-    private final CompanyUserRepository companyUserRepository;  
+    private final UsersRepository usersRepository;  
     private final RoleRepository roleRepository;
     private final CompanyAddressRepository companyAddressRepository;   
     private final CompanyCustomerRepository companyCustomerRepository;
@@ -40,12 +49,19 @@ public class CompanyService {
     private final CompanyOpeningBalanceFileRepository openingBalanceFileRepository;
     
     private final EmailTemplateService emailTemplateService;
-    private final EmailService emailService; 
+    private final EmailService emailService;
+    private final UserCompanyRepository userCompanyRepository;
+    private final UserRoleRepository userRoleRepository;
 
 
     // STEP 1 – create company
     @Transactional
-    public Company createCompanyStep1(CompanyProfileRequest request) {
+    public Company createCompanyStep1(Long userId , CompanyProfileRequest request) {
+
+        //Check the User
+        Users user = usersRepository.findById(userId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
         Company company = Company.builder()
                 .legalName(request.getLegalName())
                 .tradeName(request.getTradeName())
@@ -55,7 +71,19 @@ public class CompanyService {
                 .timeZone(request.getTimeZone())
                 .build();
 
-        return companyRepository.save(company);
+        // Save the company
+        Company savedCompany = companyRepository.save(company);
+
+        // Create the UserCompany relationship if necessary (for many-to-many)
+        UserCompany userCompany = UserCompany.builder()
+                .user(user)
+                .company(savedCompany)
+                .build();
+
+        // Save the UserCompany join table
+        userCompanyRepository.save(userCompany);
+
+        return savedCompany;
     }
 
     //Create Company Address
@@ -177,36 +205,57 @@ public class CompanyService {
 
 
 
-    //create company users
-    public CompanyUser createCompanyUser(Long companyId, CompanyUserRequest dto) {
+    //create Users users
+    public Users createCompanyUser(Long companyId, CompanyUserRequest dto) {
 
         Company company = getCompanyDetails(companyId);
 
-        if (companyUserRepository.findByEmail(dto.getEmail()) != null) {
+        if (usersRepository.findByEmailAndDeletedFalse(dto.getEmail()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists");
         }
 
-        Role role = roleRepository.findById(dto.getRoleId())
+        // Fetch the role
+        Role role = roleRepository.findById(dto.getRoleIds())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Role not found"));
 
-        CompanyUser user = CompanyUser.builder()
-                .company(company)
-                .role(role)
-                .name(dto.getName())
+        // Create a new user
+        Users user = Users.builder()
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
                 .email(dto.getEmail())
-                .status(CompanyUserStatus.INVITED)
+                .status(UserStatus.INVITED)  // Set status to INVITED initially
                 .build();
 
-        CompanyUser savedUser = companyUserRepository.save(user);
 
-        // Invite link (backend endpoint)
-        String inviteLink =
-            "https://82d87ae852f1.ngrok-free.app/api/companies/company/users/accept?email="
-            + savedUser.getEmail();
+        Users savedUser = usersRepository.save(user);
+
+
+        // Create the UserCompany relationship (i.e., link the user to the company)
+        UserCompany userCompany = UserCompany.builder()
+                .user(savedUser)
+                .company(company)
+                .build();
+
+
+        // Create the UserRole mapping
+        UserRole userRole = UserRole.builder()
+                .user(user)
+                .role(role)
+                .build();
+
+        // Add to user's collection
+        // user.getUserRoles().add(userRole);
+
+        userCompanyRepository.save(userCompany);
+        userRoleRepository.save(userRole);
+
+        // Invite link
+        String inviteLink = "https://82d87ae852f1.ngrok-free.app/api/companies/company/users/accept?email="
+                + savedUser.getEmail();
 
         String emailHtml = emailTemplateService.buildInviteEmail(
-                savedUser.getName(),
+                savedUser.getFirstName(),
                 company.getLegalName(),
                 inviteLink
         );
@@ -226,8 +275,8 @@ public class CompanyService {
 
 
     //Get User List
-    public List<CompanyUser> getcompanyUsers(Long companyId) {
-        List<CompanyUser> users = companyUserRepository.findByCompany_Id(companyId);
+    public List<Users> getcompanyUsers(Long companyId) {
+        List<Users> users = usersRepository.findByCompany_Id(companyId);
 
         if(users.isEmpty()){
             throw new ResponseStatusException(
@@ -241,9 +290,9 @@ public class CompanyService {
 
 
 
-    public Page<Company> getAllCompanies(int page, int size) {
+    public Page<Company> getAllCompanies(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return companyRepository.findByDeletedFalse(pageable);    
+        return companyRepository.findByUserIdAndDeletedFalse(userId, pageable);    
     }
 
 
@@ -263,10 +312,10 @@ public class CompanyService {
         List<CompanyBankAccount> accounts =
                 bankAccountRepo.findByCompanyId(companyId);
 
-        List<CompanyUser> users =
-            companyUserRepository.findByCompany_Id(companyId);
+        List<Users> users =
+            usersRepository.findByCompany_Id(companyId);
 
-        return CompanyDetailsResponse.fromEntities(company, address , financial, payment, accounts,users);
+        return CompanyDetailsResponse.fromEntities(company, address , financial, payment, accounts , users);
     }
 
 
@@ -341,15 +390,15 @@ public class CompanyService {
     @Transactional
     public void acceptInvitation(String email) {
 
-        CompanyUser user = companyUserRepository.findByEmail(email);
+        Users user = usersRepository.findByEmail(email);
 
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid invite");
         }
 
-        if (user.getStatus() == CompanyUserStatus.INVITED) {
-            user.setStatus(CompanyUserStatus.ACTIVE);
-            companyUserRepository.save(user);
+        if (user.getStatus() == UserStatus.INVITED) {
+            user.setStatus(UserStatus.ACTIVE);
+            usersRepository.save(user);
         }
     }
 

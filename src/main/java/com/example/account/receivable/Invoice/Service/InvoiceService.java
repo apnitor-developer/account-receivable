@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -21,6 +23,7 @@ import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
 import com.example.account.receivable.Invoice.Dto.InvoiceItemDto;
+import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendingAmountResponseDTO;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Entity.InvoiceItem;
 import com.example.account.receivable.Invoice.Repository.InvoiceItemRepo;
@@ -87,6 +90,31 @@ public class InvoiceService {
         List<String> statuses = List.of("OPEN", "PARTIAL");
 
         return invoiceRepository.findByCustomerIdAndStatusIn(customerId, statuses);
+    }
+
+
+    // Get all customers whose balanceDue > 0
+    public List<CustomerWithPendingAmountResponseDTO> getCustomersWithPendingAmount() {
+        // Fetch all customers
+        List<Customer> customers = customerRepository.findAll();
+        List<CustomerWithPendingAmountResponseDTO> responseDTOList = new ArrayList<>();
+
+        for (Customer customer : customers) {
+            // Get invoices for the customer with balance > 0
+            List<Invoice> invoices = invoiceRepository.findByCustomerIdAndBalanceDueGreaterThan(
+                customer.getId(), BigDecimal.ZERO);
+
+            // If customer has invoices with balance due > 0, add them to the response
+            if (!invoices.isEmpty()) {
+                CustomerWithPendingAmountResponseDTO responseDTO = new CustomerWithPendingAmountResponseDTO();
+                responseDTO.setId(customer.getId());
+                responseDTO.setCustomerName(customer.getCustomerName());
+
+                responseDTOList.add(responseDTO);
+            }
+        }
+
+        return responseDTOList;
     }
 
 

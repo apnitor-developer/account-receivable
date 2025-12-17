@@ -1,6 +1,8 @@
 package com.example.account.receivable.Company.Repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.account.receivable.Company.Entity.Company;
 
@@ -16,6 +18,10 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     Page<Company> findByDeletedFalse(Pageable pageable);
 
     Optional<Company> findByIdAndDeletedFalse(Long companyId);
+
+    // Custom query to fetch companies by userId
+    @Query("SELECT c FROM Company c JOIN c.userCompanies uc WHERE uc.user.id = :userId AND c.deleted = false")
+    Page<Company> findByUserIdAndDeletedFalse(@Param("userId") Long userId, Pageable pageable);
 }
 
 
