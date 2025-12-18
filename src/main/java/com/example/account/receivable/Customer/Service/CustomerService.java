@@ -26,8 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.account.receivable.CommomRepository.CompanyCustomerRepository;
-import com.example.account.receivable.CommonEntity.CompanyCustomers;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Dto.CompanyResponseDto.CustomerResponseDTO;
@@ -47,12 +45,14 @@ import com.example.account.receivable.Customer.Dto.CustomerUpdateDTO.CustomerFul
 import com.example.account.receivable.Customer.Dto.CustomerUpdateDTO.CustomerStatementUpdateDTO;
 import com.example.account.receivable.Customer.Dto.CustomerUpdateDTO.CustomerVatUpdateDTO;
 import com.example.account.receivable.Customer.Entity.CashApplication;
+import com.example.account.receivable.Customer.Entity.CompanyCustomers;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Entity.CustomerAddress;
 import com.example.account.receivable.Customer.Entity.CustomerDunningCreditSettings;
 import com.example.account.receivable.Customer.Entity.CustomerEFT;
 import com.example.account.receivable.Customer.Entity.CustomerStatement;
 import com.example.account.receivable.Customer.Entity.CustomerVAT;
+import com.example.account.receivable.Customer.Repository.CompanyCustomerRepository;
 import com.example.account.receivable.Customer.Repository.CustomerAddressRepository;
 import com.example.account.receivable.Customer.Repository.CustomerCashApplicationRepository;
 import com.example.account.receivable.Customer.Repository.CustomerDunningCreditSettingsRepository;
@@ -161,7 +161,7 @@ public class CustomerService {
  
     // Method to create a new customer
     @Transactional
-    public Customer createCustomer(Long companyId , CustomerDTO customerDTO) {
+    public Customer createCustomer(Long userId , Long companyId , CustomerDTO customerDTO) {
         //Load company
         Company company = companyRepository.findById(companyId)
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
@@ -188,6 +188,7 @@ public class CustomerService {
         CompanyCustomers link = new CompanyCustomers();
         link.setCompany(company);
         link.setCustomer(savedCustomer);
+        link.setUserId(userId);
 
         companyCustomerRepository.save(link);
 

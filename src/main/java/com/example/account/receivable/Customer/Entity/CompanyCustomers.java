@@ -1,4 +1,4 @@
-package com.example.account.receivable.CommonEntity;
+package com.example.account.receivable.Customer.Entity;
 
 import java.time.Instant;
 
@@ -6,7 +6,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.account.receivable.Company.Entity.Company;
-import com.example.account.receivable.Customer.Entity.Customer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
@@ -42,6 +41,9 @@ public class CompanyCustomers {
     @JsonIgnore
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
+
+    @Column(nullable = false)
+    private Long userId;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

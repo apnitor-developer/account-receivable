@@ -6,8 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.example.account.receivable.CommonEntity.CompanyCustomers;
-import com.example.account.receivable.User.entity.Users;
+import com.example.account.receivable.Customer.Entity.CompanyCustomers;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.Instant;

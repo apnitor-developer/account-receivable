@@ -37,9 +37,9 @@ public class CustomerController {
     }
 
     // Add main user fields
-    @PostMapping("/{companyId}")
-    public ResponseEntity<ApiResponse<Customer>> createCustomer(@PathVariable("companyId") Long companyId , @RequestBody CustomerDTO customerDTO) {
-        Customer customer = customerService.createCustomer(companyId , customerDTO);
+    @PostMapping("/{userId}/{companyId}")
+    public ResponseEntity<ApiResponse<Customer>> createCustomer(@PathVariable("userId") Long userId , @PathVariable("companyId") Long companyId , @RequestBody CustomerDTO customerDTO) {
+        Customer customer = customerService.createCustomer(userId , companyId , customerDTO);
         ApiResponse<Customer> response = ApiResponse.successResponse(
             201,
             "Customer Created Successfully", 

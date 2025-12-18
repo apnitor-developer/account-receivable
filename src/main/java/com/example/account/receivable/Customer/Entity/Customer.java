@@ -1,6 +1,5 @@
 package com.example.account.receivable.Customer.Entity;
 
-import com.example.account.receivable.CommonEntity.CompanyCustomers;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

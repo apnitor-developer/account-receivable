@@ -1,13 +1,13 @@
 package com.example.account.receivable.Company.Service;
 
 
-import com.example.account.receivable.CommomRepository.CompanyCustomerRepository;
 import com.example.account.receivable.Common.EmailService;
 import com.example.account.receivable.Common.EmailTemplateService;
 import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.*;
 import com.example.account.receivable.Company.Repository.*;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.Customer.Repository.CompanyCustomerRepository;
 import com.example.account.receivable.User.entity.UserStatus;
 import com.example.account.receivable.User.entity.Role;
 import com.example.account.receivable.User.entity.UserRole;
@@ -23,7 +23,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;

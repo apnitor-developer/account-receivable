@@ -30,12 +30,13 @@ public class UserCompany {
 
     // Many-to-One relationship with Users
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
     // Many-to-One relationship with Company
     @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnore
+    // @JsonIgnore
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
