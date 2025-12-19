@@ -238,20 +238,20 @@ public class CompanyController {
         }
 
 
-        //Get company Customer
-        @GetMapping("/{companyId}/customers")
-        public ResponseEntity<ApiResponse<List<Customer>>> getCompanyCustomers(
-                @PathVariable("companyId") Long companyId
-        ){
-                List<Customer> customers = companyService.getCompanyCustomers(companyId);
-                ApiResponse<List<Customer>> response = ApiResponse.successResponse(
-                        200, 
-                        "Customers retreived successfully", 
-                        customers
-                );
-                return ResponseEntity.status(200).body(response);
+        // //Get company Customer
+        // @GetMapping("/{companyId}/customers")
+        // public ResponseEntity<ApiResponse<List<Customer>>> getCompanyCustomers(
+        //         @PathVariable("companyId") Long companyId
+        // ){
+        //         List<Customer> customers = companyService.getCompanyCustomers(companyId);
+        //         ApiResponse<List<Customer>> response = ApiResponse.successResponse(
+        //                 200, 
+        //                 "Customers retreived successfully", 
+        //                 customers
+        //         );
+        //         return ResponseEntity.status(200).body(response);
 
-        }
+        // }
 
         // DELETE (soft delete) company
         @DeleteMapping("/{id}")

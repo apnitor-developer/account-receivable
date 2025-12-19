@@ -65,8 +65,10 @@ import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
@@ -79,38 +81,18 @@ public class CustomerService {
     private final InvoiceRepository invoiceRepository;
     private final CompanyRepository companyRepository;
     private final CompanyCustomerRepository companyCustomerRepository;
-
-    public CustomerService(
-            CustomerRepository customerRepository,
-            CustomerAddressRepository customerAddressRepository,
-            CustomerCashApplicationRepository customerCashApplicationRepository,
-            CustomerStatementRepository customerStatementRepository,
-            CustomerEftRepository customerEftRepository,
-            CustomerVatRepository customerVatRepository,
-            CustomerDunningCreditSettingsRepository customerDunningCreditSettingsRepository,
-            InvoiceRepository invoiceRepository,
-            CompanyRepository companyRepository,
-            CompanyCustomerRepository companyCustomerRepository
-
-
-    ) {
-        this.customerRepository = customerRepository;
-        this.customerAddressRepository = customerAddressRepository;
-        this.customerCashApplicationRepository = customerCashApplicationRepository;
-        this.customerStatementRepository = customerStatementRepository;
-        this.customerEftRepository = customerEftRepository;
-        this.customerVatRepository = customerVatRepository;
-        this.customerDunningCreditSettingsRepository = customerDunningCreditSettingsRepository;
-        this.invoiceRepository = invoiceRepository;
-        this.companyRepository = companyRepository;
-        this.companyCustomerRepository = companyCustomerRepository;
-    }
+    private final CompanyCustomerRepository companyCustomersRepository;
 
 
     //Get all customers
     public Page<Customer> getAllCustomers(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return customerRepository.findByDeletedFalse(pageable);
+    }
+
+    public Page<Customer> getCustomersByCompanyId(Long companyId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return companyCustomersRepository.findActiveCustomersByCompanyId(companyId, pageable);
     }
 
     //Get Single Customer

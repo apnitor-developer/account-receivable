@@ -153,6 +153,23 @@ public class CustomerController {
         return ResponseEntity.status(200).body(response);
     }
 
+
+    // Get all customers by the companyId
+    @GetMapping("/company/{companyId}")
+    public ResponseEntity<ApiResponse<Page<Customer>>> getAllCustomersByCompanyId(
+                @PathVariable("companyId") Long companyId,
+                @RequestParam(defaultValue = "0") int page,
+                @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<Customer> customers = customerService.getCustomersByCompanyId(companyId , page, size);
+        ApiResponse<Page<Customer>> response = ApiResponse.successResponse(
+            200,
+            "Customers Retreived Successfully", 
+            customers
+        );
+        return ResponseEntity.status(200).body(response);
+    }
+
     //Delete user
     @DeleteMapping("/{customerId}")
     public ResponseEntity<ApiResponse<Customer>> softDeleteCustomer(@PathVariable Long customerId) {

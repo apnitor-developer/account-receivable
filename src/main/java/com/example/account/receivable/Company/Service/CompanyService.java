@@ -6,8 +6,7 @@ import com.example.account.receivable.Common.EmailTemplateService;
 import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.*;
 import com.example.account.receivable.Company.Repository.*;
-import com.example.account.receivable.Customer.Entity.Customer;
-import com.example.account.receivable.Customer.Repository.CompanyCustomerRepository;
+// import com.example.account.receivable.Customer.Repository.CompanyCustomerRepository;
 import com.example.account.receivable.User.entity.UserStatus;
 import com.example.account.receivable.User.entity.Role;
 import com.example.account.receivable.User.entity.UserRole;
@@ -40,7 +39,7 @@ public class CompanyService {
     private final UsersRepository usersRepository;  
     private final RoleRepository roleRepository;
     private final CompanyAddressRepository companyAddressRepository;   
-    private final CompanyCustomerRepository companyCustomerRepository;
+    // private final CompanyCustomerRepository companyCustomerRepository;
        
 
     private final CompanyRepository companyRepository;
@@ -192,15 +191,15 @@ public class CompanyService {
 
 
     //Get Company Customers
-    public List<Customer> getCompanyCustomers(Long companyId) {
+    // public List<Customer> getCompanyCustomers(Long companyId) {
 
-        // Validate company exists
-        getCompanyDetails(companyId);
+    //     // Validate company exists
+    //     getCompanyDetails(companyId);
 
-        List<Customer> customers = companyCustomerRepository.findCustomersByCompanyId(companyId);
+    //     List<Customer> customers = companyCustomerRepository.findCustomersByCompanyId(companyId);
 
-        return customers;
-    }
+    //     return customers;
+    // }
 
 
 
