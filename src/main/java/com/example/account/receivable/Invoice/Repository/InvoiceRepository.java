@@ -73,4 +73,22 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
     """)
     BigDecimal getCurrentReceivables(@Param("today") LocalDate today);
 
+
+    //Get Invoices By the CompanyId
+    @Query("""
+        SELECT i
+        FROM Invoice i
+        JOIN i.customer c
+        JOIN c.companyCompanies cc
+        WHERE cc.company.id = :companyId
+        AND i.deleted = false
+        AND c.deleted = false
+        AND i.status IN :statuses
+    """)
+    Page<Invoice> findCompanyInvoicesByStatus(
+            @Param("companyId") Long companyId,
+            Pageable pageable,
+            @Param("statuses") List<String> statuses
+    );
+
 }

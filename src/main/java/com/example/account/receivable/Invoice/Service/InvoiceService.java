@@ -4,8 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -90,6 +88,18 @@ public class InvoiceService {
         List<String> statuses = List.of("OPEN", "PARTIAL");
 
         return invoiceRepository.findByCustomerIdAndStatusIn(customerId, statuses);
+    }
+
+
+
+    //Get Invoices By the CompanyId
+    public Page<Invoice> getOpenAndPartialInvoicesByCompanyId(Long companyId , int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return invoiceRepository.findCompanyInvoicesByStatus(
+                companyId,
+                pageable,
+                List.of("OPEN", "PARTIAL")
+        );
     }
 
 

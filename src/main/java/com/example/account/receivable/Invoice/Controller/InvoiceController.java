@@ -78,6 +78,25 @@ public class InvoiceController {
     }
 
 
+    //Get Invoices by the companyId
+    @GetMapping("/unpaid/company/{companyId}")
+    public ResponseEntity<ApiResponse<Page<Invoice>>> getCompanyOpenPartialInvoices(
+            @PathVariable Long companyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<Invoice> invoices = invoiceService.getOpenAndPartialInvoicesByCompanyId(companyId , page, size);
+
+        ApiResponse<Page<Invoice>> response = ApiResponse.successResponse(
+                200,
+                "Company invoices retrieved successfully",
+                invoices
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
     //Get All Invoices
     @GetMapping()
