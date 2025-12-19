@@ -157,4 +157,11 @@ public class PaymentService {
         Pageable pageable = PageRequest.of(page, size , Sort.by("paymentDate").descending());
         return paymentRepository.findAll(pageable);
     }
+
+
+    //Get Payments By the CompanyId
+    public Page<Payment> getPaymentsByCompanyId(Long companyId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return paymentRepository.findPaymentsByCompanyId(companyId, pageable);
+    }
 }

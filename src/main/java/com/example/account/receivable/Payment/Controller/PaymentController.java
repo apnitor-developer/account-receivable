@@ -51,4 +51,21 @@ public class PaymentController {
         );
         return ResponseEntity.status(200).body(response);
     }
+
+
+    //Get Payments by the companyId
+    @GetMapping("/company/{companyId}")
+    public ResponseEntity<ApiResponse<Page<Payment>>> getPaymentsByCompanyId(
+            @PathVariable("companyId") Long companyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        Page<Payment> payment = paymentService.getPaymentsByCompanyId(companyId , page , size);
+        ApiResponse<Page<Payment>> response = ApiResponse.successResponse(
+            201, 
+            "Payments Retreived successfully", 
+            payment
+        );
+        return ResponseEntity.status(200).body(response);
+    }
 }
