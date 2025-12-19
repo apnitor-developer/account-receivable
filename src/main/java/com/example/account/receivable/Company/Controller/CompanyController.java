@@ -43,9 +43,9 @@ public class CompanyController {
                 return ResponseEntity.ok(body);
         }
 
-        // Create Company Users 
+        // Invite user Users 
         @PostMapping("/{companyId}/users")
-        public ResponseEntity<ApiResponse<Users>> saveCompanyUsers(
+        public ResponseEntity<ApiResponse<Users>> InviteUsers(
                 @PathVariable("companyId") Long companyId,
                 @RequestBody CompanyUserRequest request
         ) {
@@ -57,6 +57,36 @@ public class CompanyController {
                                 "Company users saved successfully",
                                 details
                         );
+
+                return ResponseEntity.ok(body);
+        }
+
+
+
+        @GetMapping("/company/users/accept")
+        public ResponseEntity<Void> acceptInvite(
+                @RequestParam String email 
+                ) {
+
+                companyService.validateInvite(email);
+
+                return ResponseEntity
+                        .status(HttpStatus.FOUND) // 302 redirect
+                        .location(URI.create("https://94f240dff6da.ngrok-free.app/set-password?email=" + email))
+                        .build();
+        }
+
+
+        // Set Password: called from set-password screen
+        @PostMapping("/user/set-password")
+        public ResponseEntity<ApiResponse<Void>> setPassword(@RequestBody SetPasswordDto dto) {
+                companyService.acceptInvitation(dto.getEmail() , dto.getPassword());
+
+                ApiResponse<Void> body = ApiResponse.successResponse(
+                        HttpStatus.OK.value(),
+                        "Password set successfully",
+                        null
+                );
 
                 return ResponseEntity.ok(body);
         }
@@ -236,19 +266,6 @@ public class CompanyController {
                         );
 
                 return ResponseEntity.ok(body);
-        }
-
-
-        //Accept Invitaion By the link
-        @GetMapping("/company/users/accept")
-        public ResponseEntity<Void> acceptInvite(@RequestParam String email) {
-
-                companyService.acceptInvitation(email);
-
-                return ResponseEntity
-                        .status(HttpStatus.FOUND) // 302 redirect
-                        .location(URI.create("https://94f240dff6da.ngrok-free.app/admin/dashboard"))
-                        .build();
         }
 
 }

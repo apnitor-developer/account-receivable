@@ -60,6 +60,8 @@ dependencies {
 
 	//CSV
 	implementation 'org.apache.commons:commons-csv:1.11.0'
+
+    implementation 'org.springframework.security:spring-security-crypto'
 }
 
 

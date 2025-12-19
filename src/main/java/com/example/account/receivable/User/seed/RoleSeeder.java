@@ -23,6 +23,7 @@ public class RoleSeeder {
             roleRepository.save(
                 Role.builder()
                     .name("Super Admin")
+                    .description("Every access")
                     .permissions(Set.of(Permission.values())) // ALL permissions
                     .build()
             );
@@ -32,6 +33,7 @@ public class RoleSeeder {
             roleRepository.save(
                 Role.builder()
                     .name("Owner")
+                    .description("Full Company access")
                     .permissions(Set.of(Permission.values()))
                     .build()
             );

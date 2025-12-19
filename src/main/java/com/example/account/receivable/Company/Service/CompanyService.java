@@ -20,9 +20,11 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -206,17 +208,25 @@ public class CompanyService {
 
     //create Users users
     public Users createCompanyUser(Long companyId, CompanyUserRequest dto) {
+        System.out.println("Before company");
 
         Company company = getCompanyDetails(companyId);
 
-        if (usersRepository.findByEmailAndDeletedFalse(dto.getEmail()) != null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists");
+        // Check if the user already exists in the company (both user and company relationship)
+        Optional<Users> existingUser = usersRepository.findByEmailAndDeletedFalse(dto.getEmail());
+
+        // If the user exists, check if they are already associated with the company
+        if (existingUser.isPresent()) {
+            // Check if the user is already associated with the given company
+            boolean isUserInCompany = existingUser.get().getUserCompanies().stream()
+                .anyMatch(userCompany -> userCompany.getCompany().getId().equals(companyId));
+
+            if (isUserInCompany) {
+                // User already exists in the company
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "User already present in this company.");
+            }
         }
 
-        // Fetch the role
-        Role role = roleRepository.findById(dto.getRoleIds())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Role not found"));
 
         // Create a new user
         Users user = Users.builder()
@@ -237,28 +247,38 @@ public class CompanyService {
                 .build();
 
 
-        // Create the UserRole mapping
-        UserRole userRole = UserRole.builder()
-                .user(user)
-                .role(role)
-                .build();
-
-        // Add to user's collection
-        // user.getUserRoles().add(userRole);
-
         userCompanyRepository.save(userCompany);
-        userRoleRepository.save(userRole);
 
-        // Invite link
-        String inviteLink = "https://82d87ae852f1.ngrok-free.app/api/companies/company/users/accept?email="
+
+        // Assign roles to the user
+        for (Long roleId : dto.getRoleIds()) {
+            Role role = roleRepository.findById(roleId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found"));
+
+            UserRole userRole = UserRole.builder()
+                    .user(savedUser)
+                    .role(role)
+                    .build();
+
+            userRoleRepository.save(userRole);
+        }
+
+
+        System.out.println("before generate link");
+
+        // Generate invite link
+        String inviteLink = "https://ce25e78d4358.ngrok-free.app/api/companies/company/users/accept?email="
                 + savedUser.getEmail();
 
+
+        // Build the invitation email content
         String emailHtml = emailTemplateService.buildInviteEmail(
                 savedUser.getFirstName(),
                 company.getLegalName(),
                 inviteLink
         );
 
+        // Send the invite email
         emailService.sendWithAttachment(
                 savedUser.getEmail(),
                 "You're invited to join " + company.getLegalName(),
@@ -270,6 +290,39 @@ public class CompanyService {
     }
 
 
+    public void validateInvite(String email) {
+        Users user = usersRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                    
+
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid invite");
+        }
+
+        if (user.getStatus() != UserStatus.INVITED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invite already used or invalid");
+        }
+    }
+    
+    
+
+    //Set password after accept invitation
+    @Transactional
+    public void acceptInvitation(String email, String password) {
+
+        Users user = usersRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid invite"));
+
+        if (user.getStatus() != UserStatus.INVITED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invite already used or invalid");
+        }
+
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        user.setPassword(encoder.encode(password));
+        user.setStatus(UserStatus.ACTIVE);
+
+        usersRepository.save(user);
+    }
 
 
 
@@ -383,22 +436,6 @@ public class CompanyService {
 
         company.setDeleted(true);
         companyRepository.save(company);
-    }
-
-
-    @Transactional
-    public void acceptInvitation(String email) {
-
-        Users user = usersRepository.findByEmail(email);
-
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid invite");
-        }
-
-        if (user.getStatus() == UserStatus.INVITED) {
-            user.setStatus(UserStatus.ACTIVE);
-            usersRepository.save(user);
-        }
     }
 
 

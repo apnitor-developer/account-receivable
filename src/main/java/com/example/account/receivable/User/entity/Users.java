@@ -8,6 +8,7 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.example.account.receivable.Company.Entity.UserCompany;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,7 +37,8 @@ public class Users {
     @Column(nullable = false, length = 150)
     private String email;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = true, length = 150)
+    @JsonIgnore
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -47,6 +49,9 @@ public class Users {
     @Column(nullable = true)
     private boolean deleted = false;
 
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<UserRole> userRoles = new ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
@@ -54,6 +59,7 @@ public class Users {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
+
 }
 
 

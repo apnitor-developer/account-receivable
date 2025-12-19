@@ -7,6 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.account.receivable.Auth.dto.LoginDto;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.User.repository.UsersRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,8 +25,9 @@ public class LoginService {
                                             "User not found"
                                         ));
 
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();                              
 
-        if(!dto.getPassword().equals(user.getPassword())){
+        if(!encoder.matches(dto.getPassword(), user.getPassword())){
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
         }
 
