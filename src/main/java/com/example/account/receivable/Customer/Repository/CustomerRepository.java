@@ -1,9 +1,12 @@
 package com.example.account.receivable.Customer.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.account.receivable.Customer.Entity.Customer;
 
@@ -14,5 +17,18 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     //Count Total Customers
     long countByDeletedFalse();
+
+    //Fetch customers for a company with pending balance 
+    @Query("""
+        SELECT DISTINCT c
+        FROM Customer c
+        JOIN c.companyCompanies cc
+        JOIN Invoice i ON i.customer = c
+        WHERE cc.company.id = :companyId
+          AND c.deleted = false
+          AND i.deleted = false
+          AND i.balanceDue > 0
+    """)
+    List<Customer> findCustomersWithPendingByCompanyId(@Param("companyId") Long companyId);
 
 }

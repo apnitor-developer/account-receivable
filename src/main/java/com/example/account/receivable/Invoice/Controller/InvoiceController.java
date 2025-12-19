@@ -159,10 +159,10 @@ public class InvoiceController {
     }
 
 
-    // API to get all customers with pending amounts (balanceDue > 0)
-    @GetMapping("/with-pending-amounts")
-    public ResponseEntity<ApiResponse<List<CustomerWithPendingAmountResponseDTO>>> getCustomersWithPendingAmounts() {
-        List<CustomerWithPendingAmountResponseDTO> customers = invoiceService.getCustomersWithPendingAmount();
+    // API to get company customers with pending amounts (balanceDue > 0)
+    @GetMapping("/company/{companyId}/with-pending-amounts")
+    public ResponseEntity<ApiResponse<List<CustomerWithPendingAmountResponseDTO>>> getCustomersWithPendingAmountByCompany(@PathVariable Long companyId) {
+        List<CustomerWithPendingAmountResponseDTO> customers = invoiceService.getCustomersWithPendingAmountByCompany(companyId);
 
         ApiResponse<List<CustomerWithPendingAmountResponseDTO>> response = ApiResponse.successResponse(
                 200, 
