@@ -35,6 +35,24 @@ public interface PromiseToPayRepo extends JpaRepository<PromiseToPay, Long> {
 
 
 
+    //Used in the Dashboard
+    @Query("""
+    SELECT COALESCE(SUM(p.amountPromised), 0)
+    FROM PromiseToPay p
+    JOIN p.customer c
+    JOIN CompanyCustomers cc ON cc.customer = c
+    WHERE cc.company.id = :companyId
+    AND p.status IN :statuses
+    AND p.promiseDate <= :today
+    """)
+    BigDecimal getCurrentPromiseAmountByCompany(
+            @Param("companyId") Long companyId,
+            @Param("statuses") List<PromiseStatus> statuses,
+            @Param("today") LocalDate today
+    );
+
+
+
   List<PromiseToPay> findByPromiseDateAndStatus(
       LocalDate promiseDate,
       PromiseStatus status

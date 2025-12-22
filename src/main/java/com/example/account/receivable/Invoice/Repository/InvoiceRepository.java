@@ -56,22 +56,58 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
 
     long countByBalanceDueGreaterThan(BigDecimal amount);
 
-    @Query("""
-        SELECT COALESCE(SUM(i.balanceDue), 0)
-        FROM Invoice i
-        WHERE i.balanceDue > 0
-        AND i.deleted = false
-    """)
-    BigDecimal getTotalReceivables();
 
+    // These queries used in the Dashboard
+        // TOTAL receivables by company
+        @Query("""
+            SELECT COALESCE(SUM(i.balanceDue), 0)
+            FROM Invoice i
+            JOIN i.customer c
+            JOIN CompanyCustomers cc ON cc.customer = c
+            WHERE cc.company.id = :companyId
+            AND i.balanceDue > 0
+            AND i.deleted = false
+        """)
+        BigDecimal getTotalReceivablesByCompany(@Param("companyId") Long companyId);
+
+        // CURRENT receivables by company
+        @Query("""
+            SELECT COALESCE(SUM(i.balanceDue), 0)
+            FROM Invoice i
+            JOIN i.customer c
+            JOIN CompanyCustomers cc ON cc.customer = c
+            WHERE cc.company.id = :companyId
+            AND i.balanceDue > 0
+            AND i.deleted = false
+            AND i.dueDate >= :today
+        """)
+        BigDecimal getCurrentReceivablesByCompany(
+                @Param("companyId") Long companyId,
+                @Param("today") LocalDate today
+        );
+
+        // TOTAL invoices by company
+        @Query("""
+            SELECT COUNT(i)
+            FROM Invoice i
+            JOIN i.customer c
+            JOIN CompanyCustomers cc ON cc.customer = c
+            WHERE cc.company.id = :companyId
+            AND i.deleted = false
+        """)
+        long countByCompanyAndDeletedFalse(@Param("companyId") Long companyId);
+        
+
+    // PENDING invoices by company
     @Query("""
-        SELECT COALESCE(SUM(i.balanceDue), 0)
+        SELECT COUNT(i)
         FROM Invoice i
-        WHERE i.balanceDue > 0
-        AND i.deleted = false
-        AND i.dueDate >= :today
+        JOIN i.customer c
+        JOIN CompanyCustomers cc ON cc.customer = c
+        WHERE cc.company.id = :companyId
+        AND i.balanceDue > 0
     """)
-    BigDecimal getCurrentReceivables(@Param("today") LocalDate today);
+    long countPendingByCompany(@Param("companyId") Long companyId);
 
 
     //Get Invoices By the CompanyId

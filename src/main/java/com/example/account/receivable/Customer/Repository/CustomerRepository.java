@@ -18,6 +18,16 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     //Count Total Customers
     long countByDeletedFalse();
 
+    //Used in the Dashboard
+    @Query("""
+        SELECT COUNT(c)
+        FROM Customer c
+        JOIN CompanyCustomers cc ON cc.customer = c
+        WHERE cc.company.id = :companyId
+        AND c.deleted = false
+    """)
+    long countByCompanyAndDeletedFalse(@Param("companyId") Long companyId);
+
     //Fetch customers for a company with pending balance 
     @Query("""
         SELECT DISTINCT c

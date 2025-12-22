@@ -4,7 +4,6 @@ import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Entity.CompanyAddress;
 import com.example.account.receivable.Company.Service.CompanyService;
-import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.Common.ApiResponse;
 import lombok.RequiredArgsConstructor;

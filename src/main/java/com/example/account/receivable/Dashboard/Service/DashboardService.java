@@ -23,38 +23,39 @@ public class DashboardService {
     private final InvoiceRepository invoiceRepository;
     private final PromiseToPayRepo promiseToPayRepo;
 
-    public DashboardSummaryResponse getDashboardSummary(){
+    public DashboardSummaryResponse getDashboardSummary(Long companyId){
 
         
         LocalDate today = LocalDate.now();
 
         // Payments:
         //(total Payment)
-        BigDecimal totalPayments = paymentRepository.getTotalPayments();
+        BigDecimal totalPayments = paymentRepository.getTotalPaymentsByCompany(companyId);
 
         //(today Payment)
-        BigDecimal todayPayments = paymentRepository.getTodayPayments(today);
+        BigDecimal todayPayments = paymentRepository.getTodayPaymentsByCompany(companyId , today);
 
 
         //Total Customers
-        long totalCustomers = customerRepository.countByDeletedFalse();
+        long totalCustomers = customerRepository.countByCompanyAndDeletedFalse(companyId);
 
 
         // Receivables
-        BigDecimal totalReceivables = invoiceRepository.getTotalReceivables();
+        BigDecimal totalReceivables = invoiceRepository.getTotalReceivablesByCompany(companyId);
 
-        BigDecimal currentReceivables = invoiceRepository.getCurrentReceivables(today);
+        BigDecimal currentReceivables = invoiceRepository.getCurrentReceivablesByCompany(companyId ,  today);
 
 
         // Counts
-        long totalInvoices = invoiceRepository.countByDeletedFalse();
+        long totalInvoices = invoiceRepository.countByCompanyAndDeletedFalse(companyId);
 
-        long pendingInvoices = invoiceRepository.countByBalanceDueGreaterThan(BigDecimal.ZERO);
+        long pendingInvoices = invoiceRepository.countPendingByCompany(companyId);
 
 
         // Current Promise to Pay
         BigDecimal currentPromiseToPay =
-                promiseToPayRepo.getCurrentPromiseAmount(
+                promiseToPayRepo.getCurrentPromiseAmountByCompany(
+                        companyId,
                         List.of(PromiseStatus.PENDING, PromiseStatus.DUE_TODAY),
                         today
                 );

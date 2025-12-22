@@ -14,20 +14,29 @@ import com.example.account.receivable.Payment.Entity.Payment;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     //Total Payment Received
-    @Query("""
-    SELECT COALESCE(SUM(p.paymentAmount), 0)
-    FROM Payment p
-    """)
-    BigDecimal getTotalPayments();
-
-    
-    //Total Today payment Received
+    // TOTAL payments by company
     @Query("""
         SELECT COALESCE(SUM(p.paymentAmount), 0)
         FROM Payment p
-        WHERE p.paymentDate = :today
+        JOIN p.customer c
+        JOIN CompanyCustomers cc ON cc.customer = c
+        WHERE cc.company.id = :companyId
     """)
-    BigDecimal getTodayPayments(@Param("today") LocalDate today);
+    BigDecimal getTotalPaymentsByCompany(@Param("companyId") Long companyId);
+
+    // TODAY payments by company
+    @Query("""
+        SELECT COALESCE(SUM(p.paymentAmount), 0)
+        FROM Payment p
+        JOIN p.customer c
+        JOIN CompanyCustomers cc ON cc.customer = c
+        WHERE cc.company.id = :companyId
+        AND p.paymentDate = :today
+    """)
+    BigDecimal getTodayPaymentsByCompany(
+            @Param("companyId") Long companyId,
+            @Param("today") LocalDate today
+    );
 
 
     //Get Payments By the CompanyId
