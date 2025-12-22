@@ -28,11 +28,6 @@ public class PromiseToPay {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    // Optional: Promise linked to a specific invoice
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "invoice_id")
-    // private Invoice invoice;
-
     @Column(nullable = false)
     private BigDecimal amountPromised;
 

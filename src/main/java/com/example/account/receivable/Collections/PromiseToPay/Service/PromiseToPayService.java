@@ -32,12 +32,6 @@ public class PromiseToPayService {
                 Customer customer = customerRepository.findById(request.getCustomerId())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-                // Invoice invoice = null;
-                // if (request.getInvoiceId() != null) {
-                // invoice = invoiceRepository.findById(request.getInvoiceId())
-                //         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
-                // }
-
 
                 LocalDate today = LocalDate.now();
 
@@ -96,9 +90,6 @@ public class PromiseToPayService {
                                 p.getCustomer() != null
                                         ? p.getCustomer().getCustomerName()
                                         : null,
-                                // p.getInvoice() != null
-                                //         ? p.getInvoice().getInvoiceNumber()
-                                //         : null,
                                 p.getAmountPromised(),
                                 p.getPromiseDate(),
                                 p.getStatus(),
@@ -134,9 +125,22 @@ public class PromiseToPayService {
                                 p.getCustomer() != null
                                         ? p.getCustomer().getCustomerName()
                                         : null,
-                                // p.getInvoice() != null
-                                //         ? p.getInvoice().getInvoiceNumber()
-                                //         : null,
+                                p.getAmountPromised(),
+                                p.getPromiseDate(),
+                                p.getStatus(),
+                                p.getNotes()
+                        ))
+                        .toList();
+        }
+
+
+
+        public List<PromiseToPayResponse> getPromisesByCompany(Long companyId) {
+                return promiseToPayRepository.findByCompany(companyId)
+                        .stream()
+                        .map(p -> new PromiseToPayResponse(
+                                p.getId(),
+                                p.getCustomer().getCustomerName(),
                                 p.getAmountPromised(),
                                 p.getPromiseDate(),
                                 p.getStatus(),

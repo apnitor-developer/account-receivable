@@ -45,4 +45,15 @@ public interface PromiseToPayRepo extends JpaRepository<PromiseToPay, Long> {
       List<PromiseStatus> statuses
   );
 
+
+  //Used for to get the Company Promise to Pay 
+  @Query("""
+        SELECT p
+        FROM PromiseToPay p
+        JOIN p.customer c
+        JOIN CompanyCustomers cc ON cc.customer = c
+        WHERE cc.company.id = :companyId
+  """)
+  List<PromiseToPay> findByCompany(@Param("companyId") Long companyId);
+
 } 

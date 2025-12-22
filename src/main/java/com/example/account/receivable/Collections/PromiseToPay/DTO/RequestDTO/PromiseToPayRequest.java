@@ -9,7 +9,6 @@ import lombok.Data;
 public class PromiseToPayRequest {
 
     private Long customerId;
-    private Long invoiceId; // optional
     private BigDecimal amountPromised;
     private LocalDate promiseDate;
     private String notes;

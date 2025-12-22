@@ -52,6 +52,23 @@ public class PromiseToPayController {
     }
 
 
+    //Get Company Promise to Pay
+    @GetMapping("/company/{companyId}")
+    public ResponseEntity<ApiResponse<List<PromiseToPayResponse>>> getCompanyPromises(@PathVariable Long companyId){
+        List<PromiseToPayResponse> response = promiseToPayService.getPromisesByCompany(companyId);
+
+        ApiResponse<List<PromiseToPayResponse>> body = ApiResponse.successResponse(
+            200, 
+            "Promise to pay retreived successfully", 
+            response
+        );
+        return ResponseEntity.status(200).body(body);
+    }
+
+
+
+
+
     //Get Promise to pay for a particualr customer
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<ApiResponse<List<PromiseToPayResponse>>> 
