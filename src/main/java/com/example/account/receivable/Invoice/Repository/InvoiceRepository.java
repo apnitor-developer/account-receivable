@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 
 public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
@@ -140,5 +141,39 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
             AND i.balanceDue > 0
     """)
     List<Invoice> findOpenInvoicesByCompany(@Param("companyId") Long companyId);
+
+
+
+    //Query used for the ArCalculation
+    
+        //Customer Month-End Balance
+        @Query("""
+            SELECT COALESCE(SUM(i.balanceDue), 0)
+            FROM Invoice i
+            WHERE i.customer.id = :customerId
+                AND i.invoiceDate <= :asOfDate
+                AND i.deleted = false
+        """)
+        BigDecimal getCustomerMonthEndBalance(
+                @Param("customerId") Long customerId,
+                @Param("asOfDate") LocalDate asOfDate
+        );
+
+
+        // Company Month-End Balance
+        @Query("""
+            SELECT COALESCE(SUM(i.balanceDue), 0)
+            FROM Invoice i
+            JOIN i.customer c
+            JOIN CompanyCustomers cc ON cc.customer = c
+            WHERE cc.company.id = :companyId
+            AND i.invoiceDate <= :asOfDate
+            AND i.deleted = false
+            AND c.deleted = false
+        """)
+        BigDecimal getCompanyMonthEndBalance(
+                @Param("companyId") Long companyId,
+                @Param("asOfDate") LocalDate asOfDate
+        );
 
 }

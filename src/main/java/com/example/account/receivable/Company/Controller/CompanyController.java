@@ -42,6 +42,7 @@ public class CompanyController {
                 return ResponseEntity.ok(body);
         }
 
+        
         // Invite user Users 
         @PostMapping("/{companyId}/users")
         public ResponseEntity<ApiResponse<Users>> InviteUsers(
@@ -71,7 +72,7 @@ public class CompanyController {
 
                 return ResponseEntity
                         .status(HttpStatus.FOUND) // 302 redirect
-                        .location(URI.create("https://94f240dff6da.ngrok-free.app/set-password?email=" + email))
+                        .location(URI.create("https://7e58b8cc9552.ngrok-free.app/set-password?email=" + email))
                         .build();
         }
 
