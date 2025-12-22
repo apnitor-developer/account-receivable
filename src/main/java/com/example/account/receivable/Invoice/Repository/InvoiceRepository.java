@@ -91,4 +91,18 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
             @Param("statuses") List<String> statuses
     );
 
+
+    //Query used for the Aging
+    @Query("""
+        SELECT DISTINCT i
+        FROM Invoice i
+        JOIN i.customer c
+        JOIN CompanyCustomers cc ON cc.customer = c
+        WHERE cc.company.id = :companyId
+            AND i.active = true
+            AND i.deleted = false
+            AND i.balanceDue > 0
+    """)
+    List<Invoice> findOpenInvoicesByCompany(@Param("companyId") Long companyId);
+
 }

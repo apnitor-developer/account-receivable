@@ -18,20 +18,21 @@ public class AgingReportController {
 
     private final AgingReportService agingReportService;
 
-    @GetMapping
+    @GetMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<AgingReportResponse>> getAgingReport(
-            @RequestParam(required = false) Long customerId,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOfDate
+        @PathVariable("companyId") Long companyId,
+        @RequestParam(required = false) Long customerId,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false)
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOfDate
     ) {
-        AgingReportResponse response = agingReportService.getAgingReport(asOfDate, customerId, status);
+        AgingReportResponse response = agingReportService.getAgingReport(companyId , asOfDate, customerId, status);
 
         ApiResponse<AgingReportResponse> body = ApiResponse.successResponse(
             200, 
             "Get Aging and Reports successfully", 
             response
         );
-        return ResponseEntity.status(201).body(body);
+        return ResponseEntity.status(200).body(body);
     }
 }

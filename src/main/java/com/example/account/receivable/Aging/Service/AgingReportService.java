@@ -19,14 +19,14 @@ public class AgingReportService {
 
     private final InvoiceRepository invoiceRepository;
 
-    public AgingReportResponse getAgingReport(LocalDate asOfDate, Long customerId, String status) {
+    public AgingReportResponse getAgingReport(Long companyId , LocalDate asOfDate, Long customerId, String status) {
 
         if (asOfDate == null) {
             asOfDate = LocalDate.now();
         }
 
         // Get all invoices with outstanding balance
-        List<Invoice> allOpenInvoices = invoiceRepository.findByActiveTrueAndDeletedFalseAndBalanceDueGreaterThan(BigDecimal.ZERO);
+        List<Invoice> allOpenInvoices = invoiceRepository.findOpenInvoicesByCompany(companyId);
 
         // Apply optional filters in Java
         List<Invoice> filtered = new ArrayList<>();

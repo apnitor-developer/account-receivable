@@ -40,8 +40,8 @@ public class UserService {
             }
 
             // Assign Admin role to the new user
-            Role ownerRole = roleRepository.findByName("Owner")
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Owner role not found"));
+            Role ownerRole = roleRepository.findByName("Admin")
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Admin role not found"));
 
             // Create the user object and assign the role
             Users newUser = new Users();
