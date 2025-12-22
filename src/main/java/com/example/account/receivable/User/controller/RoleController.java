@@ -37,7 +37,7 @@ public class RoleController {
     }
 
     //get All Company roles
-    @GetMapping("/{companyId}")
+    @GetMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles(
         @PathVariable("companyId") Long companyId
     ) {
