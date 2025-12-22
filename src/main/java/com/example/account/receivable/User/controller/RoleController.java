@@ -1,8 +1,8 @@
-package com.example.account.receivable.Company.Controller;
+package com.example.account.receivable.User.controller;
 
 import com.example.account.receivable.Company.Dto.RoleDto;
 import com.example.account.receivable.Company.Dto.RoleResponse;
-import com.example.account.receivable.Company.Service.RoleService;
+import com.example.account.receivable.User.service.RoleService;
 import com.example.account.receivable.Common.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -20,11 +20,12 @@ public class RoleController {
 
 
     // Create role
-    @PostMapping
+    @PostMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<RoleResponse>> createRole(
-            @RequestBody RoleDto request
+        @PathVariable("companyId") Long companyId,
+        @RequestBody RoleDto request
     ) {
-        RoleResponse response = roleService.createRole(request);
+        RoleResponse response = roleService.createRole(companyId , request);
 
         return ResponseEntity.ok(
                 ApiResponse.successResponse(
@@ -35,11 +36,13 @@ public class RoleController {
         );
     }
 
-    //get All roles
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles() {
+    //get All Company roles
+    @GetMapping("/{companyId}")
+    public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles(
+        @PathVariable("companyId") Long companyId
+    ) {
 
-        List<RoleResponse> roles = roleService.getAllRoles();
+        List<RoleResponse> roles = roleService.getAllRoles(companyId);
 
         ApiResponse<List<RoleResponse>> body =
                 ApiResponse.successResponse(

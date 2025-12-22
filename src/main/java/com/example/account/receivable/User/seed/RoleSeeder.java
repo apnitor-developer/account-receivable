@@ -19,22 +19,13 @@ public class RoleSeeder {
     @PostConstruct
     public void seedRoles() {
 
-        if (!roleRepository.existsByName("Super Admin")) {
+        if (!roleRepository.existsByName("Admin")) {
             roleRepository.save(
                 Role.builder()
-                    .name("Super Admin")
+                    .name("Admin")
                     .description("Every access")
                     .permissions(Set.of(Permission.values())) // ALL permissions
-                    .build()
-            );
-        }
-
-        if (!roleRepository.existsByName("Owner")) {
-            roleRepository.save(
-                Role.builder()
-                    .name("Owner")
-                    .description("Full Company access")
-                    .permissions(Set.of(Permission.values()))
+                    .company(null)
                     .build()
             );
         }

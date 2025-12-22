@@ -3,6 +3,7 @@ package com.example.account.receivable.User.entity;
 import java.util.Set;
 
 import com.example.account.receivable.Common.Premission.Permission;
+import com.example.account.receivable.Company.Entity.Company;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,6 +34,12 @@ public class Role {
     @Column(name = "permissions", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     private Set<Permission> permissions;
+
+
+    // NULL = global role, NOT NULL = company-specific role
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 }
 
 

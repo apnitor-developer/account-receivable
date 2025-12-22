@@ -1,7 +1,9 @@
-package com.example.account.receivable.Company.Service;
+package com.example.account.receivable.User.service;
 
 import com.example.account.receivable.Company.Dto.RoleDto;
 import com.example.account.receivable.Company.Dto.RoleResponse;
+import com.example.account.receivable.Company.Entity.Company;
+import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.User.entity.Role;
 import com.example.account.receivable.User.repository.RoleRepository;
 
@@ -17,26 +19,33 @@ import java.util.List;
 public class RoleService {
 
     private final RoleRepository roleRepository;
+    private final CompanyRepository companyRepository;
 
 
-    public RoleResponse createRole(RoleDto request) {
+    //Create Role
 
-        if (roleRepository.existsByName(request.getName())) {
+    public RoleResponse createRole(Long companyId, RoleDto request) {
+
+        if (roleRepository.existsByNameAndCompanyId(request.getName(), companyId)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "Role already exists"
+                    "Role already exists for this company"
             );
         }
+
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Company not found"
+                ));
 
         Role role = Role.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .permissions(request.getPermissions())
+                .company(company) // 🏢 COMPANY ROLE
                 .build();
 
-        Role saved = roleRepository.save(role);
-
-        return map(saved);
+        return map(roleRepository.save(role));
     }
 
 
@@ -49,8 +58,9 @@ public class RoleService {
         );
     }
 
-    public List<RoleResponse> getAllRoles() {
-        return roleRepository.findAll()
+    //Get All Company Roles 
+    public List<RoleResponse> getAllRoles(Long companyId) {
+        return roleRepository.findByCompanyIdOrCompanyIsNull(companyId)
                 .stream()
                 .map(this::map)
                 .toList();
