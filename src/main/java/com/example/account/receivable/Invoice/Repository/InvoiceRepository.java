@@ -10,8 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 
 public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
@@ -145,7 +143,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
 
 
     //Query used for the ArCalculation
-    
+
         //Customer Month-End Balance
         @Query("""
             SELECT COALESCE(SUM(i.balanceDue), 0)
