@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.account.receivable.Auth.dto.LoginDto;
+import com.example.account.receivable.Auth.dto.LoginResponseDto;
 import com.example.account.receivable.Auth.service.LoginService;
 import com.example.account.receivable.Common.ApiResponse;
-import com.example.account.receivable.User.entity.Users;
 
 import jakarta.validation.Valid;
 
@@ -24,10 +24,10 @@ public class LoginController {
     
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<Users>> login(@Valid @RequestBody LoginDto dto) {
-        Users user = loginService.login(dto);
+    public ResponseEntity<ApiResponse<LoginResponseDto>> login(@Valid @RequestBody LoginDto dto) {
+        LoginResponseDto user = loginService.login(dto);
 
-        ApiResponse<Users> body = ApiResponse.successResponse(
+        ApiResponse<LoginResponseDto> body = ApiResponse.successResponse(
             201, 
             "Login Successfully", 
             user

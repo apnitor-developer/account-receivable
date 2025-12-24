@@ -63,7 +63,7 @@ public class DisputeController {
     }
 
 
-    // Get Copmany Dispute List
+    // Get Company Dispute List
     @GetMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<List<Dispute>>> getCompnayDisputeList(
             @PathVariable Long companyId
