@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.account.receivable.Collections.Dispute.DTO.DisputeCodeResponseDto;
 import com.example.account.receivable.Collections.Dispute.DTO.DisputeDTORequest;
+import com.example.account.receivable.Collections.Dispute.DTO.DisputeStatusUpdateRequest;
 import com.example.account.receivable.Collections.Dispute.Entity.Dispute;
 import com.example.account.receivable.Collections.Dispute.Service.DisputeService;
 import com.example.account.receivable.Common.ApiResponse;
@@ -72,6 +74,21 @@ public class DisputeController {
 
         ApiResponse<List<Dispute>> body = ApiResponse.successResponse(200, "Copmany Disputes retreived successfully", dispute);
         return ResponseEntity.status(200).body(body);
+    }
+
+
+    //Update Dispute Status
+    @PatchMapping("/{disputeId}/status")
+    public ResponseEntity<ApiResponse<Dispute>> updateDisputeStatus(
+            @PathVariable Long disputeId,
+            @RequestBody DisputeStatusUpdateRequest dto
+    ) {
+        Dispute updated = disputeService.updateDisputeStatus(disputeId, dto);
+
+        ApiResponse<Dispute> body =
+                ApiResponse.successResponse(200, "Dispute status updated successfully", updated);
+
+        return ResponseEntity.ok(body);
     }
 
 

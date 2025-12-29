@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.account.receivable.Collections.Dispute.DTO.DisputeCodeResponseDto;
 import com.example.account.receivable.Collections.Dispute.DTO.DisputeDTORequest;
+import com.example.account.receivable.Collections.Dispute.DTO.DisputeStatusUpdateRequest;
 import com.example.account.receivable.Collections.Dispute.Entity.Dispute;
 import com.example.account.receivable.Collections.Dispute.Enum.DisputeCode;
 import com.example.account.receivable.Collections.Dispute.Enum.DisputeStatus;
@@ -168,5 +169,64 @@ public class DisputeService {
 
         return candidate;
     }
+
+
+
+    // Update Dispute Status
+    public Dispute updateDisputeStatus(Long disputeId, DisputeStatusUpdateRequest dto) {
+
+        Dispute dispute = disputeRepository.findById(disputeId)
+                .orElseThrow(() -> new RuntimeException("Dispute not found"));
+
+        if (dto.getStatus() == null || dto.getStatus().isBlank()) {
+            throw new RuntimeException("Status must not be empty");
+        }
+
+        DisputeStatus newStatus;
+        try {
+            newStatus = DisputeStatus.valueOf(dto.getStatus().trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new RuntimeException("Invalid dispute status: " + dto.getStatus());
+        }
+
+        // Optional: block updates after closed
+        if (dispute.getStatus() == DisputeStatus.CLOSED) {
+            throw new RuntimeException("Closed dispute status cannot be changed");
+        }
+
+        // Optional: validate transitions (recommended)
+        validateDisputeStatusTransition(dispute.getStatus(), newStatus);
+
+        dispute.setStatus(newStatus);
+        return disputeRepository.save(dispute);
+    }
+
+
+
+    //Validate transitions
+    private void validateDisputeStatusTransition(DisputeStatus current, DisputeStatus next) {
+
+        if (current == next) return;
+
+        switch (current) {
+            case OPEN -> {
+                if (!(next == DisputeStatus.UNDER_REVIEW || next == DisputeStatus.CLOSED)) {
+                    throw new RuntimeException("OPEN can move only to UNDER_REVIEW or CLOSED");
+                }
+            }
+            case UNDER_REVIEW -> {
+                if (!(next == DisputeStatus.RESOLVED || next == DisputeStatus.REJECTED || next == DisputeStatus.CLOSED)) {
+                    throw new RuntimeException("UNDER_REVIEW can move only to RESOLVED, REJECTED, or CLOSED");
+                }
+            }
+            case RESOLVED, REJECTED -> {
+                if (next != DisputeStatus.CLOSED) {
+                    throw new RuntimeException(current + " can move only to CLOSED");
+                }
+            }
+            case CLOSED -> throw new RuntimeException("CLOSED status cannot be changed");
+        }
+    }
+
 
 }
