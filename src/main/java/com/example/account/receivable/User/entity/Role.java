@@ -4,6 +4,7 @@ import java.util.Set;
 
 import com.example.account.receivable.Common.Premission.Permission;
 import com.example.account.receivable.Company.Entity.Company;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -38,6 +39,7 @@ public class Role {
 
     // NULL = global role, NOT NULL = company-specific role
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "company_id")
     private Company company;
 }
