@@ -2,10 +2,14 @@ package com.example.account.receivable.Dashboard.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.account.receivable.ArCalculation.DTO.CompanyBalanceSeriesDto;
+import com.example.account.receivable.ArCalculation.Entity.CompanyMonthEndBalance;
+import com.example.account.receivable.ArCalculation.Repository.CompanyMonthEndBalanceRepository;
 import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseStatus;
 import com.example.account.receivable.Collections.PromiseToPay.Repository.PromiseToPayRepo;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
@@ -22,6 +26,7 @@ public class DashboardService {
     private final PaymentRepository paymentRepository;
     private final InvoiceRepository invoiceRepository;
     private final PromiseToPayRepo promiseToPayRepo;
+    private final CompanyMonthEndBalanceRepository companyMonthEndBalanceRepository;
 
     public DashboardSummaryResponse getDashboardSummary(Long companyId){
 
@@ -70,5 +75,27 @@ public class DashboardService {
             pendingInvoices,
             currentPromiseToPay
         );
+    }
+
+
+    //Company Previous monthly balances
+    public CompanyBalanceSeriesDto getCompanyBalanceSeries(Long companyId, int months) {
+        if (months <= 0) months = 12;
+
+        YearMonth now = YearMonth.now();
+        YearMonth start = now.minusMonths(months - 1);
+
+        String startYm = start.toString();
+        String endYm = now.toString();
+
+        List<CompanyMonthEndBalance> rows =
+                companyMonthEndBalanceRepository
+                        .findByCompanyIdAndYearMonthBetweenOrderByYearMonthAsc(companyId, startYm, endYm);
+
+        List<CompanyBalanceSeriesDto.Point> points = rows.stream()
+                .map(r -> new CompanyBalanceSeriesDto.Point(r.getYearMonth(), r.getBalance()))
+                .toList();
+
+        return new CompanyBalanceSeriesDto(companyId, points);
     }
 }
