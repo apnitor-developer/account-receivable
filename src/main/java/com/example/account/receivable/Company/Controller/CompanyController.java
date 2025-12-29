@@ -13,6 +13,7 @@ import java.util.List;
 
 import org.springframework.data.domain.*;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,7 +44,8 @@ public class CompanyController {
         }
 
         
-        // Invite user Users 
+        // Invite user Users
+        @PreAuthorize("hasAuthority('Admin')")
         @PostMapping("/{companyId}/users")
         public ResponseEntity<ApiResponse<Users>> InviteUsers(
                 @PathVariable("companyId") Long companyId,
@@ -72,7 +74,7 @@ public class CompanyController {
 
                 return ResponseEntity
                         .status(HttpStatus.FOUND) // 302 redirect
-                        .location(URI.create("https://7e58b8cc9552.ngrok-free.app/set-password?email=" + email))
+                        .location(URI.create("https://ce0becf9fc95.ngrok-free.app/set-password?email=" + email)) // frontend url
                         .build();
         }
 

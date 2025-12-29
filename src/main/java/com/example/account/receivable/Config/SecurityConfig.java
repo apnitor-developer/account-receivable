@@ -48,7 +48,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // Public APIs
-                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers(
+                    "/auth/**",
+                    "/users",
+                    "/api/companies/company/users/accept",
+                    "/api/companies/user/set-password"
+                ).permitAll()
 
                 // Everything else needs JWT
                 .anyRequest().authenticated()

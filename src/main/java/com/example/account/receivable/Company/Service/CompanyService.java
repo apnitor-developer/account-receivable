@@ -266,7 +266,7 @@ public class CompanyService {
         System.out.println("before generate link");
 
         // Generate invite link
-        String inviteLink = "https://ce25e78d4358.ngrok-free.app/api/companies/company/users/accept?email="
+        String inviteLink = "https://91c0e19fc536.ngrok-free.app/api/companies/company/users/accept?email="  //backend url
                 + savedUser.getEmail();
 
 
