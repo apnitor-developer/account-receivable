@@ -30,8 +30,8 @@ public class UserService {
             // Destructure the DTO (Java-style)
             String firstName = dto.getFirstName();
             String lastName = dto.getLastName();
-            String email = dto.getEmail();
             String password = dto.getPassword();
+            String email = dto.getEmail();
 
             // Check if the user already exists
             Optional<Users> existingUser = usersRepository.findByEmailAndDeletedFalse(email);
