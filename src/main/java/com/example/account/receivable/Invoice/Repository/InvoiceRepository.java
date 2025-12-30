@@ -174,4 +174,32 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
                 @Param("asOfDate") LocalDate asOfDate
         );
 
+
+
+        //Query used to Get all invoices of a company that are : OPEN and PARTIAL , Overdue (dueDate < today) , balanceDue > 0 , Belong to customers of that company
+        @Query("""
+            SELECT 
+                i.id,
+                i.invoiceNumber,
+                i.invoiceDate,
+                i.dueDate,
+                i.status,
+                i.totalAmount,
+                i.balanceDue,
+                c.id,
+                c.customerName
+            FROM Invoice i
+            JOIN i.customer c
+            JOIN c.companyCompanies cc
+            WHERE cc.company.id = :companyId
+            AND i.deleted = false
+            AND c.deleted = false
+            AND i.balanceDue > 0
+            AND i.status IN ('OPEN', 'PARTIAL')
+            AND i.dueDate < CURRENT_DATE
+        """)
+        List<Object[]> findOverdueInvoicesByCompany(
+            @Param("companyId") Long companyId
+        );
+
 }

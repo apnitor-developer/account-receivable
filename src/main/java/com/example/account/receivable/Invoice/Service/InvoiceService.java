@@ -21,6 +21,7 @@ import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
 import com.example.account.receivable.Invoice.Dto.InvoiceItemDto;
+import com.example.account.receivable.Invoice.Dto.OverdueInvoiceResponseDTO;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendingAmountResponseDTO;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Entity.InvoiceItem;
@@ -357,5 +358,34 @@ public class InvoiceService {
 
         return invoiceRepository.getCompanyTotalPendingAmount(companyId);
     }
+
+
+
+    // Get all Overdue Invoices of the company and their balance is greater than 0
+    public List<OverdueInvoiceResponseDTO> getOverdueInvoicesByCompany(Long companyId) {
+        List<Object[]> rows =
+            invoiceRepository.findOverdueInvoicesByCompany(companyId);
+
+        List<OverdueInvoiceResponseDTO> response = new ArrayList<>();
+
+        for (Object[] row : rows) {
+            OverdueInvoiceResponseDTO dto = new OverdueInvoiceResponseDTO();
+
+            dto.setInvoiceId((Long) row[0]);
+            dto.setInvoiceNumber((String) row[1]);
+            dto.setInvoiceDate((LocalDate) row[2]);
+            dto.setDueDate((LocalDate) row[3]);
+            dto.setStatus((String) row[4]);
+            dto.setTotalAmount((BigDecimal) row[5]);
+            dto.setBalanceDue((BigDecimal) row[6]);
+            dto.setCustomerId((Long) row[7]);
+            dto.setCustomerName((String) row[8]);
+
+            response.add(dto);
+        }
+
+        return response;
+    }
+
 
 }

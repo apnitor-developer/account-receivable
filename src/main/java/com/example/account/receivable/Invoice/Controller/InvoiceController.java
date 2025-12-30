@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.account.receivable.Common.ApiResponse;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
+import com.example.account.receivable.Invoice.Dto.OverdueInvoiceResponseDTO;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendingAmountResponseDTO;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Service.InvoiceService;
@@ -189,5 +190,22 @@ public class InvoiceController {
 
         return ResponseEntity.ok(response);
     }
+
+
+    // Get all Overdue Invoices of the company and their balance is greater than 0
+    @GetMapping("/company/{companyId}/overdue-invoices")
+    public ResponseEntity<ApiResponse<List<OverdueInvoiceResponseDTO>>> getOverdueInvoicesByCompany(@PathVariable Long companyId) {
+
+        List<OverdueInvoiceResponseDTO> invoices = invoiceService.getOverdueInvoicesByCompany(companyId);
+
+        return ResponseEntity.ok(
+            ApiResponse.successResponse(
+                200,
+                "Overdue invoices retrieved successfully",
+                invoices
+            )
+        );
+    }
+
 
 }
