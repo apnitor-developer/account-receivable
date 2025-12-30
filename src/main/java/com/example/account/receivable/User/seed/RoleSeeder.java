@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component;
 import com.example.account.receivable.Common.Premission.Permission;
 import com.example.account.receivable.User.entity.Role;
 import com.example.account.receivable.User.repository.RoleRepository;
-import java.util.Set;
+
+import java.util.EnumSet;
 
 @Component
 @RequiredArgsConstructor
@@ -19,17 +20,18 @@ public class RoleSeeder {
     @PostConstruct
     public void seedRoles() {
 
-        if (!roleRepository.existsByName("Admin")) {
-            roleRepository.save(
-                Role.builder()
-                    .name("Admin")
-                    .description("Every access")
-                    .permissions(Set.of(Permission.values())) // ALL permissions
-                    .company(null)
-                    .build()
+        Role admin = roleRepository.findByName("Admin")
+            .orElseGet(() -> Role.builder()
+                .name("Admin")
+                .description("Every access")
+                .company(null)
+                .build()
             );
-        }
 
-        System.out.println("✅ Roles & permissions seeded.");
+        admin.setPermissions(EnumSet.allOf(Permission.class));
+
+        roleRepository.save(admin);
+
+        System.out.println("✅ Admin role synced with all permissions.");
     }
 }
