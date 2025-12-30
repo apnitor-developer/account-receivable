@@ -30,15 +30,16 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     //Fetch customers for a company with pending balance 
     @Query("""
-        SELECT DISTINCT c
+        SELECT c.id, c.customerName, SUM(i.balanceDue)
         FROM Customer c
         JOIN c.companyCompanies cc
         JOIN Invoice i ON i.customer = c
         WHERE cc.company.id = :companyId
-          AND c.deleted = false
-          AND i.deleted = false
-          AND i.balanceDue > 0
+        AND c.deleted = false
+        AND i.deleted = false
+        AND i.balanceDue > 0
+        GROUP BY c.id, c.customerName
     """)
-    List<Customer> findCustomersWithPendingByCompanyId(@Param("companyId") Long companyId);
+    List<Object[]> findCustomersWithPendingAmountByCompanyId( @Param("companyId") Long companyId );
 
 }

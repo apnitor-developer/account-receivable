@@ -105,20 +105,24 @@ public class InvoiceService {
 
     // Get company customers whose balanceDue > 0
     public List<CustomerWithPendingAmountResponseDTO> getCustomersWithPendingAmountByCompany(Long companyId) {
-
-        List<Customer> customers = customerRepository.findCustomersWithPendingByCompanyId(companyId);
+        List<Object[]> results = customerRepository.findCustomersWithPendingAmountByCompanyId(companyId);
 
         List<CustomerWithPendingAmountResponseDTO> response = new ArrayList<>();
 
-        for (Customer customer : customers) {
-            CustomerWithPendingAmountResponseDTO dto = new CustomerWithPendingAmountResponseDTO();
-            dto.setId(customer.getId());
-            dto.setCustomerName(customer.getCustomerName());
+        for (Object[] row : results) {
+            CustomerWithPendingAmountResponseDTO dto =
+                new CustomerWithPendingAmountResponseDTO();
+
+            dto.setId((Long) row[0]);
+            dto.setCustomerName((String) row[1]);
+            dto.setOverdueAmount((BigDecimal) row[2]);
+
             response.add(dto);
         }
 
         return response;
     }
+
 
 
 
