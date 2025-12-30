@@ -20,4 +20,13 @@ public class InvoiceTemplateService {
 
         return templateEngine.process("invoice-template", ctx);
     }
+
+    public String generateHtmlReminder(Invoice invoice) {
+        Context ctx = new Context();
+
+        ctx.setVariable("invoice", invoice);
+        ctx.setVariable("customer", invoice.getCustomer());
+
+        return templateEngine.process("invoice-reminder-template", ctx);
+    }
 }
