@@ -41,10 +41,13 @@ public enum Permission {
     // =========================
     // COLLECTIONS & PROMISE TO PAY & DISPUTE
     // =========================
+    VIEW_COLLECTIONS,
     VIEW_PROMISE_TO_PAY,
     CREATE_PROMISE_TO_PAY,
     VIEW_DISPUTE,
     CREATE_DISPUTE,
+    VIEW_REMINDER,
+    SEND_REMINDER,
 
 
     // =========================
