@@ -465,7 +465,7 @@ public class CompanyService {
         companyRepository.save(company);
 
         if (request.getAddress() != null){
-            UpdateAddress(companyId , request.getAddress());
+            updateAddress(companyId , request.getAddress());
         }
 
         // 2) Financial
@@ -504,29 +504,47 @@ public class CompanyService {
     }
 
 
-    public void UpdateAddress(Long companyId , AddressRequestDto request){
+    public void updateAddress(Long companyId, AddressRequestDto request) {
+
         Company company = getCompanyOrThrow(companyId);
 
-        CompanyAddress address = companyAddressRepository.findByCompany_Id(companyId)
-                        .orElseGet(() -> CompanyAddress.builder()
+        CompanyAddress address = companyAddressRepository
+                .findByCompany_Id(companyId)
+                .orElseGet(() -> CompanyAddress.builder()
                         .company(company)
                         .build());
 
+        if (request.getAddressLine1() != null)
+            address.setAddressLine1(request.getAddressLine1());
 
-        // 3. Map DTO → Entity
-        address.setAddressLine1(request.getAddressLine1());
-        address.setCity(request.getCity());
-        address.setStateProvince(request.getStateProvince());
-        address.setPostalCode(request.getPostalCode());
-        address.setAddressCountry(request.getAddressCountry());
-        address.setPrimaryContactName(request.getPrimaryContactName());
-        address.setPrimaryContactEmail(request.getPrimaryContactEmail());
-        address.setPrimaryContactPhone(request.getPrimaryContactPhone());
-        address.setWebsite(request.getWebsite());
-        address.setPrimaryContactCountry(request.getPrimaryContactCountry());
+        if (request.getCity() != null)
+            address.setCity(request.getCity());
+
+        if (request.getStateProvince() != null)
+            address.setStateProvince(request.getStateProvince());
+
+        if (request.getPostalCode() != null)
+            address.setPostalCode(request.getPostalCode());
+
+        if (request.getAddressCountry() != null)
+            address.setAddressCountry(request.getAddressCountry());
+
+        if (request.getPrimaryContactName() != null)
+            address.setPrimaryContactName(request.getPrimaryContactName());
+
+        if (request.getPrimaryContactEmail() != null)
+            address.setPrimaryContactEmail(request.getPrimaryContactEmail());
+
+        if (request.getPrimaryContactPhone() != null)
+            address.setPrimaryContactPhone(request.getPrimaryContactPhone());
+
+        if (request.getWebsite() != null)
+            address.setWebsite(request.getWebsite());
+
+        if (request.getPrimaryContactCountry() != null)
+            address.setPrimaryContactCountry(request.getPrimaryContactCountry());
 
         company.setCompanyAddress(address);
-   
         companyAddressRepository.save(address);
     }
 
