@@ -1,7 +1,8 @@
-version: "3.9"
-
 services:
   account-receivable-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: account-receivable
     container_name: account-receivable
 
