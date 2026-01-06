@@ -2,12 +2,14 @@ version: "3.9"
 
 services:
   account-receivable-app:
-    build: .
+    image: account-receivable
     container_name: account-receivable
 
     env_file:
       - .env
 
+    environment:
+      SPRING_PROFILES_ACTIVE: sql
+
     ports:
       - "8080:8080"
-
