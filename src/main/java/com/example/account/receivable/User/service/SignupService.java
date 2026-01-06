@@ -2,6 +2,7 @@ package com.example.account.receivable.User.service;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,12 +48,25 @@ public class SignupService {
         System.out.println("Signup email = " + dto.getEmail());
 
 
-        if (usersRepository.existsByEmail(dto.getEmail())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "User already exists"
-            );
+        // Check if the user already exists
+        Optional<Users> existingUser = usersRepository.findByEmailAndDeletedFalse(dto.getEmail());
+
+        if (existingUser.isPresent()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists with this email");
         }
+
+        pendingRepo.findByEmail(dto.getEmail()).ifPresent(existing -> {
+
+                // If OTP expired → allow re-signup
+                if (existing.getExpiresAt().isBefore(Instant.now())) {
+                pendingRepo.delete(existing);
+                } else {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "OTP already sent. Please verify your email."
+                );
+                }
+        });
 
         String otp = generateOtp();
 
