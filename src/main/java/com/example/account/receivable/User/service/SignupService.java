@@ -43,31 +43,37 @@ public class SignupService {
     /* =========================
        STEP 1: START SIGNUP
        ========================= */
+    @Transactional
     public void startSignup(UserCreateDto dto) {
 
-        System.out.println("Signup email = " + dto.getEmail());
-
-
-        // Check if the user already exists
-        Optional<Users> existingUser = usersRepository.findByEmailAndDeletedFalse(dto.getEmail());
-
-        if (existingUser.isPresent()) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists with this email");
+        // 1️⃣ Check existing user
+        if (usersRepository.findByEmailAndDeletedFalse(dto.getEmail()).isPresent()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "User already exists with this email"
+            );
         }
 
-        pendingRepo.findByEmail(dto.getEmail()).ifPresent(existing -> {
+        // 2️⃣ Check pending signup (NO lambda)
+        Optional<PendingUserSignup> existingOpt =
+                pendingRepo.findByEmail(dto.getEmail());
 
-                // If OTP expired → allow re-signup
-                if (existing.getExpiresAt().isBefore(Instant.now())) {
-                pendingRepo.delete(existing);
-                } else {
+        if (existingOpt.isPresent()) {
+            PendingUserSignup existing = existingOpt.get();
+
+            if (existing.getExpiresAt().isAfter(Instant.now())) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "OTP already sent. Please verify your email."
                 );
-                }
-        });
+            }
 
+            // OTP expired → cleanup
+            pendingRepo.delete(existing);
+            pendingRepo.flush(); // 🔥 REQUIRED for SQL Server
+        }
+
+        // 3️⃣ Create new pending signup
         String otp = generateOtp();
 
         PendingUserSignup pending = PendingUserSignup.builder()
@@ -81,18 +87,26 @@ public class SignupService {
 
         pendingRepo.save(pending);
 
-        String body = """
-            <p>Your OTP for signup is:</p>
-            <h2>%s</h2>
-            <p>Valid for %d minutes.</p>
-        """.formatted(otp, OTP_EXPIRY_MINUTES);
+        // 4️⃣ Send email (outside DB logic)
+        try {
+            String body = """
+                <p>Your OTP for signup is:</p>
+                <h2>%s</h2>
+                <p>Valid for %d minutes.</p>
+            """.formatted(otp, OTP_EXPIRY_MINUTES);
 
-        emailService.sendWithAttachment(
-                dto.getEmail(),
-                "Verify your email",
-                body,
-                null
-        );
+            emailService.sendWithAttachment(
+                    dto.getEmail(),
+                    "Verify your email",
+                    body,
+                    null
+            );
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "Unable to send OTP email. Please try again."
+            );
+        }
     }
 
     /* =========================
