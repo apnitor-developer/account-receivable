@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  account-receivable-app:
+    build: .
+    container_name: account-receivable
+
+    env_file:
+      - .env
+
+    ports:
+      - "8080:8080"
+
