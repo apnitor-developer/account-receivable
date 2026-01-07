@@ -18,6 +18,7 @@ import com.example.account.receivable.Common.InvoiceTemplateService;
 import com.example.account.receivable.Common.PdfGeneratorService;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.Customer.Entity.CustomerDunningCreditSettings;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
 import com.example.account.receivable.Invoice.Dto.InvoiceItemDto;
@@ -213,10 +214,12 @@ public class InvoiceService {
             items.add(item);
         }
 
-        invoiceItemRepo.saveAll(items);
-
         // Compute TOTAL invoice values
         BigDecimal totalAmount = subTotal.add(taxTotal);
+
+        enforceCreditLimit(customer, totalAmount);
+
+        invoiceItemRepo.saveAll(items);
 
         invoice.setSubTotal(subTotal);
         invoice.setTotalAmount(totalAmount);
@@ -303,6 +306,39 @@ public class InvoiceService {
         }
 
         return candidate;
+    }
+
+    //Check the credit Limit of the Customer
+    private void enforceCreditLimit(Customer customer, BigDecimal newInvoiceAmount) {
+        CustomerDunningCreditSettings dunning = customer.getDunning();
+        if (dunning == null) {
+            return;
+        }
+
+        Double limitValue = dunning.getCreditLimit();
+        if (limitValue == null) {
+            return;
+        }
+
+        BigDecimal creditLimit = BigDecimal.valueOf(limitValue);
+        if (creditLimit.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        BigDecimal outstanding = invoiceRepository.getCustomerOutstandingBalance(customer.getId());
+        if (outstanding == null) {
+            outstanding = BigDecimal.ZERO;
+        }
+
+        BigDecimal projectedExposure = outstanding.add(newInvoiceAmount);
+        if (projectedExposure.compareTo(creditLimit) > 0) {
+            String msg = String.format(
+                    "Credit limit exceeded. Limit: %s",
+                    creditLimit.toPlainString(),
+                    projectedExposure.toPlainString()
+            );
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msg);
+        }
     }
 
     // Get all Invoices

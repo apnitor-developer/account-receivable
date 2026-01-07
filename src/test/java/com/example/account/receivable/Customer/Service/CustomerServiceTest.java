@@ -60,8 +60,6 @@ class CustomerServiceTest {
     private CompanyRepository companyRepository;
     @Mock
     private CompanyCustomerRepository companyCustomerRepository;
-    @Mock
-    private CompanyCustomerRepository companyCustomersRepository;
 
     @InjectMocks
     private CustomerService customerService;

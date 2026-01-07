@@ -35,6 +35,16 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
     //Use this function to calculate the allbalance dues of the invoices
     List<Invoice> findByCustomerIdAndBalanceDueGreaterThan(Long customerId, BigDecimal balance);
 
+    @Query("""
+        SELECT COALESCE(SUM(i.balanceDue), 0)
+        FROM Invoice i
+        WHERE i.customer.id = :customerId
+          AND i.deleted = false
+          AND i.balanceDue > 0
+          AND i.status IN ('OPEN', 'PARTIAL')
+    """)
+    BigDecimal getCustomerOutstandingBalance(@Param("customerId") Long customerId);
+
 
 
     //Calculate Total Pending Amount of the company

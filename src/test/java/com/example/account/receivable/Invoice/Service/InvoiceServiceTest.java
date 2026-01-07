@@ -28,6 +28,7 @@ import com.example.account.receivable.Common.InvoiceTemplateService;
 import com.example.account.receivable.Common.PdfGeneratorService;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.Customer.Entity.CustomerDunningCreditSettings;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
 import com.example.account.receivable.Invoice.Dto.InvoiceItemDto;
@@ -111,6 +112,29 @@ class InvoiceServiceTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> invoiceService.createInvoice(1L, dto));
         assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+    }
+
+    @Test
+    void createInvoice_whenCreditLimitExceeded_throwsBadRequest() {
+        Customer customer = new Customer();
+        customer.setId(9L);
+        CustomerDunningCreditSettings dunning = new CustomerDunningCreditSettings();
+        dunning.setCreditLimit(10.0);
+        customer.setDunning(dunning);
+
+        when(customerRepository.findById(9L)).thenReturn(Optional.of(customer));
+        when(invoiceRepository.findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc("INV-"))
+                .thenReturn(Optional.empty());
+        when(invoiceRepository.existsByInvoiceNumber(anyString())).thenReturn(false);
+        when(invoiceRepository.getCustomerOutstandingBalance(9L)).thenReturn(new BigDecimal("8"));
+
+        InvoiceDto dto = new InvoiceDto();
+        dto.setGenerated(true);
+        dto.setItems(List.of(item("Consulting", "5", 1, null)));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> invoiceService.createInvoice(9L, dto));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
 
     @Test

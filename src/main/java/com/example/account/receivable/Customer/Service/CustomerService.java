@@ -81,7 +81,6 @@ public class CustomerService {
     private final InvoiceRepository invoiceRepository;
     private final CompanyRepository companyRepository;
     private final CompanyCustomerRepository companyCustomerRepository;
-    private final CompanyCustomerRepository companyCustomersRepository;
 
 
     //Get all customers
@@ -92,7 +91,7 @@ public class CustomerService {
 
     public Page<Customer> getCustomersByCompanyId(Long companyId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return companyCustomersRepository.findActiveCustomersByCompanyId(companyId, pageable);
+        return companyCustomerRepository.findActiveCustomersByCompanyId(companyId, pageable);
     }
 
     //Get Single Customer
