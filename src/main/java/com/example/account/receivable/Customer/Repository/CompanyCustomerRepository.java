@@ -23,4 +23,6 @@ public interface CompanyCustomerRepository extends JpaRepository<CompanyCustomer
     @Query("select cc.customer from CompanyCustomers cc " +
           "where cc.company.id = :companyId and cc.customer.deleted = false")
     Page<Customer> findActiveCustomersByCompanyId(@Param("companyId") Long companyId, Pageable pageable);
+
+    boolean existsByCompany_IdAndCustomer_Id(Long companyId, Long customerId);
 }

@@ -1,6 +1,7 @@
 package com.example.account.receivable.Customer.Controller;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -217,7 +218,8 @@ public class CustomerController {
         return ResponseEntity.ok(response);
     }
 
-            @PostMapping(
+    //import customers fromm csv file
+    @PostMapping(
             value = "/import-csv",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
@@ -227,13 +229,20 @@ public class CustomerController {
     ) {
         CustomerCsv result = customerService.importCustomersFromCsv(companyId, file);
 
-        ApiResponse<CustomerCsv> body = ApiResponse.successResponse(
-                200,
-                "Customer CSV processed successfully",
+        boolean hasFailures = result.getFailureCount() > 0;
+        HttpStatus status = hasFailures ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
+        String message = hasFailures
+                ? "Customers already exists"
+                : "Customer CSV processed successfully";
+
+        ApiResponse<CustomerCsv> body = new ApiResponse<>(
+                status.value(),
+                hasFailures ? "error" : "success",
+                message,
                 result
         );
 
-        return ResponseEntity.ok(body);
+        return ResponseEntity.status(status).body(body);
     }
 }
 

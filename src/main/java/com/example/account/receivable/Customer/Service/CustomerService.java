@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -147,11 +148,17 @@ public class CustomerService {
         Company company = companyRepository.findById(companyId)
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
 
-        //EMAIL DUPLICATE CHECK
-        customerRepository.findByEmail(customerDTO.getEmail())
-            .ifPresent(existing -> {
-                throw new DuplicateCustomerException("Customer already exists with this email");
-            });
+        Optional<Customer> existingCustomerOpt = customerRepository.findByEmail(customerDTO.getEmail());
+
+        if (existingCustomerOpt.isPresent()) {
+            Customer existing = existingCustomerOpt.get();
+            boolean alreadyLinked = companyCustomerRepository
+                    .existsByCompany_IdAndCustomer_Id(companyId, existing.getId());
+
+            if (alreadyLinked) {
+                throw new DuplicateCustomerException("Customer already exists for this company");
+            }
+        }
 
         Long randomNumber = (long) (100000 + new Random().nextInt(900000));
         
@@ -558,6 +565,8 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
+
+    //Import Customer from the CSV file
     @Transactional
     public CustomerCsv importCustomersFromCsv(Long companyId, MultipartFile file) {
     if (file == null || file.isEmpty()) {
@@ -641,9 +650,13 @@ public class CustomerService {
         // Duplicate check by email
         customerRepository.findByEmail(email)
                 .ifPresent(existing -> {
-                    throw new DuplicateCustomerException(
-                            "Customer already exists with email: " + email
-                    );
+                    boolean linked = companyCustomerRepository
+                            .existsByCompany_IdAndCustomer_Id(company.getId(), existing.getId());
+                    if (linked) {
+                        throw new DuplicateCustomerException(
+                                "Customer already exists with email: " + email
+                        );
+                    }
                 });
 
         Long randomNumber = (long) (100000 + new Random().nextInt(900000));
@@ -656,6 +669,20 @@ public class CustomerService {
         customer.setDeleted(false);
 
         customer = customerRepository.save(customer);
+
+        Long ownerUserId = company.getUserCompanies().stream()
+                .findFirst()
+                .map(uc -> uc.getUser().getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Company has no users to assign imported customers"
+                ));
+
+        CompanyCustomers link = new CompanyCustomers();
+        link.setCompany(company);
+        link.setCustomer(customer);
+        link.setUserId(ownerUserId);
+        companyCustomerRepository.save(link);
 
         // ---- ADDRESS (OPTIONAL) ----
         String addressLine1 = headers.get(record, "addressLine1");

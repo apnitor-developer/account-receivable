@@ -65,10 +65,13 @@ class CustomerServiceTest {
     private CustomerService customerService;
 
     @Test
-    void createCustomer_whenEmailExists_throwsDuplicateException() {
+    void createCustomer_whenEmailExistsAndLinked_throwsDuplicateException() {
         Company company = Company.builder().id(12L).companyCustomers(new ArrayList<>()).build();
         when(companyRepository.findById(12L)).thenReturn(Optional.of(company));
-        when(customerRepository.findByEmail("dup@example.com")).thenReturn(Optional.of(new Customer()));
+        Customer existing = new Customer();
+        existing.setId(200L);
+        when(customerRepository.findByEmail("dup@example.com")).thenReturn(Optional.of(existing));
+        when(companyCustomerRepository.existsByCompany_IdAndCustomer_Id(12L, 200L)).thenReturn(true);
 
         CustomerDTO dto = new CustomerDTO();
         dto.setCustomerName("Dup");
@@ -130,5 +133,35 @@ class CustomerServiceTest {
     void softDeleteCustomer_whenMissing_throwsNotFound() {
         when(customerRepository.findById(1L)).thenReturn(Optional.empty());
         assertThrows(ResponseStatusException.class, () -> customerService.softDeleteCustomer(1L));
+    }
+
+    @Test
+    void createCustomer_whenEmailExistsButNotLinked_createsNewCustomer() {
+        Company company = Company.builder().id(88L).companyCustomers(new ArrayList<>()).build();
+        when(companyRepository.findById(88L)).thenReturn(Optional.of(company));
+
+        Customer existing = new Customer();
+        existing.setId(300L);
+        existing.setCompanyCompanies(new ArrayList<>());
+
+        when(customerRepository.findByEmail("shared@example.com")).thenReturn(Optional.of(existing));
+        when(companyCustomerRepository.existsByCompany_IdAndCustomer_Id(88L, 300L)).thenReturn(false);
+        Customer saved = new Customer();
+        saved.setId(301L);
+        saved.setCompanyCompanies(new ArrayList<>());
+        when(customerRepository.save(any(Customer.class))).thenReturn(saved);
+        when(companyCustomerRepository.save(any(CompanyCustomers.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CustomerDTO dto = new CustomerDTO();
+        dto.setCustomerName("Existing");
+        dto.setEmail("shared@example.com");
+
+        Customer result = customerService.createCustomer(5L, 88L, dto);
+
+        assertEquals(saved, result);
+        assertEquals(1, company.getCompanyCustomers().size());
+        assertEquals(1, saved.getCompanyCompanies().size());
+        verify(customerRepository).save(any(Customer.class));
+        verify(companyCustomerRepository).save(any(CompanyCustomers.class));
     }
 }
