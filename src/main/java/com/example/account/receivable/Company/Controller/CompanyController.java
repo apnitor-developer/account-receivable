@@ -74,7 +74,7 @@ public class CompanyController {
 
                 return ResponseEntity
                         .status(HttpStatus.FOUND) // 302 redirect
-                        .location(URI.create("https://ce0becf9fc95.ngrok-free.app/set-password?email=" + email)) // frontend url
+                        .location(URI.create("http://54.225.63.207:4200/set-password?email=" + email)) // frontend url
                         .build();
         }
 
