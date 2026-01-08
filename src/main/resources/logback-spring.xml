@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Where logs are stored -->
+    <property name="LOG_PATH" value="./logs"/>
+
+    <!-- Log format -->
+    <property name="HTTP_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"/>
+
+    <!-- ================= HTTP LOG FILE ================= -->
+    <appender name="HTTP_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <!-- current file -->
+        <file>${LOG_PATH}/logs-current.log</file>
+
+        <!-- daily rolling -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>
+                ${LOG_PATH}/logs-%d{dd-MM-yyyy}.log
+            </fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${HTTP_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ================= ONLY YOUR FILTER LOGGER ================= -->
+    <logger name="com.example.account.receivable.Config.RequestResponseLoggingFilter"
+            level="INFO"
+            additivity="false">
+        <appender-ref ref="HTTP_FILE"/>
+    </logger>
+
+    <!-- ================= DISABLE ROOT LOGGER ================= -->
+    <root level="OFF"/>
+
+</configuration>
