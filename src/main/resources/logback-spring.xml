@@ -1,6 +1,6 @@
 <configuration>
 
-    <property name="LOG_PATH" value="logs"/>
+    <property name="LOG_PATH" value="/var/log/account-receivable"/>
 
     <!-- Console Appender (keep everything in console) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
