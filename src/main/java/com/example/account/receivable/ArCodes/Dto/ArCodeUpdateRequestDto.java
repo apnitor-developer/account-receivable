@@ -1,6 +1,5 @@
 package com.example.account.receivable.ArCodes.Dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Data
@@ -9,7 +8,8 @@ import lombok.*;
 @Builder
 public class ArCodeUpdateRequestDto {
 
-    @NotBlank
+    private String codeType;
+
     private String name;
 
     private String description;

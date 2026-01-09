@@ -14,6 +14,8 @@ import lombok.Data;
 //     private List<InvoicePaymentDto> invoicePayments;
 // }
 public class ReceivePaymentRequest {
+    private BigDecimal bankDeposit;
+    private BigDecimal serviceFee;
     private BigDecimal paymentAmount;
     private String paymentMethod;
     private String notes;

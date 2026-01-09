@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.account.receivable.ArCodes.ArCodeType;
 import com.example.account.receivable.ArCodes.Dto.ArCodeCreateRequestDto;
 import com.example.account.receivable.ArCodes.Dto.ArCodeResponseDto;
 import com.example.account.receivable.ArCodes.Dto.ArCodeUpdateRequestDto;
@@ -109,6 +110,19 @@ public class ArCodeService {
                 ArCode arCode = arCodeRepository
                         .findByIdAndOwnerIdAndIsDeletedFalse(arCodeId, userId)
                         .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND, "AR Code not found"));
+
+
+
+                if (dto.getCodeType() != null) {
+                        try {
+                                ArCodeType type = ArCodeType.valueOf(dto.getCodeType().toUpperCase());
+                                arCode.setCodeType(type);
+                        } catch (IllegalArgumentException ex) {
+                                throw new ResponseStatusException(
+                                                HttpStatus.BAD_REQUEST,
+                                                "Invalid codeType: " + dto.getCodeType());
+                        }
+                }
 
                 if (dto.getName() != null && !dto.getName().isBlank()) {
                         arCode.setName(dto.getName());

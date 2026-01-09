@@ -50,6 +50,8 @@ public class PaymentService {
         // Create payment record
         Payment payment = Payment.builder()
                 .customer(customer)
+                .bankDeposit(request.getBankDeposit())
+                .serviceFee(request.getServiceFee())
                 .paymentAmount(request.getPaymentAmount())
                 .paymentMethod(request.getPaymentMethod())
                 .paymentDate(LocalDate.now())

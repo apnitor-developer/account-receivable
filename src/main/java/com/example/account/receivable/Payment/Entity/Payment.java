@@ -38,6 +38,12 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "bank_deposit", nullable = false)
+    private BigDecimal bankDeposit;
+
+    @Column(name = "service_fee", nullable = false)
+    private BigDecimal serviceFee;
+
     @Column(name = "payment_amount", nullable = false)
     private BigDecimal paymentAmount;
 

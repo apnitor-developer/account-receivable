@@ -12,6 +12,7 @@ import lombok.*;
 @Builder
 public class ArCodeCreateRequestDto {
     
+    @NonNull
     private ArCodeType codeType;
 
     @NotBlank
