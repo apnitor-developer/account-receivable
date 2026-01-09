@@ -66,6 +66,10 @@ public enum Permission {
 
     // ROLES
     VIEW_ROLES,
-    CREATE_ROLES
+    CREATE_ROLES,
+    VIEW_CODE,
+    CREATE_CODE,
+    UPDATE_CODE,
+    DELETE_CODE
 }
 

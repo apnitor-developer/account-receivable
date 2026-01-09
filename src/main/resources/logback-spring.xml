@@ -1,41 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <!-- Where logs are stored -->
+    <!-- Log directory -->
     <property name="LOG_PATH" value="./logs"/>
 
-    <!-- Log format -->
-    <property name="HTTP_PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n"/>
+    <!-- Patterns -->
+    <property name="CONSOLE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"/>
 
-    <!-- ================= HTTP LOG FILE ================= -->
-    <appender name="HTTP_FILE"
+    <property name="FILE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n"/>
+
+    <!-- ================= CONSOLE APPENDER ================= -->
+    <appender name="CONSOLE"
+              class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ================= FILE APPENDER ================= -->
+    <appender name="APP_FILE"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/application.log</file>
 
-        <!-- current file -->
-        <file>${LOG_PATH}/logs-current.log</file>
-
-        <!-- daily rolling -->
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>
-                ${LOG_PATH}/logs-%d{dd-MM-yyyy}.log
-            </fileNamePattern>
+            <fileNamePattern>${LOG_PATH}/application-%d{dd-MM-yyyy}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
         </rollingPolicy>
 
         <encoder>
-            <pattern>${HTTP_PATTERN}</pattern>
+            <pattern>${FILE_PATTERN}</pattern>
         </encoder>
     </appender>
 
-    <!-- ================= ONLY YOUR FILTER LOGGER ================= -->
+    <!-- ================= HTTP REQUEST/RESPONSE FILE ================= -->
+    <appender name="HTTP_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/http-current.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/http-%d{dd-MM-yyyy}.log</fileNamePattern>
+            <maxHistory>15</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ================= YOUR REQUEST FILTER ONLY ================= -->
     <logger name="com.example.account.receivable.Config.RequestResponseLoggingFilter"
             level="INFO"
             additivity="false">
         <appender-ref ref="HTTP_FILE"/>
     </logger>
 
-    <!-- ================= DISABLE ROOT LOGGER ================= -->
-    <root level="OFF"/>
+    <!-- ================= APPLICATION LOGGING ================= -->
+    <logger name="com.example.account.receivable" level="DEBUG"/>
+
+    <!-- ================= ROOT LOGGER (IMPORTANT) ================= -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="APP_FILE"/>
+    </root>
 
 </configuration>
