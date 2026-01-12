@@ -15,7 +15,7 @@ import com.example.account.receivable.Invoice.Entity.Invoice;
 public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
     Page<Invoice> findByDeletedFalse(Pageable pageable);
 
-    List<Invoice> findByCustomerIdAndDeletedFalse(Long customerId);
+    List<Invoice> findByCustomerIdAndDeletedFalse(Long customerId , String status);
 
     List<Invoice> findByCustomerId(Long customerId);
 

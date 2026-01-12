@@ -349,7 +349,7 @@ public class InvoiceService {
 
     // Get Single customer invoice
     public List<Invoice> getSingleCustomerInvoice(Long customerId) {
-        return invoiceRepository.findByCustomerIdAndDeletedFalse(customerId);
+        return invoiceRepository.findByCustomerIdAndDeletedFalse(customerId , "WRITTEN_OFF");
     }
 
     // Invoice By Id

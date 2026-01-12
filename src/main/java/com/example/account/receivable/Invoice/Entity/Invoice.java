@@ -51,7 +51,7 @@ public class Invoice {
     @Column(name = "balance_due", nullable = false)
     private BigDecimal balanceDue;  // Default value should be set to the total amount initially
 
-    // New field for invoice status (OPEN, PARTIAL, PAID)
+    // New field for invoice status (OPEN, PARTIAL, PAID , WRITTEN_OFF)
     @Column(name = "status", nullable = false)
     @Builder.Default
     private String status = "OPEN";  // Initial status is OPEN
