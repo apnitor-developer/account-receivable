@@ -1,12 +1,12 @@
-package com.example.account.receivable.Aging.Controller;
+package com.example.account.receivable.AgingReports.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.account.receivable.Aging.DTO.AgingReportResponse;
-import com.example.account.receivable.Aging.Service.AgingReportService;
+import com.example.account.receivable.AgingReports.DTO.AgingReportResponse;
+import com.example.account.receivable.AgingReports.Service.AgingReportService;
 import com.example.account.receivable.Common.ApiResponse;
 
 import java.time.LocalDate;

@@ -24,9 +24,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.example.account.receivable.Aging.Controller.AgingReportController;
-import com.example.account.receivable.Aging.DTO.AgingReportResponse;
-import com.example.account.receivable.Aging.Service.AgingReportService;
+import com.example.account.receivable.AgingReports.Controller.AgingReportController;
+import com.example.account.receivable.AgingReports.DTO.AgingReportResponse;
+import com.example.account.receivable.AgingReports.Service.AgingReportService;
 import com.example.account.receivable.ArCalculation.Controller.ArCalculationController;
 import com.example.account.receivable.ArCalculation.DTO.CompanyBalanceSeriesDto;
 import com.example.account.receivable.ArCalculation.DTO.CompanyBalanceSeriesDto.Point;

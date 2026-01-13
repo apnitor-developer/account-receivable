@@ -1,7 +1,7 @@
-package com.example.account.receivable.Aging.Service;
+package com.example.account.receivable.AgingReports.Service;
 
-import com.example.account.receivable.Aging.DTO.AgingReportResponse;
-import com.example.account.receivable.Aging.DTO.CustomerAgingDto;
+import com.example.account.receivable.AgingReports.DTO.AgingReportResponse;
+import com.example.account.receivable.AgingReports.DTO.CustomerAgingDto;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;

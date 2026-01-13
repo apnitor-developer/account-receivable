@@ -1,4 +1,4 @@
-package com.example.account.receivable.Aging.DTO;
+package com.example.account.receivable.AgingReports.DTO;
 
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
