@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.account.receivable.Common.ApiResponse;
+
+import java.time.LocalDate;
+
 import org.springframework.data.domain.Page;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
 import com.example.account.receivable.Payment.Entity.Payment;
@@ -67,5 +70,31 @@ public class PaymentController {
             payment
         );
         return ResponseEntity.status(200).body(response);
+    }
+
+
+    
+    // Get All Payments with date filter(used in the Paymnet Report)
+    @GetMapping("/company/{companyId}/filter")
+    public ResponseEntity<ApiResponse<Page<Payment>>> getPaymentsByCompanyId(
+            @PathVariable("companyId") Long companyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            LocalDate toDate
+    ) {
+        Page<Payment> payments = paymentService.getPaymentsByCompanyId(companyId, page, size, fromDate, toDate);
+
+        ApiResponse<Page<Payment>> response = ApiResponse.successResponse(
+                200,
+                "Payments retrieved successfully",
+                payments
+        );
+
+        return ResponseEntity.ok(response);
     }
 }

@@ -53,4 +53,23 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             Pageable pageable
     );
 
+    //Get Payments By the CompanyId (query used in the payment reports)
+    @Query("""
+        SELECT p
+        FROM Payment p
+        JOIN p.customer c
+        JOIN c.companyCompanies cc
+        WHERE cc.company.id = :companyId
+        AND c.deleted = false
+        AND (:fromDate IS NULL OR p.paymentDate >= :fromDate)
+        AND (:toDate IS NULL OR p.paymentDate <= :toDate)
+    """)
+    Page<Payment> findPaymentsByCompanyIdFiltered(
+            @Param("companyId") Long companyId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            Pageable pageable
+    );
+
+
 }

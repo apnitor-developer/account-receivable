@@ -166,4 +166,17 @@ public class PaymentService {
         Pageable pageable = PageRequest.of(page, size);
         return paymentRepository.findPaymentsByCompanyId(companyId, pageable);
     }
+
+
+    // Get All Payment 
+    public Page<Payment> getPaymentsByCompanyId(Long companyId, int page, int size, LocalDate fromDate, LocalDate toDate) {
+
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fromDate cannot be after toDate");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "paymentDate"));
+
+        return paymentRepository.findPaymentsByCompanyIdFiltered(companyId, fromDate, toDate, pageable);
+    }
 }
