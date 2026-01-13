@@ -2,6 +2,7 @@ package com.example.account.receivable.Invoice.Controller;
 
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -208,4 +209,29 @@ public class InvoiceController {
     }
 
 
+    // GET ALL invoices of a company with optional filters(used in the Invoice Reports)
+    // /invoice/company/5?statuses=OPEN,PARTIAL&fromDate=2026-01-01&toDate=2026-01-31&page=0&size=10
+    @GetMapping("/company/{companyId}")
+    public ResponseEntity<ApiResponse<Page<Invoice>>> getCompanyInvoices(
+            @PathVariable Long companyId,
+            @RequestParam(required = false) List<String> statuses,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            LocalDate toDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<Invoice> invoices = invoiceService.getCompanyInvoices(companyId, statuses, fromDate, toDate, page, size);
+
+        ApiResponse<Page<Invoice>> response = ApiResponse.successResponse(
+                200,
+                "Invoices fetched successfully",
+                invoices
+        );
+
+        return ResponseEntity.ok(response);
+    }
 }

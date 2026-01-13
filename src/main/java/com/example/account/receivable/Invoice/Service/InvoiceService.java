@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -422,6 +423,37 @@ public class InvoiceService {
 
         return response;
     }
+
+    // Get All invoices of the company based on the filters
+    public Page<Invoice> getCompanyInvoices(
+            Long companyId,
+            List<String> statuses,
+            LocalDate fromDate,
+            LocalDate toDate,
+            int page,
+            int size
+    ) {
+        // If statuses is empty list [], treat it as no filter (otherwise IN () breaks)
+        if (statuses != null && statuses.isEmpty()) {
+            statuses = null;
+        }
+
+        // Optional: validate date range
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fromDate cannot be after toDate");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "invoiceDate"));
+
+        return invoiceRepository.findCompanyInvoicesFiltered(
+                companyId,
+                statuses,     // null => no status filter
+                fromDate,     // null => no from filter
+                toDate,       // null => no to filter
+                pageable
+        );
+    }
+
 
 
 }

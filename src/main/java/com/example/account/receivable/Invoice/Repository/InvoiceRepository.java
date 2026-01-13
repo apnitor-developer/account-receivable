@@ -212,4 +212,26 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
             @Param("companyId") Long companyId
         );
 
+
+        //Query used to get all the Invoices with filter(used for the Invoice Reports)
+        @Query("""
+            SELECT i
+            FROM Invoice i
+            JOIN i.customer c
+            JOIN c.companyCompanies cc
+            WHERE cc.company.id = :companyId
+            AND i.deleted = false
+            AND c.deleted = false
+            AND (:statuses IS NULL OR i.status IN :statuses)
+            AND (:fromDate IS NULL OR i.invoiceDate >= :fromDate)
+            AND (:toDate IS NULL OR i.invoiceDate <= :toDate)
+        """)
+        Page<Invoice> findCompanyInvoicesFiltered(
+                @Param("companyId") Long companyId,
+                @Param("statuses") List<String> statuses,
+                @Param("fromDate") LocalDate fromDate,
+                @Param("toDate") LocalDate toDate,
+                Pageable pageable
+        );
+
 }
