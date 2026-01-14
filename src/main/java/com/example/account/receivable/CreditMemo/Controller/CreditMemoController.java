@@ -12,12 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.account.receivable.Common.ApiResponse;
 import com.example.account.receivable.CreditMemo.Dto.AppliedCreditMemoOnInvoiceResponse;
-import com.example.account.receivable.CreditMemo.Dto.ApplyCreditMemoRequest;
 import com.example.account.receivable.CreditMemo.Dto.CreateCreditMemoRequest;
 import com.example.account.receivable.CreditMemo.Dto.CustomerCreditBalanceResponse;
 import com.example.account.receivable.CreditMemo.Entity.CreditMemo;
-import com.example.account.receivable.CreditMemo.Entity.CreditMemoApplication;
 import com.example.account.receivable.CreditMemo.Service.CreditMemoService;
+import com.example.account.receivable.CreditMemo.StatusFile.CreditMemoStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,11 +40,11 @@ public class CreditMemoController {
 
 
     // Allow Credit Memo To Apply
-    @PostMapping("/{creditMemoId}/allow")
-    public ResponseEntity<ApiResponse<CreditMemo>> allowCreditMemo(
+    @PostMapping("/{creditMemoId}/approve")
+    public ResponseEntity<ApiResponse<CreditMemo>> approveCreditMemo(
             @PathVariable Long creditMemoId
     ) {
-        CreditMemo cm = creditMemoService.allowCreditMemo(creditMemoId);
+        CreditMemo cm = creditMemoService.approveCreditMemo(creditMemoId);
         return ResponseEntity.ok(
                 ApiResponse.successResponse(200, "Credit memo allowed", cm)
         );
@@ -56,10 +55,10 @@ public class CreditMemoController {
     @GetMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<Page<CreditMemo>>> getCompanyCreditMemos(
                     @PathVariable Long companyId,
-                    @RequestParam(required = false) String status,
+                    @RequestParam(required = false) CreditMemoStatus status,
                     @RequestParam(defaultValue = "0") int page,
                     @RequestParam(defaultValue = "10") int size) {
-            Page<CreditMemo> result = creditMemoService.getCompanyCreditMemos(companyId, status, page, size);
+            Page<CreditMemo> result = creditMemoService.getCompanyCreditMemosByStatus(companyId, status, page, size);
 
             return ResponseEntity.ok(
                             ApiResponse.successResponse(
@@ -86,17 +85,6 @@ public class CreditMemoController {
         );
     }
 
-
-
-    // Apply Credit Memo on the Customer Invoice
-    @PostMapping("/{creditMemoId}/apply")
-    public ResponseEntity<ApiResponse<CreditMemoApplication>> apply(
-            @PathVariable Long creditMemoId,
-            @RequestBody ApplyCreditMemoRequest req
-    ) {
-        CreditMemoApplication app = creditMemoService.applyToInvoice(creditMemoId, req);
-        return ResponseEntity.ok(ApiResponse.successResponse(200, "Credit memo applied to invoice", app));
-    }
 
 
     // Get Company Apply Credit Memos

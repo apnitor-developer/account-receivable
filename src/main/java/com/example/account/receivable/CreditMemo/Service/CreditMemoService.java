@@ -22,6 +22,7 @@ import com.example.account.receivable.CreditMemo.Entity.CreditMemo;
 import com.example.account.receivable.CreditMemo.Entity.CreditMemoApplication;
 import com.example.account.receivable.CreditMemo.Repository.CreditMemoApplicationRepository;
 import com.example.account.receivable.CreditMemo.Repository.CreditMemoRepository;
+import com.example.account.receivable.CreditMemo.StatusFile.CreditMemoStatus;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Entity.Invoice;
@@ -76,7 +77,7 @@ public class CreditMemoService {
                 .creditReason(req.getCreditReason())
                 .amount(req.getAmount())
                 .currency(req.getCurrency())
-                .status("DRAFT")                // ✅ DRAFT
+                .status(CreditMemoStatus.DRAFT)                // ✅ DRAFT
                 .targetInvoiceId(req.getInvoiceId()) // optional
                 .arCode(arCode)
                 .build();
@@ -102,18 +103,20 @@ public class CreditMemoService {
 
 
 
-    // Allow Credit Memo 
+    // Approve Credit Memo 
     @Transactional
-    public CreditMemo allowCreditMemo(Long creditMemoId) {
+    public CreditMemo approveCreditMemo(Long creditMemoId) {
 
         CreditMemo cm = creditMemoRepository.findById(creditMemoId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Credit memo not found"));
 
-        if (!"DRAFT".equalsIgnoreCase(cm.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only DRAFT credit memos can be allowed");
+        if (cm.getStatus() != CreditMemoStatus.DRAFT) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Only DRAFT credit memos can be approved");
         }
 
-        cm.setStatus("ALLOWED");
+        cm.setStatus(CreditMemoStatus.APPROVED);
         cm.setPostingDate(LocalDate.now());
 
         // 👇 Apply to invoice ONLY now
@@ -150,23 +153,23 @@ public class CreditMemoService {
 
 
 
-    public Page<CreditMemo> getCompanyCreditMemos(
-        Long companyId,
-        String status,
-        int page,
-        int size
+
+    // Get Company Credit Memos By Status
+    public Page<CreditMemo> getCompanyCreditMemosByStatus(
+            Long companyId,
+            CreditMemoStatus status,
+            int page,
+            int size
     ) {
         companyRepository.findById(companyId)
                 .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found")
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Company not found"
+                        )
                 );
 
         Pageable pageable = PageRequest.of(page, size);
-
-        // Normalize status
-        if ("ALL".equalsIgnoreCase(status)) {
-            status = null;
-        }
 
         return creditMemoRepository.findCompanyCreditMemos(
                 companyId,
@@ -174,6 +177,7 @@ public class CreditMemoService {
                 pageable
         );
     }
+
 
 
 
@@ -186,7 +190,7 @@ public class CreditMemoService {
                 );
 
         BigDecimal totalPosted =
-                creditMemoRepository.getCustomerTotalPostedCredits(customerId);
+                creditMemoRepository.getCustomerTotalCreditsByStatus(customerId , CreditMemoStatus.APPROVED);
 
         BigDecimal totalApplied =
                 creditMemoApplicationRepository.getCustomerTotalApplied(customerId);
@@ -220,8 +224,10 @@ public class CreditMemoService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Credit memo not found"));
 
         // Since you're keeping simple flow, CM is always Posted.
-        if (!"Posted".equalsIgnoreCase(cm.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credit memo must be Posted");
+        if (cm.getStatus() != CreditMemoStatus.APPROVED) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Credit memo must be APPROVED");
         }
 
         Invoice invoice = invoiceRepository.findById(req.getInvoiceId())

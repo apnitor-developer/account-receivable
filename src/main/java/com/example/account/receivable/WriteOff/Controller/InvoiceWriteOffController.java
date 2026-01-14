@@ -63,7 +63,7 @@ public class InvoiceWriteOffController {
 
 
     //get company  write-offs based on the status
-    @GetMapping("/company/{companyId}")
+    @GetMapping("/company/{companyId}/filter")
     public ResponseEntity<ApiResponse<Page<CompanyWriteOffResponse>>> getWriteOffs(
                     @PathVariable Long companyId,
                     @RequestParam WriteOffStatus status,
