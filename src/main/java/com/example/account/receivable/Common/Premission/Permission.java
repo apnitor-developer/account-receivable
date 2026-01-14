@@ -50,6 +50,18 @@ public enum Permission {
     SEND_REMINDER,
 
 
+    // CREDIT MEMOS
+    VIEW_MEMOS,
+    CREATE_MEMOS,
+    APPROVE_MEMOS,
+
+
+    // WRITE OFF
+    VIEW_WRITE_OFF,
+    CREATE_WRITE_OFF,
+    APPROVE_WRITE_OFF,
+
+
     // =========================
     // COMPANY
     // =========================
