@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.account.receivable.ArCodes.ArCodeType;
+import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.User.entity.Users;
 
 import jakarta.persistence.Column;
@@ -36,10 +37,9 @@ public class ArCode {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // OWNER = USER
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private Users owner;
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "code_type", nullable = true)

@@ -32,13 +32,13 @@ public class ArCodeController {
 
 
     //Create Codes
-    @PostMapping("/ar-codes/{userId}")
+    @PostMapping("/ar-codes/{companyId}")
     public ResponseEntity<ApiResponse<ArCodeResponseDto>> create(
-        @PathVariable Long userId,
+        @PathVariable Long companyId,
         @Valid @RequestBody ArCodeCreateRequestDto dto
             
     ) {
-        ArCodeResponseDto codes = arCodeService.createArCode(dto , userId);
+        ArCodeResponseDto codes = arCodeService.createArCode(dto , companyId);
 
         ApiResponse<ArCodeResponseDto> body = ApiResponse.successResponse(201, "Codes created successfully", codes);
         return ResponseEntity.status(201).body(body);
@@ -47,11 +47,11 @@ public class ArCodeController {
 
 
     //Get Ar Codes 
-    @GetMapping("/ar-codes/{userId}")
+    @GetMapping("/ar-codes/{companyId}")
     public ResponseEntity<ApiResponse<List<ArCodeResponseDto>>> getAllActiveCodes(
-            @PathVariable Long userId
+            @PathVariable Long companyId
     ) {
-        List<ArCodeResponseDto> codes = arCodeService.getAllActiveArCodes(userId);
+        List<ArCodeResponseDto> codes = arCodeService.getAllActiveArCodes(companyId);
 
         ApiResponse<List<ArCodeResponseDto>> body =
                 ApiResponse.successResponse(
@@ -65,14 +65,14 @@ public class ArCodeController {
 
 
     //Update Ar Code 
-    @PutMapping("/ar-codes/{arCodeId}/{userId}")
+    @PutMapping("/ar-codes/{arCodeId}/{companyId}")
     public ResponseEntity<ApiResponse<ArCodeResponseDto>> update(
             @PathVariable Long arCodeId,
-            @PathVariable Long userId,
+            @PathVariable Long companyId,
             @Valid @RequestBody ArCodeUpdateRequestDto dto
     ) {
         ArCodeResponseDto updated =
-                arCodeService.updateArCode(arCodeId, dto, userId);
+                arCodeService.updateArCode(arCodeId, dto, companyId);
 
         return ResponseEntity.ok(
                 ApiResponse.successResponse(
@@ -85,13 +85,13 @@ public class ArCodeController {
 
 
     //Inactive code
-    @PatchMapping("/ar-codes/{arCodeId}/inactive/{userId}")
+    @PatchMapping("/ar-codes/{arCodeId}/inactive/{companyId}")
     public ResponseEntity<ApiResponse<ArCodeResponseDto>> inactivate(
             @PathVariable Long arCodeId,
-            @PathVariable Long userId
+            @PathVariable Long companyId
     ) {
         ArCodeResponseDto code =
-                arCodeService.inactivateArCode(arCodeId, userId);
+                arCodeService.inactivateArCode(arCodeId, companyId);
 
         return ResponseEntity.ok(
                 ApiResponse.successResponse(200, "AR Code inactivated", code)
@@ -100,13 +100,13 @@ public class ArCodeController {
 
 
     //Active Code
-    @PatchMapping("/ar-codes/{arCodeId}/active/{userId}")
+    @PatchMapping("/ar-codes/{arCodeId}/active/{companyId}")
     public ResponseEntity<ApiResponse<ArCodeResponseDto>> activate(
             @PathVariable Long arCodeId,
-            @PathVariable Long userId
+            @PathVariable Long companyId
     ) {
         ArCodeResponseDto code =
-                arCodeService.activateArCode(arCodeId, userId);
+                arCodeService.activateArCode(arCodeId, companyId);
 
         return ResponseEntity.ok(
                 ApiResponse.successResponse(200, "AR Code activated", code)
@@ -116,12 +116,12 @@ public class ArCodeController {
 
 
     //Soft Delate Ar Code
-    @DeleteMapping("/ar-codes/{arCodeId}/{userId}")
+    @DeleteMapping("/ar-codes/{arCodeId}/{companyId}")
     public ResponseEntity<ApiResponse<Void>> softDelete(
             @PathVariable Long arCodeId,
-            @PathVariable Long userId
+            @PathVariable Long companyId
     ) {
-        arCodeService.softDeleteArCode(arCodeId, userId);
+        arCodeService.softDeleteArCode(arCodeId, companyId);
 
         return ResponseEntity.ok(
                 ApiResponse.successResponse(200, "AR Code deleted successfully", null)

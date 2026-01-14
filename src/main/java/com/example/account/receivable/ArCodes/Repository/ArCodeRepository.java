@@ -9,7 +9,7 @@ import com.example.account.receivable.ArCodes.Entity.ArCode;
 
 public interface ArCodeRepository extends JpaRepository<ArCode, Long> {
 
-    List<ArCode> findByOwnerIdAndIsDeletedFalse(Long ownerId);
+    List<ArCode> findByCompanyIdAndIsDeletedFalse(Long companyId);
 
-    Optional<ArCode> findByIdAndOwnerIdAndIsDeletedFalse(Long id, Long ownerId);
+    Optional<ArCode> findByIdAndCompanyIdAndIsDeletedFalse(Long id, Long companyId);
 }

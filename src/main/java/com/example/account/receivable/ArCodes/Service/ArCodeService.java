@@ -12,6 +12,8 @@ import com.example.account.receivable.ArCodes.Dto.ArCodeResponseDto;
 import com.example.account.receivable.ArCodes.Dto.ArCodeUpdateRequestDto;
 import com.example.account.receivable.ArCodes.Entity.ArCode;
 import com.example.account.receivable.ArCodes.Repository.ArCodeRepository;
+import com.example.account.receivable.Company.Entity.Company;
+import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.User.repository.UsersRepository;
 
@@ -22,49 +24,46 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class ArCodeService {
-        private final UsersRepository usersRepository;
+        private final CompanyRepository companyRepository;
         private final ArCodeRepository arCodeRepository;
 
 
         public ArCodeResponseDto createArCode(
                         ArCodeCreateRequestDto dto,
-                        Long userId
-                ) {
-
-                Users owner = usersRepository.findById(userId)
-                        .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND, "User not found"));
+                        Long companyId) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "Company not found"));
 
                 ArCode arCode = ArCode.builder()
-                        .owner(owner)
-                        .codeType(dto.getCodeType())
-                        .code(dto.getCode())
-                        .name(dto.getName())
-                        .description(dto.getDescription())
-                        .isActive(true)
-                        .isDeleted(false)
-                        .build();
+                                .company(company)
+                                .codeType(dto.getCodeType())
+                                .code(dto.getCode())
+                                .name(dto.getName())
+                                .description(dto.getDescription())
+                                .isActive(true)
+                                .isDeleted(false)
+                                .build();
 
-                ArCode saved = arCodeRepository.save(arCode);
-
-                return toResponseDto(saved);
+                return toResponseDto(arCodeRepository.save(arCode));
         }
 
 
-        //Get Ar Codes of the Owner
-        public List<ArCodeResponseDto> getAllActiveArCodes(Long userId) {
+        //Get Ar Codes of the company
+        public List<ArCodeResponseDto> getAllActiveArCodes(Long companyId) {
                 return arCodeRepository
-                        .findByOwnerIdAndIsDeletedFalse(userId)
-                        .stream()
-                        .map(this::toResponseDto)
-                        .toList();
+                                .findByCompanyIdAndIsDeletedFalse(companyId)
+                                .stream()
+                                .map(this::toResponseDto)
+                                .toList();
         }
 
 
         //Change Active to InActive
-        public ArCodeResponseDto inactivateArCode(Long arCodeId, Long userId) {
+        public ArCodeResponseDto inactivateArCode(Long arCodeId, Long companyId) {
 
                 ArCode arCode = arCodeRepository
-                        .findByIdAndOwnerIdAndIsDeletedFalse(arCodeId, userId)
+                        .findByIdAndCompanyIdAndIsDeletedFalse(arCodeId, companyId)
                         .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND, "AR Code not found"));
 
                 arCode.setActive(false);
@@ -73,10 +72,10 @@ public class ArCodeService {
         }
 
         //Change InActive to Active
-        public ArCodeResponseDto activateArCode(Long arCodeId, Long userId) {
+        public ArCodeResponseDto activateArCode(Long arCodeId, Long companyId) {
 
                 ArCode arCode = arCodeRepository
-                        .findByIdAndOwnerIdAndIsDeletedFalse(arCodeId, userId)
+                        .findByIdAndCompanyIdAndIsDeletedFalse(arCodeId, companyId)
                         .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND, "AR Code not found"));
 
                 arCode.setActive(true);
@@ -86,10 +85,10 @@ public class ArCodeService {
 
 
         //Soft Delate 
-        public void softDeleteArCode(Long arCodeId, Long userId) {
+        public void softDeleteArCode(Long arCodeId, Long companyId) {
 
                 ArCode arCode = arCodeRepository
-                        .findByIdAndOwnerIdAndIsDeletedFalse(arCodeId, userId)
+                        .findByIdAndCompanyIdAndIsDeletedFalse(arCodeId, companyId)
                         .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND, "AR Code not found"));
 
                 arCode.setDeleted(true);
@@ -104,11 +103,11 @@ public class ArCodeService {
         public ArCodeResponseDto updateArCode(
                 Long arCodeId,
                 ArCodeUpdateRequestDto dto,
-                Long userId
+                Long companyId
         ) {
 
                 ArCode arCode = arCodeRepository
-                        .findByIdAndOwnerIdAndIsDeletedFalse(arCodeId, userId)
+                        .findByIdAndCompanyIdAndIsDeletedFalse(arCodeId, companyId)
                         .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND, "AR Code not found"));
 
 
