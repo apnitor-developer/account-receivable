@@ -16,6 +16,7 @@ public class CompanyWriteOffResponse {
     private String customerName;
 
     private String reason;
+    private String status;
 
     private LocalDate writeOffDate;
 }

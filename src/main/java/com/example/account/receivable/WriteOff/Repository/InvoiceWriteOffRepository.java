@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.account.receivable.WriteOff.Entity.InvoiceWriteOff;
+import com.example.account.receivable.WriteOff.StatusFile.WriteOffStatus;
 
 public interface InvoiceWriteOffRepository
         extends JpaRepository<InvoiceWriteOff, Long> {
@@ -21,4 +22,12 @@ public interface InvoiceWriteOffRepository
             @Param("companyId") Long companyId,
             Pageable pageable
     );
+
+
+    Page<InvoiceWriteOff> findByCompanyIdAndStatus(
+            Long companyId,
+            WriteOffStatus status,
+            Pageable pageable
+        );
+
 }

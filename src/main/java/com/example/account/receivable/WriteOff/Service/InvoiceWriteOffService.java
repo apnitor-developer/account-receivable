@@ -19,6 +19,7 @@ import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.WriteOff.Dto.CompanyWriteOffResponse;
 import com.example.account.receivable.WriteOff.Dto.CreateWriteOffRequest;
 import com.example.account.receivable.WriteOff.Repository.InvoiceWriteOffRepository;
+import com.example.account.receivable.WriteOff.StatusFile.WriteOffStatus;
 import com.example.account.receivable.WriteOff.Entity.InvoiceWriteOff;
 
 import jakarta.transaction.Transactional;
@@ -33,70 +34,116 @@ public class InvoiceWriteOffService {
     private final ArCodeRepository arCodeRepository;
     private final CompanyRepository companyRepository;
 
+
+    // Create Write Off Invoice
     @Transactional
-    public InvoiceWriteOff writeOffInvoice(
-            Long companyId,
-            Long invoiceId,
-            CreateWriteOffRequest req
-    ) {
+    public InvoiceWriteOff writeOffInvoice( Long companyId, Long invoiceId, CreateWriteOffRequest req) {
 
-        Company company = companyRepository.findById(companyId)
-            .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Company not found"
-            ));
+            Company company = companyRepository.findById(companyId)
+                            .orElseThrow(() -> new ResponseStatusException(
+                                            HttpStatus.NOT_FOUND, "Company not found"));
 
+            Invoice invoice = invoiceRepository.findById(invoiceId)
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
 
-        Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found")
-                );
+            // ❌ DO NOT change invoice status here
+            if ("WRITTEN_OFF".equalsIgnoreCase(invoice.getStatus())) {
+                    throw new ResponseStatusException(
+                                    HttpStatus.BAD_REQUEST,
+                                    "Invoice already written off");
+            }
 
-        if ("WRITTEN_OFF".equalsIgnoreCase(invoice.getStatus())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Invoice already written off"
-            );
-        }
+            if (invoice.getBalanceDue().compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new ResponseStatusException(
+                                    HttpStatus.BAD_REQUEST,
+                                    "Invoice has no balance to write off");
+            }
 
-        BigDecimal balanceDue = invoice.getBalanceDue();
-        if (balanceDue.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Invoice has no balance to write off"
-            );
-        }
-        
+            ArCode arCode = null;
+            if (req.getArCodeId() != null) {
+                    arCode = arCodeRepository.findById(req.getArCodeId())
+                                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                    "AR code not found"));
+            }
 
-        ArCode arCode = null;
-        if (req.getArCodeId() != null) {
-            arCode = arCodeRepository.findById(req.getArCodeId())
-                    .orElseThrow(() ->
-                            new ResponseStatusException(HttpStatus.NOT_FOUND, "AR code not found")
-                    );
-        }
+            InvoiceWriteOff writeOff = InvoiceWriteOff.builder()
+                            .invoice(invoice)
+                            .customer(invoice.getCustomer())
+                            .company(company)
+                            .reason(req.getReason())
+                            .arCode(arCode)
+                            .status(WriteOffStatus.DRAFT)
+                            .writeOffDate(LocalDate.now())
+                            .build();
 
-        // Create write-off record
-        InvoiceWriteOff writeOff = InvoiceWriteOff.builder()
-                .invoice(invoice)
-                .customer(invoice.getCustomer())
-                .company(company)
-                .reason(req.getReason())
-                .arCode(arCode)
-                .writeOffDate(LocalDate.now())
-                .build();
-
-        writeOffRepository.save(writeOff);
-
-        // Update invoice
-        invoice.setStatus("WRITTEN_OFF");
-        invoiceRepository.save(invoice);
-
-        return writeOff;
+            return writeOffRepository.save(writeOff);
     }
 
 
 
 
+    // Approve Write off Invoice
+    @Transactional
+    public InvoiceWriteOff approveWriteOff(Long writeOffId) {
+
+            InvoiceWriteOff writeOff = writeOffRepository.findById(writeOffId)
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                            "Write-off not found"));
+
+            if (writeOff.getStatus() == WriteOffStatus.APPROVED) {
+                    throw new ResponseStatusException(
+                                    HttpStatus.BAD_REQUEST,
+                                    "Write-off already approved");
+            }
+
+            // Update write-off status
+            writeOff.setStatus(WriteOffStatus.APPROVED);
+
+            // Update invoice status
+            Invoice invoice = writeOff.getInvoice();
+            invoice.setStatus("WRITTEN_OFF");
+
+            invoiceRepository.save(invoice);
+            return writeOffRepository.save(writeOff);
+    }
+
+
+
+    //Get Writeoff List based on the status
+    public Page<CompanyWriteOffResponse> getCompanyWriteOffsByStatus(
+                    Long companyId,
+                    WriteOffStatus status,
+                    int page,
+                    int size) {
+            companyRepository.findById(companyId)
+                            .orElseThrow(() -> new ResponseStatusException(
+                                            HttpStatus.NOT_FOUND,
+                                            "Company not found"));
+
+            Pageable pageable = PageRequest.of(page, size);
+
+            Page<InvoiceWriteOff> writeOffs = writeOffRepository.findByCompanyIdAndStatus(
+                            companyId,
+                            status,
+                            pageable);
+
+            return writeOffs.map(w -> {
+                    CompanyWriteOffResponse dto = new CompanyWriteOffResponse();
+                    dto.setId(w.getId());
+                    dto.setInvoiceId(w.getInvoice().getId());
+                    dto.setInvoiceNumber(w.getInvoice().getInvoiceNumber());
+                    dto.setCustomerId(w.getCustomer().getId());
+                    dto.setCustomerName(w.getCustomer().getCustomerName());
+                    dto.setReason(w.getReason());
+                    dto.setWriteOffDate(w.getWriteOffDate());
+                    dto.setStatus(w.getStatus().name());
+                    return dto;
+            });
+    }
+
+
+
+    //get all write-off list
     public Page<CompanyWriteOffResponse> getCompanyWriteOffs(
             Long companyId,
             int page,

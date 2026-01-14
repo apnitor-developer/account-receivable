@@ -1,21 +1,21 @@
 package com.example.account.receivable.WriteOff.Entity;
 
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.account.receivable.ArCodes.Entity.ArCode;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.WriteOff.StatusFile.WriteOffStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -54,6 +54,10 @@ public class InvoiceWriteOff {
     private Company company;
 
     private String reason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
+    private WriteOffStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ar_code_id")
