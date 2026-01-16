@@ -1,12 +1,15 @@
-package com.example.account.receivable.ArCodes.Entity;
+package com.example.account.receivable.GLCodes.Entity;
+
 
 import java.time.Instant;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.example.account.receivable.ArCodes.ArCodeType;
 import com.example.account.receivable.Company.Entity.Company;
+import com.example.account.receivable.GLCodes.Enum.GlAccountType;
+import com.example.account.receivable.User.entity.Users;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,41 +28,41 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "ar_codes")
+@Table( name = "gl_codes" )
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ArCode {
+public class GlCode {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "code_type", nullable = true)
-    private ArCodeType codeType; 
-    // DISPUTE, PROMISE_TO_PAY, DUNNING, etc.
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", nullable = false)
+    private Users createdBy;
+
+    @Column(name = "gl_code", nullable = false)
+    private String glCode;
 
     @Column(nullable = false)
-    private String code;
-
-    @Column(nullable = false)
-    private String name;
-
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_type", nullable = false)
+    private GlAccountType accountType;
+    // AR, CASH, REVENUE, EXPENSE
 
     @Builder.Default
     @Column(name = "is_active")
     private boolean isActive = true;
-
-    @Builder.Default
-    @Column(name = "is_deleted")
-    private boolean isDeleted = false;
 
     @CreationTimestamp
     private Instant createdAt;
@@ -67,3 +70,4 @@ public class ArCode {
     @UpdateTimestamp
     private Instant updatedAt;
 }
+

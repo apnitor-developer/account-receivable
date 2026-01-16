@@ -101,19 +101,21 @@ public class InvoiceController {
 
 
     //Get All Invoices
-    @GetMapping()
-    public ResponseEntity<ApiResponse <Page<Invoice>>> getAllInvoices(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ){
-        Page<Invoice> invoice = invoiceService.getAllInvoices(page , size);
-        ApiResponse<Page<Invoice>> response = ApiResponse.successResponse(
-            200,
-            "Invoices Retreived Successfully", 
-            invoice
-        );
-        return ResponseEntity.status(200).body(response);
-    }
+    // @GetMapping()
+    // public ResponseEntity<ApiResponse <Page<Invoice>>> getAllInvoices(
+    //         @RequestParam(defaultValue = "0") int page,
+    //         @RequestParam(defaultValue = "10") int size
+    // ){
+    //     Page<Invoice> invoice = invoiceService.getAllInvoices(page , size);
+    //     ApiResponse<Page<Invoice>> response = ApiResponse.successResponse(
+    //         200,
+    //         "Invoices Retreived Successfully", 
+    //         invoice
+    //     );
+    //     return ResponseEntity.status(200).body(response);
+    // }
+
+    
 
     //Get single customer Invoice
     @GetMapping("/customer/{customerId}")

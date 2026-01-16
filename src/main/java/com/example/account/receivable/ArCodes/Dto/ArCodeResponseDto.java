@@ -6,6 +6,7 @@ import lombok.*;
 import java.time.Instant;
 
 import com.example.account.receivable.ArCodes.ArCodeType;
+import com.example.account.receivable.ArCodes.GlMappingStatus;
 
 @Data
 @NoArgsConstructor
@@ -28,4 +29,6 @@ public class ArCodeResponseDto {
     private Instant createdAt;
 
     private Instant updatedAt;
+
+    private GlMappingStatus glMappingStatus;
 }

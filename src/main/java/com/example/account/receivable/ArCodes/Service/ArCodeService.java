@@ -1,21 +1,22 @@
 package com.example.account.receivable.ArCodes.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.account.receivable.ArCodes.ArCodeType;
+import com.example.account.receivable.ArCodes.GlMappingStatus;
 import com.example.account.receivable.ArCodes.Dto.ArCodeCreateRequestDto;
 import com.example.account.receivable.ArCodes.Dto.ArCodeResponseDto;
 import com.example.account.receivable.ArCodes.Dto.ArCodeUpdateRequestDto;
 import com.example.account.receivable.ArCodes.Entity.ArCode;
 import com.example.account.receivable.ArCodes.Repository.ArCodeRepository;
+import com.example.account.receivable.ArGlMapping.Repository.ArGlMappingRepository;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
-import com.example.account.receivable.User.entity.Users;
-import com.example.account.receivable.User.repository.UsersRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class ArCodeService {
         private final CompanyRepository companyRepository;
         private final ArCodeRepository arCodeRepository;
+        private final ArGlMappingRepository arGlMappingRepository;
 
 
         public ArCodeResponseDto createArCode(
@@ -51,11 +53,32 @@ public class ArCodeService {
 
         //Get Ar Codes of the company
         public List<ArCodeResponseDto> getAllActiveArCodes(Long companyId) {
+
+                // LocalDate today = LocalDate.now(); // today's date to check effective mapping
+
+                // Fetch AR Codes for the given company that are not deleted
                 return arCodeRepository
-                                .findByCompanyIdAndIsDeletedFalse(companyId)
-                                .stream()
-                                .map(this::toResponseDto)
-                                .toList();
+                .findByCompanyIdAndIsDeletedFalse(companyId)
+                .stream()
+                .map(arCode -> {
+
+                        // Check if there's an active GL mapping for this AR Code
+                        boolean hasMapping = arGlMappingRepository.hasActiveMapping(arCode.getId());
+
+                        // Create and return ArCodeResponseDto
+                        return new ArCodeResponseDto(
+                        arCode.getId(),
+                        arCode.getCodeType(),
+                        arCode.getCode(),
+                        arCode.getName(),
+                        arCode.getDescription(),
+                        arCode.isActive(),
+                        arCode.getCreatedAt(),
+                        arCode.getUpdatedAt(),
+                        hasMapping ? GlMappingStatus.CONFIGURED : GlMappingStatus.MISSING
+                        );
+                })
+                .collect(Collectors.toList());
         }
 
 
