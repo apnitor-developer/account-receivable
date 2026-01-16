@@ -92,6 +92,8 @@ public class ArGlMappingService {
 
         // Set the 'effectiveTo' date on the existing mapping (i.e., closing the old mapping)
         existingMapping.setEffectiveTo(LocalDate.now()); // The old mapping becomes invalid today
+        existingMapping.setActive(false);
+        
         mappingRepo.save(existingMapping); // Save the closed mapping
 
         // Create a new mapping with the updated details
