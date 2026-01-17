@@ -36,12 +36,13 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
     List<Invoice> findByCustomerIdAndBalanceDueGreaterThan(Long customerId, BigDecimal balance);
 
     @Query("""
-        SELECT COALESCE(SUM(i.balanceDue), 0)
+        SELECT COALESCE(SUM(i.balanceDue), 0) - COALESCE(SUM(pa.appliedAmount), 0)
         FROM Invoice i
+        LEFT JOIN PaymentApplication pa ON pa.invoice.id = i.id
         WHERE i.customer.id = :customerId
-          AND i.deleted = false
-          AND i.balanceDue > 0
-          AND i.status IN ('OPEN', 'PARTIAL')
+        AND i.deleted = false
+        AND i.balanceDue > 0
+        AND i.status IN ('OPEN', 'PARTIAL')
     """)
     BigDecimal getCustomerOutstandingBalance(@Param("customerId") Long customerId);
 
@@ -129,11 +130,15 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
         AND i.deleted = false
         AND c.deleted = false
         AND i.status IN :statuses
+        AND (:dateFrom IS NULL OR i.invoiceDate >= :dateFrom)
+        AND (:dateTo IS NULL OR i.invoiceDate <= :dateTo)
     """)
-    Page<Invoice> findCompanyInvoicesByStatus(
+    Page<Invoice> findCompanyInvoicesByStatusAndDateRange(
             @Param("companyId") Long companyId,
             Pageable pageable,
-            @Param("statuses") List<String> statuses
+            @Param("statuses") List<String> statuses,
+            @Param("dateFrom") LocalDate dateFrom,
+            @Param("dateTo") LocalDate dateTo
     );
 
 

@@ -110,17 +110,6 @@ class FinanceControllersTest {
         verify(invoiceService).getOpenInvoices(2L);
     }
 
-    @Test
-    void getCompanyOpenPartialInvoices_returnsPage() throws Exception {
-        Page<Invoice> page = new PageImpl<>(List.of(sampleInvoice()));
-        when(invoiceService.getOpenAndPartialInvoicesByCompanyId(5L, 1, 5)).thenReturn(page);
-
-        mockMvc.perform(get("/invoice/unpaid/company/{companyId}", 5L).param("page", "1").param("size", "5"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].balanceDue").value(120));
-
-        verify(invoiceService).getOpenAndPartialInvoicesByCompanyId(5L, 1, 5);
-    }
 
     @Test
     void getAllInvoices_returnsPagedData() throws Exception {

@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -85,9 +86,11 @@ public class InvoiceController {
     public ResponseEntity<ApiResponse<Page<Invoice>>> getCompanyOpenPartialInvoices(
             @PathVariable Long companyId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo
     ) {
-        Page<Invoice> invoices = invoiceService.getOpenAndPartialInvoicesByCompanyId(companyId , page, size);
+        Page<Invoice> invoices = invoiceService.getOpenAndPartialInvoicesByCompanyId(companyId , page, size , dateFrom, dateTo);
 
         ApiResponse<Page<Invoice>> response = ApiResponse.successResponse(
                 200,

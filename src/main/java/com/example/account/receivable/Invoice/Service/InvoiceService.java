@@ -96,12 +96,14 @@ public class InvoiceService {
 
 
     //Get Invoices By the CompanyId
-    public Page<Invoice> getOpenAndPartialInvoicesByCompanyId(Long companyId , int page, int size) {
+    public Page<Invoice> getOpenAndPartialInvoicesByCompanyId(Long companyId , int page, int size , LocalDate dateFrom, LocalDate dateTo) {
         Pageable pageable = PageRequest.of(page, size);
-        return invoiceRepository.findCompanyInvoicesByStatus(
+        return invoiceRepository.findCompanyInvoicesByStatusAndDateRange(
                 companyId,
                 pageable,
-                List.of("OPEN", "PARTIAL")
+                List.of("OPEN", "PARTIAL"),
+                dateFrom,
+                dateTo
         );
     }
 
