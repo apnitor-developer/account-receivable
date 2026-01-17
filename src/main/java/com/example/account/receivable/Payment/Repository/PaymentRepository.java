@@ -2,6 +2,7 @@ package com.example.account.receivable.Payment.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.example.account.receivable.Payment.MonthlyPaymentProjection;
+import com.example.account.receivable.Payment.PaymentMethodReportProjection;
 import com.example.account.receivable.Payment.Entity.Payment;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -69,6 +72,44 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             Pageable pageable
+    );
+
+
+
+    //Query used to calculate payment reports(BANK_TRANSFER , CASH , UPI etc)
+    @Query("""
+        SELECT 
+            p.paymentMethod AS paymentMethod,
+            COUNT(p.id) AS count
+        FROM Payment p
+        JOIN p.customer c
+        JOIN c.companyCompanies cc
+        WHERE cc.company.id = :companyId
+        AND p.paymentDate >= :fromDate
+        GROUP BY p.paymentMethod
+        """)
+    List<PaymentMethodReportProjection> getPaymentReport(
+            @Param("companyId") Long companyId,
+            @Param("fromDate") LocalDate fromDate
+    );
+
+
+    //Query used to show the 12 month data used in the payment reports
+    @Query("""
+        SELECT 
+            MONTH(p.paymentDate) AS month,
+            COALESCE(SUM(p.paymentAmount), 0) AS total
+        FROM Payment p
+        JOIN p.customer c
+        JOIN c.companyCompanies cc
+        WHERE cc.company.id = :companyId
+        AND YEAR(p.paymentDate) = :year
+        GROUP BY MONTH(p.paymentDate)
+        ORDER BY MONTH(p.paymentDate)
+        """)
+    List<MonthlyPaymentProjection> getMonthlyPaymentsByYear(
+            @Param("companyId") Long companyId,
+            @Param("year") int year
     );
 
 

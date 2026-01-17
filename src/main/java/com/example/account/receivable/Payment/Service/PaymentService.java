@@ -2,8 +2,16 @@ package com.example.account.receivable.Payment.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Month;
+import java.time.YearMonth;
+import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,9 +28,14 @@ import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
+import com.example.account.receivable.Payment.MonthlyPaymentProjection;
+import com.example.account.receivable.Payment.PaymentMethodReportProjection;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
+import com.example.account.receivable.Payment.Dto.ResponseDTO.MonthlyPaymentDto;
+import com.example.account.receivable.Payment.Dto.ResponseDTO.PaymentReportDto;
 import com.example.account.receivable.Payment.Entity.Payment;
 import com.example.account.receivable.Payment.Entity.PaymentApplication;
+import com.example.account.receivable.Payment.Enum.PaymentMethod;
 import com.example.account.receivable.Payment.Repository.PaymentApplicationRepository;
 import com.example.account.receivable.Payment.Repository.PaymentRepository;
 
@@ -179,4 +192,57 @@ public class PaymentService {
 
         return paymentRepository.findPaymentsByCompanyIdFiltered(companyId, fromDate, toDate, pageable);
     }
+
+
+
+    //Used to calculate the payment report(BANK_TRANSFER , CASH , UPI etc)
+    public PaymentReportDto getPaymentReport(Long companyId, int months) {
+
+        LocalDate fromDate = LocalDate.now().minusMonths(months);
+
+        List<PaymentMethodReportProjection> rows =
+                paymentRepository.getPaymentReport(companyId, fromDate);
+
+        Map<PaymentMethod, Long> result = new LinkedHashMap<>();
+        long total = 0;
+
+        for (PaymentMethodReportProjection row : rows) {
+            result.put(row.getPaymentMethod(), row.getCount());
+            total += row.getCount();
+        }
+
+        return new PaymentReportDto(result, total);
+    }
+
+
+
+    //Method used to show the paymnet per months
+    public List<MonthlyPaymentDto> getMonthlyPaymentsByYear(
+        Long companyId,
+        int year
+    ) {
+        List<MonthlyPaymentProjection> rows =
+                paymentRepository.getMonthlyPaymentsByYear(companyId, year);
+
+        Map<Integer, BigDecimal> monthMap = new HashMap<>();
+
+        for (MonthlyPaymentProjection row : rows) {
+            monthMap.put(row.getMonth(), row.getTotal());
+        }
+
+        List<MonthlyPaymentDto> result = new ArrayList<>();
+
+        for (int month = 1; month <= 12; month++) {
+            BigDecimal amount = monthMap.getOrDefault(month, BigDecimal.ZERO);
+
+            String monthName = Month.of(month)
+                    .getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+
+            result.add(new MonthlyPaymentDto(monthName, amount));
+        }
+
+        return result;
+    }
+
+
 }

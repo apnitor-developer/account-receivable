@@ -12,9 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.account.receivable.Common.ApiResponse;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
+import com.example.account.receivable.Payment.Dto.ResponseDTO.MonthlyPaymentDto;
+import com.example.account.receivable.Payment.Dto.ResponseDTO.PaymentReportDto;
 import com.example.account.receivable.Payment.Entity.Payment;
 import com.example.account.receivable.Payment.Service.PaymentService;
 
@@ -97,4 +100,46 @@ public class PaymentController {
 
         return ResponseEntity.ok(response);
     }
+
+
+
+    // API used to calculate the payment report(BANK_TRANSFER , CASH , UPI etc)
+    @GetMapping("/report/company/{companyId}")
+    public ResponseEntity<ApiResponse<PaymentReportDto>> getPaymentReport(
+            @PathVariable Long companyId,
+            @RequestParam(defaultValue = "1") int months
+    ) {
+        PaymentReportDto data =
+                paymentService.getPaymentReport(companyId, months);
+
+        return ResponseEntity.ok(
+                ApiResponse.successResponse(
+                        200,
+                        "Payment report fetched successfully",
+                        data
+                )
+        );
+    }
+
+
+
+    //API used to show the paymnet per months
+    @GetMapping("/monthly/company/{companyId}")
+    public ResponseEntity<ApiResponse<List<MonthlyPaymentDto>>> getMonthlyPayments(
+            @PathVariable Long companyId,
+            @RequestParam int year
+    ) {
+        List<MonthlyPaymentDto> data =
+                paymentService.getMonthlyPaymentsByYear(companyId, year);
+
+        return ResponseEntity.ok(
+                ApiResponse.successResponse(
+                        200,
+                        "Monthly payment report fetched successfully",
+                        data
+                )
+        );
+    }
+
+
 }
