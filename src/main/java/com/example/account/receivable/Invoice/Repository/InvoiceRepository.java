@@ -10,6 +10,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.example.account.receivable.Invoice.InvoiceAgingProjection;
+import com.example.account.receivable.Invoice.InvoiceStatusProjection;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 
 public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
@@ -237,6 +240,55 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
                 @Param("fromDate") LocalDate fromDate,
                 @Param("toDate") LocalDate toDate,
                 Pageable pageable
+        );
+
+
+
+        //Query Used to  Cal Invoice Reports(CURRENT , 0-30 , 30-60 , 60-90 , 90>)
+        @Query("""
+            SELECT
+                SUM(CASE WHEN i.dueDate >= :today THEN 1 ELSE 0 END) AS current,
+                SUM(CASE WHEN i.dueDate < :today AND i.dueDate >= :todayMinus30 THEN 1 ELSE 0 END) AS days0to30,
+                SUM(CASE WHEN i.dueDate < :todayMinus30 AND i.dueDate >= :todayMinus60 THEN 1 ELSE 0 END) AS days31to60,
+                SUM(CASE WHEN i.dueDate < :todayMinus60 AND i.dueDate >= :todayMinus90 THEN 1 ELSE 0 END) AS days61to90,
+                SUM(CASE WHEN i.dueDate < :todayMinus90 THEN 1 ELSE 0 END) AS days90Plus
+            FROM Invoice i
+            JOIN i.customer c
+            JOIN c.companyCompanies cc
+            WHERE cc.company.id = :companyId
+            AND i.deleted = false
+            AND c.deleted = false
+            AND i.balanceDue > 0
+            AND i.status IN ('OPEN','PARTIAL')
+            """)
+        InvoiceAgingProjection getInvoiceAgingReport(
+                @Param("companyId") Long companyId,
+                @Param("today") LocalDate today,
+                @Param("todayMinus30") LocalDate todayMinus30,
+                @Param("todayMinus60") LocalDate todayMinus60,
+                @Param("todayMinus90") LocalDate todayMinus90
+        );
+
+
+
+        //Query Used to  Cal Invoice Reports(OPEN ,PARTIAL , PAID , WRITTEN_OFF)
+        @Query("""
+            SELECT
+                SUM(CASE WHEN i.status = 'OPEN' THEN 1 ELSE 0 END) AS open,
+                SUM(CASE WHEN i.status = 'PARTIAL' THEN 1 ELSE 0 END) AS partial,
+                SUM(CASE WHEN i.status = 'PAID' THEN 1 ELSE 0 END) AS paid,
+                SUM(CASE WHEN i.status = 'WRITTEN_OFF' THEN 1 ELSE 0 END) AS writtenOff
+            FROM Invoice i
+            JOIN i.customer c
+            JOIN c.companyCompanies cc
+            WHERE cc.company.id = :companyId
+            AND i.deleted = false
+            AND c.deleted = false
+            AND i.invoiceDate >= :fromDate
+            """)
+        InvoiceStatusProjection getInvoiceStatusBreakdown(
+                @Param("companyId") Long companyId,
+                @Param("fromDate") LocalDate fromDate
         );
 
 }

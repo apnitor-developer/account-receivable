@@ -21,10 +21,14 @@ import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Entity.CustomerDunningCreditSettings;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.Invoice.InvoiceAgingProjection;
+import com.example.account.receivable.Invoice.InvoiceStatusProjection;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
 import com.example.account.receivable.Invoice.Dto.InvoiceItemDto;
 import com.example.account.receivable.Invoice.Dto.OverdueInvoiceResponseDTO;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendingAmountResponseDTO;
+import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceAgingDto;
+import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceStatusBreakdownResponseDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Entity.InvoiceItem;
 import com.example.account.receivable.Invoice.Repository.InvoiceItemRepo;
@@ -455,6 +459,58 @@ public class InvoiceService {
                 pageable
         );
     }
+
+
+    //Calculate Invoice Reports(CURRENT , 0-30 , 30-60 , 60-90 , 90>)
+    public InvoiceAgingDto getInvoiceAging(Long companyId) {
+        LocalDate today = LocalDate.now();
+
+        InvoiceAgingProjection p =
+            invoiceRepository.getInvoiceAgingReport(
+                companyId,
+                today,
+                today.minusDays(30),
+                today.minusDays(60),
+                today.minusDays(90)
+            );
+
+        return new InvoiceAgingDto(
+            p.getCurrent(),
+            p.getDays0to30(),
+            p.getDays31to60(),
+            p.getDays61to90(),
+            p.getDays90Plus()
+        );
+    }
+
+
+    //Calculate Invoice Report(OPEN ,PARTIAL , PAID , WRITTEN_OFF)
+    public InvoiceStatusBreakdownResponseDto getInvoiceStatusBreakdown(
+        Long companyId,
+        int months
+    ) {
+        LocalDate fromDate = LocalDate.now().minusMonths(months);
+
+        InvoiceStatusProjection p =
+                invoiceRepository.getInvoiceStatusBreakdown(companyId, fromDate);
+
+        long open = p.getOpen() == null ? 0 : p.getOpen();
+        long partial = p.getPartial() == null ? 0 : p.getPartial();
+        long paid = p.getPaid() == null ? 0 : p.getPaid();
+        long writtenOff = p.getWrittenOff() == null ? 0 : p.getWrittenOff();
+
+        long total = open + partial + paid + writtenOff;
+
+        return new InvoiceStatusBreakdownResponseDto(
+                open,
+                partial,
+                paid,
+                writtenOff,
+                total
+        );
+    }
+
+
 
 
 

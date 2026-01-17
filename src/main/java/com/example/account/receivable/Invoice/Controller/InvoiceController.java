@@ -20,6 +20,8 @@ import com.example.account.receivable.Common.ApiResponse;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
 import com.example.account.receivable.Invoice.Dto.OverdueInvoiceResponseDTO;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendingAmountResponseDTO;
+import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceAgingDto;
+import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceStatusBreakdownResponseDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Service.InvoiceService;
 
@@ -239,4 +241,42 @@ public class InvoiceController {
 
         return ResponseEntity.ok(response);
     }
+
+
+    //Calculate Invoice Reports(CURRENT , 0-30 , 30-60 , 60-90 , 90>)
+    @GetMapping("/invoice-aging/company/{companyId}")
+    public ResponseEntity<ApiResponse<InvoiceAgingDto>> getInvoiceAging(
+            @PathVariable Long companyId
+    ) {
+        InvoiceAgingDto data = invoiceService.getInvoiceAging(companyId);
+
+        return ResponseEntity.ok(
+            ApiResponse.successResponse(
+                200,
+                "Invoice aging report fetched successfully",
+                data
+            )
+        );
+    }
+
+
+    //Calculate Invoice Report(OPEN ,PARTIAL , PAID , WRITTEN_OFF)
+    @GetMapping("/status-breakdown/company/{companyId}")
+    public ResponseEntity<ApiResponse<InvoiceStatusBreakdownResponseDto>> getInvoiceStatusBreakdown(
+            @PathVariable Long companyId,
+            @RequestParam(defaultValue = "1") int months
+    ) {
+        InvoiceStatusBreakdownResponseDto data =
+                invoiceService.getInvoiceStatusBreakdown(companyId, months);
+
+        return ResponseEntity.ok(
+                ApiResponse.successResponse(
+                        200,
+                        "Invoice status breakdown fetched successfully",
+                        data
+                )
+        );
+    }
+
+
 }
