@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.example.account.receivable.Dashboard.CompanyInvoiceMonthProjection;
 import com.example.account.receivable.Invoice.InvoiceAgingProjection;
 import com.example.account.receivable.Invoice.InvoiceStatusProjection;
 import com.example.account.receivable.Invoice.Entity.Invoice;
@@ -290,5 +291,32 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
                 @Param("companyId") Long companyId,
                 @Param("fromDate") LocalDate fromDate
         );
+
+
+
+    //Query used to calculate the invoice amount per month(used for the graph)
+    @Query(value = """
+        SELECT
+        TO_CHAR(i.INVOICE_DATE, 'YYYY-MM') AS yearMonth,
+        COUNT(*) AS invoiceCount,
+        NVL(SUM(i.TOTAL_AMOUNT), 0) AS totalAmount
+        FROM APNITOR.INVOICES i
+        JOIN APNITOR.CUSTOMER c ON c.ID = i.CUSTOMER_ID
+        JOIN APNITOR.COMPANY_CUSTOMERS cc ON cc.CUSTOMER_ID = c.ID
+        WHERE cc.COMPANY_ID = :companyId
+        AND i.DELETED = 0
+        AND c.DELETED = 0
+        AND i.INVOICE_DATE >= :fromDate
+        AND i.INVOICE_DATE <= :toDate
+        GROUP BY TO_CHAR(i.INVOICE_DATE, 'YYYY-MM')
+        ORDER BY yearMonth
+    """, nativeQuery = true)
+    List<CompanyInvoiceMonthProjection> getCompanyInvoiceMonthlyTotals(
+            @Param("companyId") Long companyId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate
+    );
+
+
 
 }

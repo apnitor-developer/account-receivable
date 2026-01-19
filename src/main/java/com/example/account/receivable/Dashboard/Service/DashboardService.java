@@ -3,7 +3,10 @@ package com.example.account.receivable.Dashboard.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -13,6 +16,8 @@ import com.example.account.receivable.ArCalculation.Repository.CompanyMonthEndBa
 import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseStatus;
 import com.example.account.receivable.Collections.PromiseToPay.Repository.PromiseToPayRepo;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.Dashboard.CompanyInvoiceMonthProjection;
+import com.example.account.receivable.Dashboard.DTO.CompanyInvoiceMonthlySeriesResponse;
 import com.example.account.receivable.Dashboard.DTO.DashboardSummaryResponse;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.Payment.Repository.PaymentRepository;
@@ -98,4 +103,57 @@ public class DashboardService {
 
         return new CompanyBalanceSeriesDto(companyId, points);
     }
+
+
+    //Calculate invoice monthly amount
+    public CompanyInvoiceMonthlySeriesResponse getCompanyInvoiceMonthlySeries(
+            Long companyId,
+            Integer year
+    ) {
+        YearMonth start;
+        YearMonth end;
+
+        if (year != null) {
+            start = YearMonth.of(year, 1);
+            YearMonth now = YearMonth.now();
+            end = (year == now.getYear()) ? now : YearMonth.of(year, 12);
+        } else {
+            // Default last 12 months
+            end = YearMonth.now();
+            start = end.minusMonths(11);
+        }
+
+        LocalDate fromDate = start.atDay(1);
+        LocalDate toDate = end.atEndOfMonth();
+
+        List<CompanyInvoiceMonthProjection> rows =
+                invoiceRepository.getCompanyInvoiceMonthlyTotals(companyId, fromDate, toDate);
+
+        Map<String, CompanyInvoiceMonthProjection> byMonth = new HashMap<>();
+        for (CompanyInvoiceMonthProjection r : rows) {
+            byMonth.put(r.getYearMonth(), r);
+        }
+
+        List<CompanyInvoiceMonthlySeriesResponse.Point> points = new ArrayList<>();
+
+        YearMonth cursor = start;
+        while (!cursor.isAfter(end)) {
+            String key = cursor.toString(); // YYYY-MM
+
+            CompanyInvoiceMonthProjection r = byMonth.get(key);
+
+            long count = (r == null || r.getInvoiceCount() == null) ? 0L : r.getInvoiceCount();
+            BigDecimal total = (r == null || r.getTotalAmount() == null)
+                    ? BigDecimal.ZERO
+                    : r.getTotalAmount();
+
+            points.add(new CompanyInvoiceMonthlySeriesResponse.Point(key, count, total));
+
+            cursor = cursor.plusMonths(1);
+        }
+
+        return new CompanyInvoiceMonthlySeriesResponse(companyId, points);
+    }
+
+
 }
