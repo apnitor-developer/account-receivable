@@ -118,7 +118,6 @@ public class DashboardService {
             YearMonth now = YearMonth.now();
             end = (year == now.getYear()) ? now : YearMonth.of(year, 12);
         } else {
-            // Default last 12 months
             end = YearMonth.now();
             start = end.minusMonths(11);
         }
@@ -129,9 +128,11 @@ public class DashboardService {
         List<CompanyInvoiceMonthProjection> rows =
                 invoiceRepository.getCompanyInvoiceMonthlyTotals(companyId, fromDate, toDate);
 
+        // Map: YYYY-MM -> projection
         Map<String, CompanyInvoiceMonthProjection> byMonth = new HashMap<>();
         for (CompanyInvoiceMonthProjection r : rows) {
-            byMonth.put(r.getYearMonth(), r);
+            String key = String.format("%04d-%02d", r.getYear(), r.getMonth());
+            byMonth.put(key, r);
         }
 
         List<CompanyInvoiceMonthlySeriesResponse.Point> points = new ArrayList<>();
@@ -142,10 +143,8 @@ public class DashboardService {
 
             CompanyInvoiceMonthProjection r = byMonth.get(key);
 
-            long count = (r == null || r.getInvoiceCount() == null) ? 0L : r.getInvoiceCount();
-            BigDecimal total = (r == null || r.getTotalAmount() == null)
-                    ? BigDecimal.ZERO
-                    : r.getTotalAmount();
+            long count = (r == null) ? 0L : r.getInvoiceCount();
+            BigDecimal total = (r == null) ? BigDecimal.ZERO : r.getTotalAmount();
 
             points.add(new CompanyInvoiceMonthlySeriesResponse.Point(key, count, total));
 
@@ -154,6 +153,7 @@ public class DashboardService {
 
         return new CompanyInvoiceMonthlySeriesResponse(companyId, points);
     }
+
 
 
 }

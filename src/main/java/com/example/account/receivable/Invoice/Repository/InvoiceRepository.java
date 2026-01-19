@@ -295,27 +295,29 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
 
 
     //Query used to calculate the invoice amount per month(used for the graph)
-    @Query(value = """
+    @Query("""
         SELECT
-        TO_CHAR(i.INVOICE_DATE, 'YYYY-MM') AS yearMonth,
-        COUNT(*) AS invoiceCount,
-        NVL(SUM(i.TOTAL_AMOUNT), 0) AS totalAmount
-        FROM APNITOR.INVOICES i
-        JOIN APNITOR.CUSTOMER c ON c.ID = i.CUSTOMER_ID
-        JOIN APNITOR.COMPANY_CUSTOMERS cc ON cc.CUSTOMER_ID = c.ID
-        WHERE cc.COMPANY_ID = :companyId
-        AND i.DELETED = 0
-        AND c.DELETED = 0
-        AND i.INVOICE_DATE >= :fromDate
-        AND i.INVOICE_DATE <= :toDate
-        GROUP BY TO_CHAR(i.INVOICE_DATE, 'YYYY-MM')
-        ORDER BY yearMonth
-    """, nativeQuery = true)
+            YEAR(i.invoiceDate) AS year,
+            MONTH(i.invoiceDate) AS month,
+            COUNT(i) AS invoiceCount,
+            COALESCE(SUM(i.totalAmount), 0) AS totalAmount
+        FROM Invoice i
+        JOIN i.customer c
+        JOIN c.companyCompanies cc
+        WHERE cc.company.id = :companyId
+        AND i.deleted = false
+        AND c.deleted = false
+        AND i.invoiceDate >= :fromDate
+        AND i.invoiceDate <= :toDate
+        GROUP BY YEAR(i.invoiceDate), MONTH(i.invoiceDate)
+        ORDER BY YEAR(i.invoiceDate), MONTH(i.invoiceDate)
+    """)
     List<CompanyInvoiceMonthProjection> getCompanyInvoiceMonthlyTotals(
             @Param("companyId") Long companyId,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate
     );
+
 
 
 
