@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -24,7 +23,6 @@ import com.example.account.receivable.Auth.controller.LoginController;
 import com.example.account.receivable.Auth.dto.LoginDto;
 import com.example.account.receivable.Auth.dto.LoginResponseDto;
 import com.example.account.receivable.Auth.service.LoginService;
-import com.example.account.receivable.Common.ApiResponse;
 import com.example.account.receivable.User.controller.SignupController;
 import com.example.account.receivable.User.controller.UserController;
 import com.example.account.receivable.User.dto.SignupVerifyDto;

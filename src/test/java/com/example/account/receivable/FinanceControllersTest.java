@@ -12,9 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -32,11 +32,16 @@ import com.example.account.receivable.Invoice.Controller.InvoiceController;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
 import com.example.account.receivable.Invoice.Dto.OverdueInvoiceResponseDTO;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendingAmountResponseDTO;
+import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceAgingDto;
+import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceStatusBreakdownResponseDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Service.InvoiceService;
 import com.example.account.receivable.Payment.Controller.PaymentController;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
+import com.example.account.receivable.Payment.Dto.ResponseDTO.MonthlyPaymentDto;
+import com.example.account.receivable.Payment.Dto.ResponseDTO.PaymentReportDto;
 import com.example.account.receivable.Payment.Entity.Payment;
+import com.example.account.receivable.Payment.Enum.PaymentMethod;
 import com.example.account.receivable.Payment.Service.PaymentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -199,15 +204,81 @@ class FinanceControllersTest {
     }
 
     @Test
+    void getCompanyOpenPartialInvoices_returnsPage() throws Exception {
+        Page<Invoice> page = new PageImpl<>(List.of(sampleInvoice()));
+        when(invoiceService.getOpenAndPartialInvoicesByCompanyId(eq(3L), eq(1), eq(20), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(page);
+
+        mockMvc.perform(
+                get("/invoice/unpaid/company/{companyId}", 3L)
+                        .param("page", "1")
+                        .param("size", "20")
+                        .param("dateFrom", "2026-01-01")
+                        .param("dateTo", "2026-01-31")
+        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].invoiceNumber").value("INV-001"));
+
+        verify(invoiceService).getOpenAndPartialInvoicesByCompanyId(eq(3L), eq(1), eq(20), any(LocalDate.class), any(LocalDate.class));
+    }
+
+    @Test
+    void getCompanyInvoices_appliesFilters() throws Exception {
+        Page<Invoice> page = new PageImpl<>(List.of(sampleInvoice()));
+        List<String> statuses = List.of("OPEN", "PARTIAL");
+        when(invoiceService.getCompanyInvoices(eq(5L), eq(statuses), any(LocalDate.class), any(LocalDate.class), eq(0), eq(5)))
+                .thenReturn(page);
+
+        mockMvc.perform(
+                get("/invoice/company/{companyId}", 5L)
+                        .param("statuses", "OPEN", "PARTIAL")
+                        .param("fromDate", "2026-01-01")
+                        .param("toDate", "2026-01-10")
+                        .param("page", "0")
+                        .param("size", "5")
+        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].invoiceNumber").value("INV-001"));
+
+        verify(invoiceService).getCompanyInvoices(eq(5L), eq(statuses), any(LocalDate.class), any(LocalDate.class), eq(0), eq(5));
+    }
+
+    @Test
+    void getInvoiceAging_returnsDto() throws Exception {
+        InvoiceAgingDto dto = new InvoiceAgingDto(1L, 2L, 3L, 4L, 5L);
+        when(invoiceService.getInvoiceAging(11L)).thenReturn(dto);
+
+        mockMvc.perform(get("/invoice/invoice-aging/company/{companyId}", 11L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.current").value(1))
+                .andExpect(jsonPath("$.data.days61to90").value(4));
+
+        verify(invoiceService).getInvoiceAging(11L);
+    }
+
+    @Test
+    void getInvoiceStatusBreakdown_returnsDto() throws Exception {
+        InvoiceStatusBreakdownResponseDto dto = new InvoiceStatusBreakdownResponseDto(1L, 2L, 3L, 4L, 10L);
+        when(invoiceService.getInvoiceStatusBreakdown(12L, 3)).thenReturn(dto);
+
+        mockMvc.perform(get("/invoice/status-breakdown/company/{companyId}", 12L).param("months", "3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(10))
+                .andExpect(jsonPath("$.data.open").value(1));
+
+        verify(invoiceService).getInvoiceStatusBreakdown(12L, 3);
+    }
+
+    @Test
     void applyPayment_createsPayment() throws Exception {
         ReceivePaymentRequest request = new ReceivePaymentRequest();
         request.setPaymentAmount(BigDecimal.valueOf(200));
-        request.setPaymentMethod("ACH");
+        request.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
 
         Payment payment = Payment.builder()
                 .id(1L)
                 .paymentAmount(BigDecimal.valueOf(200))
-                .paymentMethod("ACH")
+                .paymentMethod(PaymentMethod.BANK_TRANSFER)
                 .build();
 
         when(paymentService.applyPayment(eq(4L), any(ReceivePaymentRequest.class))).thenReturn(payment);
@@ -226,13 +297,13 @@ class FinanceControllersTest {
     @Test
     void getAllPayments_returnsPage() throws Exception {
         Page<Payment> page = new PageImpl<>(List.of(
-                Payment.builder().id(1L).paymentAmount(BigDecimal.valueOf(50)).paymentMethod("Card").build()
+                Payment.builder().id(1L).paymentAmount(BigDecimal.valueOf(50)).paymentMethod(PaymentMethod.CREDIT_CARD).build()
         ));
         when(paymentService.getAllPayments(0, 10)).thenReturn(page);
 
         mockMvc.perform(get("/payment").param("page", "0").param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].paymentMethod").value("Card"));
+                .andExpect(jsonPath("$.data.content[0].paymentMethod").value("CREDIT_CARD"));
 
         verify(paymentService).getAllPayments(0, 10);
     }
@@ -240,15 +311,59 @@ class FinanceControllersTest {
     @Test
     void getPaymentsByCompany_returnsPagedPayments() throws Exception {
         Page<Payment> page = new PageImpl<>(List.of(
-                Payment.builder().id(2L).paymentAmount(BigDecimal.valueOf(70)).paymentMethod("Wire").build()
+                Payment.builder().id(2L).paymentAmount(BigDecimal.valueOf(70)).paymentMethod(PaymentMethod.BANK_TRANSFER).build()
         ));
         when(paymentService.getPaymentsByCompanyId(5L, 1, 5)).thenReturn(page);
 
         mockMvc.perform(get("/payment/company/{companyId}", 5L).param("page", "1").param("size", "5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].paymentMethod").value("Wire"));
+                .andExpect(jsonPath("$.data.content[0].paymentMethod").value("BANK_TRANSFER"));
 
         verify(paymentService).getPaymentsByCompanyId(5L, 1, 5);
+    }
+
+    @Test
+    void getPaymentsByCompany_withDateFilter_returnsPage() throws Exception {
+        Page<Payment> page = new PageImpl<>(List.of(
+                Payment.builder().id(3L).paymentAmount(BigDecimal.TEN).paymentMethod(PaymentMethod.UPI).build()
+        ));
+        when(paymentService.getPaymentsByCompanyId(eq(6L), eq(0), eq(10), any(LocalDate.class), any(LocalDate.class))).thenReturn(page);
+
+        mockMvc.perform(
+                get("/payment/company/{companyId}/filter", 6L)
+                        .param("fromDate", "2026-01-01")
+                        .param("toDate", "2026-01-31")
+        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].paymentMethod").value("UPI"));
+
+        verify(paymentService).getPaymentsByCompanyId(eq(6L), eq(0), eq(10), any(LocalDate.class), any(LocalDate.class));
+    }
+
+    @Test
+    void getPaymentReport_returnsAggregatedCounts() throws Exception {
+        PaymentReportDto dto = new PaymentReportDto(Map.of(PaymentMethod.CASH, 2L), 2L);
+        when(paymentService.getPaymentReport(7L, 4)).thenReturn(dto);
+
+        mockMvc.perform(get("/payment/report/company/{companyId}", 7L).param("months", "4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalPayments").value(2))
+                .andExpect(jsonPath("$.data.methodCounts.CASH").value(2));
+
+        verify(paymentService).getPaymentReport(7L, 4);
+    }
+
+    @Test
+    void getMonthlyPayments_returnsList() throws Exception {
+        List<MonthlyPaymentDto> monthly = List.of(new MonthlyPaymentDto("Jan", BigDecimal.TEN));
+        when(paymentService.getMonthlyPaymentsByYear(8L, 2026)).thenReturn(monthly);
+
+        mockMvc.perform(get("/payment/monthly/company/{companyId}", 8L).param("year", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].month").value("Jan"))
+                .andExpect(jsonPath("$.data[0].totalAmount").value(10));
+
+        verify(paymentService).getMonthlyPaymentsByYear(8L, 2026);
     }
 
     @TestConfiguration

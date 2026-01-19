@@ -18,7 +18,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -42,8 +41,6 @@ import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseSta
 import com.example.account.receivable.Collections.PromiseToPay.Service.PromiseToPayService;
 import com.example.account.receivable.Collections.Reminder.Controller.ReminderController;
 import com.example.account.receivable.Collections.Reminder.Service.ReminderService;
-import com.example.account.receivable.Customer.Entity.Customer;
-import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest({DisputeController.class, PromiseToPayController.class, ReminderController.class})
