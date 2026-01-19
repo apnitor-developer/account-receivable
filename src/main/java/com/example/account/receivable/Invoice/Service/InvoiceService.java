@@ -100,14 +100,31 @@ public class InvoiceService {
 
 
     //Get Invoices By the CompanyId
-    public Page<Invoice> getOpenAndPartialInvoicesByCompanyId(Long companyId , int page, int size , LocalDate dateFrom, LocalDate dateTo) {
+    public Page<Invoice> getOpenAndPartialInvoicesByCompanyId(
+            Long companyId,
+            int page,
+            int size,
+            LocalDate dateFrom,
+            LocalDate dateTo,
+            Integer months
+    ) {
         Pageable pageable = PageRequest.of(page, size);
+
+        LocalDate resolvedFrom = dateFrom;
+        LocalDate resolvedTo = dateTo;
+
+        // If explicit dates are NOT provided, but months is provided
+        if (resolvedFrom == null && resolvedTo == null && months != null && months > 0) {
+            resolvedTo = LocalDate.now();
+            resolvedFrom = resolvedTo.minusMonths(months);
+        }
+
         return invoiceRepository.findCompanyInvoicesByStatusAndDateRange(
                 companyId,
                 pageable,
                 List.of("OPEN", "PARTIAL"),
-                dateFrom,
-                dateTo
+                resolvedFrom,
+                resolvedTo
         );
     }
 

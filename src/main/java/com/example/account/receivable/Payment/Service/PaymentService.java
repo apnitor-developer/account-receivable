@@ -181,16 +181,41 @@ public class PaymentService {
 
 
     // Get All Payment 
-    public Page<Payment> getPaymentsByCompanyId(Long companyId, int page, int size, LocalDate fromDate, LocalDate toDate) {
-
+    public Page<Payment> getPaymentsByCompanyId(
+            Long companyId,
+            int page,
+            int size,
+            LocalDate fromDate,
+            LocalDate toDate,
+            Integer months
+    ) {
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fromDate cannot be after toDate");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "fromDate cannot be after toDate"
+            );
         }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "paymentDate"));
+        LocalDate resolvedFrom = fromDate;
+        LocalDate resolvedTo = toDate;
 
-        return paymentRepository.findPaymentsByCompanyIdFiltered(companyId, fromDate, toDate, pageable);
+        // Apply months filter ONLY if explicit dates are not provided
+        if (resolvedFrom == null && resolvedTo == null && months != null && months > 0) {
+            resolvedTo = LocalDate.now();
+            resolvedFrom = resolvedTo.minusMonths(months);
+        }
+
+        Pageable pageable =
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "paymentDate"));
+
+        return paymentRepository.findPaymentsByCompanyIdFiltered(
+                companyId,
+                resolvedFrom,
+                resolvedTo,
+                pageable
+        );
     }
+
 
 
 

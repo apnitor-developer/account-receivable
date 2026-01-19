@@ -88,9 +88,10 @@ public class PaymentController {
             LocalDate fromDate,
             @RequestParam(required = false)
             @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
-            LocalDate toDate
+            LocalDate toDate,
+            @RequestParam(required = false) Integer months
     ) {
-        Page<Payment> payments = paymentService.getPaymentsByCompanyId(companyId, page, size, fromDate, toDate);
+        Page<Payment> payments = paymentService.getPaymentsByCompanyId(companyId, page, size, fromDate, toDate , months);
 
         ApiResponse<Page<Payment>> response = ApiResponse.successResponse(
                 200,

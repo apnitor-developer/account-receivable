@@ -89,10 +89,11 @@ public class InvoiceController {
             @PathVariable Long companyId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Integer months,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo
     ) {
-        Page<Invoice> invoices = invoiceService.getOpenAndPartialInvoicesByCompanyId(companyId , page, size , dateFrom, dateTo);
+        Page<Invoice> invoices = invoiceService.getOpenAndPartialInvoicesByCompanyId(companyId , page, size , dateFrom, dateTo , months);
 
         ApiResponse<Page<Invoice>> response = ApiResponse.successResponse(
                 200,
