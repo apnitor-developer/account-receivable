@@ -43,7 +43,7 @@ public interface PromiseToPayRepo extends JpaRepository<PromiseToPay, Long> {
     JOIN CompanyCustomers cc ON cc.customer = c
     WHERE cc.company.id = :companyId
     AND p.status IN :statuses
-    AND p.promiseDate <= :today
+    AND p.promiseDate >= :today
     """)
     BigDecimal getCurrentPromiseAmountByCompany(
             @Param("companyId") Long companyId,

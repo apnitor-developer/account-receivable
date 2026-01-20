@@ -82,6 +82,11 @@ public enum Permission {
     VIEW_CODE,
     CREATE_CODE,
     UPDATE_CODE,
-    DELETE_CODE
+    DELETE_CODE,
+
+    //GL Codes
+    VIEW_GL_CODE,
+    CREATE_GL_CODE,
+    UPDATE_GL_CODE
 }
 
