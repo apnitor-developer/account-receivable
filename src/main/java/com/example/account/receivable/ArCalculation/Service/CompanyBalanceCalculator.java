@@ -3,6 +3,7 @@ package com.example.account.receivable.ArCalculation.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.temporal.TemporalAdjusters;
 
 import org.springframework.stereotype.Service;
 
@@ -21,12 +22,15 @@ public class CompanyBalanceCalculator {
             Long companyId,
             YearMonth month
     ) {
-        LocalDate monthEnd = month.atEndOfMonth();
+        LocalDate asOfDate =
+        LocalDate.now()
+                 .minusMonths(1)
+                 .with(TemporalAdjusters.lastDayOfMonth());
 
         BigDecimal balance =
                 invoiceRepository.getCompanyMonthEndBalance(
                         companyId,
-                        monthEnd
+                        asOfDate
                 );
 
         return new CompanyMonthEndBalanceDto(

@@ -166,6 +166,10 @@ public class ArCodeService {
 
         // ✅ Mapping method inside service
         private ArCodeResponseDto toResponseDto(ArCode entity) {
+
+                boolean hasMapping =
+                        arGlMappingRepository.hasActiveMapping(entity.getId());
+
                 return ArCodeResponseDto.builder()
                         .id(entity.getId())
                         .codeType(entity.getCodeType())
@@ -175,6 +179,9 @@ public class ArCodeService {
                         .isActive(entity.isActive())
                         .createdAt(entity.getCreatedAt())
                         .updatedAt(entity.getUpdatedAt())
+                        .glMappingStatus(
+                                hasMapping ? GlMappingStatus.CONFIGURED : GlMappingStatus.MISSING
+                        )
                         .build();
         }
 }
