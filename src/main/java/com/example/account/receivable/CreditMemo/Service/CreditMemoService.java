@@ -25,6 +25,10 @@ import com.example.account.receivable.CreditMemo.Repository.CreditMemoRepository
 import com.example.account.receivable.CreditMemo.StatusFile.CreditMemoStatus;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.GL.Dto.GlTransactionCreateRequest;
+import com.example.account.receivable.GL.Enum.GlReferenceType;
+import com.example.account.receivable.GL.Service.GlTransactionService;
+import com.example.account.receivable.HelperMethods.CompanyResolver;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
@@ -40,6 +44,7 @@ public class CreditMemoService {
     private final CreditMemoApplicationRepository creditMemoApplicationRepository;
     private final InvoiceRepository invoiceRepository;
     private final CompanyRepository companyRepository;
+    private final GlTransactionService glTransactionService;
 
     private static final String CM_PREFIX = "CM-";
     private static final int CM_NUMBER_WIDTH = 4;
@@ -147,6 +152,22 @@ public class CreditMemoService {
 
             creditMemoApplicationRepository.save(app);
         }
+
+
+            // SAVE TRANSACTION
+            glTransactionService.createTransaction(
+                CompanyResolver
+                    .resolveCompanyForCustomer(cm.getCustomer())
+                    .getId(),
+                GlTransactionCreateRequest.builder()
+                    .referenceType(GlReferenceType.CREDIT_MEMO)
+                    .referenceId(cm.getId())
+                    .referenceNumber(cm.getCreditMemoNo())
+                    .amount(cm.getAmount())
+                    .transactionDate(cm.getPostingDate())
+                    .description("Credit memo approved: " + cm.getCreditMemoNo())
+                    .build()
+            );
 
         return creditMemoRepository.save(cm);
     }

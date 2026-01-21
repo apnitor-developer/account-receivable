@@ -17,10 +17,15 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.account.receivable.Common.EmailService;
 import com.example.account.receivable.Common.InvoiceTemplateService;
 import com.example.account.receivable.Common.PdfGeneratorService;
+import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Entity.CustomerDunningCreditSettings;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.GL.Dto.GlTransactionCreateRequest;
+import com.example.account.receivable.GL.Enum.GlReferenceType;
+import com.example.account.receivable.GL.Service.GlTransactionService;
+import com.example.account.receivable.HelperMethods.CompanyResolver;
 import com.example.account.receivable.Invoice.InvoiceAgingProjection;
 import com.example.account.receivable.Invoice.InvoiceStatusProjection;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
@@ -35,37 +40,22 @@ import com.example.account.receivable.Invoice.Repository.InvoiceItemRepo;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class InvoiceService {
     private final CustomerRepository customerRepository;
     private final InvoiceRepository invoiceRepository;
     private final InvoiceItemRepo invoiceItemRepo;
     private final CompanyRepository companyRepository;
+    private final GlTransactionService glTransactionService;
 
     private static final String INVOICE_PREFIX = "INV-";
     private static final int INVOICE_NUMBER_WIDTH = 4;  // 0001 – 9999
     private final EmailService emailService;
     private final InvoiceTemplateService invoiceTemplateService;
     private final PdfGeneratorService pdfGeneratorService;
-
-    public InvoiceService(
-            CustomerRepository customerRepository,
-            InvoiceRepository invoiceRepository,
-            EmailService emailService,
-            InvoiceTemplateService invoiceTemplateService,
-            PdfGeneratorService pdfGeneratorService,
-            InvoiceItemRepo invoiceItemRepo,
-            CompanyRepository companyRepository
-    ) {
-        this.customerRepository = customerRepository;
-        this.invoiceRepository = invoiceRepository;
-        this.emailService = emailService;
-        this.invoiceTemplateService = invoiceTemplateService;
-        this.pdfGeneratorService = pdfGeneratorService;
-        this.invoiceItemRepo = invoiceItemRepo;
-        this.companyRepository = companyRepository;
-    }
 
     
     public void sendInvoiceEmail(Long invoiceId) {
@@ -257,6 +247,25 @@ public class InvoiceService {
             item.setInvoice(invoice);
         }
         invoiceItemRepo.saveAll(items);
+
+        Company company =
+            CompanyResolver.resolveCompanyForCustomer(invoice.getCustomer());
+
+            // System.out.println("Company : " + company);
+            // System.out.println("Invoice : " + invoice);
+
+        glTransactionService.createTransaction(
+            company.getId(),
+            GlTransactionCreateRequest.builder()
+                .referenceType(GlReferenceType.INVOICE)
+                .referenceId(invoice.getId())
+                .referenceNumber(invoice.getInvoiceNumber())
+                .amount(invoice.getTotalAmount())
+                .transactionDate(invoice.getInvoiceDate())
+                .description("Invoice " + invoice.getInvoiceNumber())
+                .build()
+        );
+
 
         try {
             return invoice;

@@ -23,8 +23,13 @@ import org.springframework.data.domain.Sort;
 import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseStatus;
 import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseToPay;
 import com.example.account.receivable.Collections.PromiseToPay.Repository.PromiseToPayRepo;
+import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.GL.Dto.GlTransactionCreateRequest;
+import com.example.account.receivable.GL.Enum.GlReferenceType;
+import com.example.account.receivable.GL.Service.GlTransactionService;
+import com.example.account.receivable.HelperMethods.CompanyResolver;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.Payment.MonthlyPaymentProjection;
@@ -49,6 +54,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentApplicationRepository paymentApplicationRepository;
     private final PromiseToPayRepo promiseToPayRepo;
+    private final GlTransactionService glTransactionService;
 
     //Auto Apply Payment
     @Transactional
@@ -71,6 +77,24 @@ public class PaymentService {
                 .build();
 
         payment = paymentRepository.save(payment);
+
+
+        // Resolve company from customer
+        Company company =
+            CompanyResolver.resolveCompanyForCustomer(customer);
+
+        // SAVE TRANSACTION
+        glTransactionService.createTransaction(
+            company.getId(),
+            GlTransactionCreateRequest.builder()
+                .referenceType(GlReferenceType.PAYMENT)
+                .referenceId(payment.getId())
+                .referenceNumber("PAY-" + payment.getId())
+                .amount(payment.getPaymentAmount())
+                .transactionDate(payment.getPaymentDate())
+                .description("Payment received")
+                .build()
+        );
 
         // Auto-apply logic
         BigDecimal remainingPayment = request.getPaymentAmount();

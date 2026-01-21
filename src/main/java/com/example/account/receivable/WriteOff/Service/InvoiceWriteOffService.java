@@ -14,6 +14,9 @@ import com.example.account.receivable.ArCodes.Entity.ArCode;
 import com.example.account.receivable.ArCodes.Repository.ArCodeRepository;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
+import com.example.account.receivable.GL.Dto.GlTransactionCreateRequest;
+import com.example.account.receivable.GL.Enum.GlReferenceType;
+import com.example.account.receivable.GL.Service.GlTransactionService;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.WriteOff.Dto.CompanyWriteOffResponse;
@@ -33,6 +36,7 @@ public class InvoiceWriteOffService {
     private final InvoiceWriteOffRepository writeOffRepository;
     private final ArCodeRepository arCodeRepository;
     private final CompanyRepository companyRepository;
+    private final GlTransactionService glTransactionService;
 
 
     // Create Write Off Invoice
@@ -104,6 +108,19 @@ public class InvoiceWriteOffService {
             invoice.setStatus("WRITTEN_OFF");
 
             invoiceRepository.save(invoice);
+
+            // SAVE TRANSACTION
+            glTransactionService.createTransaction(
+                            writeOff.getCompany().getId(),
+                            GlTransactionCreateRequest.builder()
+                                            .referenceType(GlReferenceType.WRITE_OFF)
+                                            .referenceId(writeOff.getId())
+                                            .referenceNumber("WO-" + writeOff.getId())
+                                            .amount(invoice.getBalanceDue())
+                                            .transactionDate(writeOff.getWriteOffDate())
+                                            .description("Invoice written off: " + invoice.getInvoiceNumber())
+                                            .build());
+
             return writeOffRepository.save(writeOff);
     }
 

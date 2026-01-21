@@ -87,6 +87,10 @@ public enum Permission {
     //GL Codes
     VIEW_GL_CODE,
     CREATE_GL_CODE,
-    UPDATE_GL_CODE
+    UPDATE_GL_CODE,
+
+    // GL Transactions
+    VIEW_GL_TRANSACTION,
+    CREATE_GL_TRANSACTION
 }
 
