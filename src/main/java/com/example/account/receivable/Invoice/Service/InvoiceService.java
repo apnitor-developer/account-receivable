@@ -124,7 +124,7 @@ public class InvoiceService {
         return invoiceRepository.findCompanyInvoicesByStatusAndDateRange(
                 companyId,
                 pageable,
-                List.of( InvoiceStatus.OPEN, InvoiceStatus.PARTIAL),
+                List.of( InvoiceStatus.DRAFT, InvoiceStatus.OPEN, InvoiceStatus.PARTIAL),
                 resolvedFrom,
                 resolvedTo
         );
@@ -243,7 +243,7 @@ public class InvoiceService {
         // Compute TOTAL invoice values
         BigDecimal totalAmount = subTotal.add(taxTotal);
 
-        enforceCreditLimit(customer, totalAmount);
+        // enforceCreditLimit(customer, totalAmount);
 
         invoiceItemRepo.saveAll(items);
 
