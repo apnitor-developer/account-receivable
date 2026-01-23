@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.account.receivable.Common.ApiResponse;
+import com.example.account.receivable.Customer.Dto.ImportTemplateMetadata;
 import com.example.account.receivable.Customer.Dto.CompanyResponseDto.CustomerResponseDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerCsv;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDTO;
@@ -244,6 +245,25 @@ public class CustomerController {
 
         return ResponseEntity.status(status).body(body);
     }
+
+
+    // Template
+    @GetMapping("/import/template-metadata")
+    public ResponseEntity<ApiResponse<ImportTemplateMetadata>> getCustomerImportTemplate() {
+
+        ImportTemplateMetadata metadata =
+                customerService.getTemplateMetadata();
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(
+                        HttpStatus.OK.value(),
+                        "success",
+                        "Customer import template metadata",
+                        metadata
+                )
+        );
+    }
+
 }
 
 

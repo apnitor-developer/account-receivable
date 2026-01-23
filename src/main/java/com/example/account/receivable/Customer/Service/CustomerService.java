@@ -29,6 +29,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
+import com.example.account.receivable.Customer.Dto.ImportTemplateMetadata;
+import com.example.account.receivable.Customer.Dto.TemplateField;
+import com.example.account.receivable.Customer.Dto.TemplateTab;
 import com.example.account.receivable.Customer.Dto.CompanyResponseDto.CustomerResponseDTO;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerCsv;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerCsv.RowError;
@@ -946,5 +949,93 @@ public class CustomerService {
     }
 
 
- 
+    
+    public ImportTemplateMetadata getTemplateMetadata() {
+
+        return ImportTemplateMetadata.builder()
+                .entity("Customer")
+                .format("CSV")
+                .tabs(List.of(
+
+                        // MAIN TAB
+                        TemplateTab.builder()
+                                .tab("Main")
+                                .fields(List.of(
+                                        field("customerName", "Customer Name", true, "string",
+                                                Map.of("minLength", 2, "pattern", "letters_and_spaces")),
+                                        field("customerType", "Customer Type", true, "string",
+                                                Map.of("pattern", "letters_and_spaces")),
+                                        field("email", "Email", true, "email", null)))
+                                .build(),
+
+                        // ADDRESS TAB
+                        TemplateTab.builder()
+                                .tab("Address")
+                                .fields(List.of(
+                                        field("addressLine1", "Address Line 1", true, "string", null),
+                                        field("city", "City", true, "string", null),
+                                        field("stateProvince", "State / Province", true, "string", null),
+                                        field("postalCode", "Postal Code", true, "string",
+                                                Map.of("digitsOnly", true, "maxLength", 6)),
+                                        field("country", "Country", true, "string", null)))
+                                .build(),
+
+                        // EFT TAB
+                        TemplateTab.builder()
+                                .tab("EFT")
+                                .fields(List.of(
+                                        field("bankName", "Bank Name", true, "string", null),
+                                        field("ibanAccountNumber", "IBAN / Account Number", true, "string", null),
+                                        field("bankIdentifierCode", "Bank Identifier Code", true, "string", null),
+                                        field("enableAchPayments", "Enable ACH Payments", false, "boolean", null)))
+                                .build(),
+
+                        // VAT TAB (NON-MANDATORY)
+                        TemplateTab.builder()
+                                .tab("VAT")
+                                .fields(List.of(
+                                        field("enableVatCodes", "Enable VAT Codes", false, "boolean", null),
+                                        fieldWithCondition("taxIdentificationNumber", "Tax Identification Number",
+                                                "enableVatCodes=true"),
+                                        fieldWithCondition("taxAgencyName", "Tax Agency Name",
+                                                "enableVatCodes=true")))
+                                .build(),
+
+                        // DUNNING / CREDIT TAB
+                        TemplateTab.builder()
+                                .tab("DunningCredit")
+                                .fields(List.of(
+                                        field("creditLimit", "Credit Limit", true, "number",
+                                                Map.of("min", 0)),
+                                        field("dunningLevel", "Dunning Level", true, "string", null),
+                                        field("pastDue", "Past Due (Days)", true, "number", null),
+                                        field("level1", "Level 1 (Days)", true, "number", null),
+                                        field("level2", "Level 2 (Days)", true, "number", null),
+                                        field("level3", "Level 3 (Days)", true, "number", null),
+                                        field("level4", "Level 4 (Days)", true, "number", null),
+                                        field("placeOnCreditHold", "Place on Credit Hold", false, "boolean", null)))
+                                .build()))
+                .build();
+    }
+
+    private TemplateField field(
+            String name, String label, boolean required, String type, Map<String, Object> rules) {
+        return TemplateField.builder()
+                .name(name)
+                .label(label)
+                .required(required)
+                .type(type)
+                .rules(rules)
+                .build();
+    }
+
+    private TemplateField fieldWithCondition(String name, String label, String condition) {
+        return TemplateField.builder()
+                .name(name)
+                .label(label)
+                .required(false)
+                .requiredIf(condition)
+                .type("string")
+                .build();
+    }
 }
