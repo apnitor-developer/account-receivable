@@ -112,6 +112,10 @@ public class CustomerService {
         dto.setCustomerId(customer.getCustomerId());
         dto.setEmail(customer.getEmail());
         dto.setCustomerType(customer.getCustomerType());
+        dto.setPhoneNumber(customer.getPhoneNumber());
+        dto.setLinkedin(customer.getLinkedin());
+        dto.setFacebook(customer.getFaceBook());
+        dto.setTwitter(customer.getTwitter());
         dto.setDeleted(customer.isDeleted());
         dto.setCreatedAt(customer.getCreatedAt());
         dto.setUpdatedAt(customer.getUpdatedAt());
@@ -173,7 +177,7 @@ public class CustomerService {
         customer.setCustomerType(customerDTO.getCustomerType());
         customer.setPhoneNumber(customerDTO.getPhoneNumber());
         customer.setFaceBook(customerDTO.getFaceBook());
-        customer.setLinkedin(customer.getLinkedin());
+        customer.setLinkedin(customerDTO.getLinkedin());
         customer.setTwitter(customerDTO.getTwitter());
 
         // Save customer first

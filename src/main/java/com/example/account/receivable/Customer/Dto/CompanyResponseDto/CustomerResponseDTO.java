@@ -18,6 +18,10 @@ public class CustomerResponseDTO {
     private Long customerId;
     private String email;
     private String customerType;
+    private String phoneNumber;
+    private String linkedin;
+    private String facebook;
+    private String twitter;
     private boolean deleted;
     private Instant createdAt;
     private Instant updatedAt;
