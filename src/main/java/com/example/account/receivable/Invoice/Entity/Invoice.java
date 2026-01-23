@@ -1,6 +1,7 @@
 package com.example.account.receivable.Invoice.Entity;
 
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,6 +14,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -52,9 +55,10 @@ public class Invoice {
     private BigDecimal balanceDue;  // Default value should be set to the total amount initially
 
     // New field for invoice status (OPEN, PARTIAL, PAID , WRITTEN_OFF)
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
-    private String status = "OPEN";  // Initial status is OPEN
+    private InvoiceStatus status = InvoiceStatus.DRAFT;  // Initial status is OPEN
 
     // Optional: Track the date of the last payment
     @Column(name = "last_payment_date")

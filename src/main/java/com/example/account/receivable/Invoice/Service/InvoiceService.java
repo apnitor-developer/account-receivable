@@ -36,6 +36,7 @@ import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceAgingDto;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceStatusBreakdownResponseDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Entity.InvoiceItem;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceItemRepo;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
@@ -62,6 +63,14 @@ public class InvoiceService {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
 
+
+        if (invoice.getStatus() != InvoiceStatus.OPEN) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invoice must be approved before sending"
+            );
+        }
+
         String html = invoiceTemplateService.generateHtml(invoice);
 
         byte[] pdf = pdfGeneratorService.generatePdf(html);
@@ -82,7 +91,10 @@ public class InvoiceService {
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
         // Fetch only unpaid invoices
-        List<String> statuses = List.of("OPEN", "PARTIAL");
+        List<InvoiceStatus> statuses = List.of(
+                InvoiceStatus.OPEN,
+                InvoiceStatus.PARTIAL
+        );
 
         return invoiceRepository.findByCustomerIdAndStatusIn(customerId, statuses);
     }
@@ -112,7 +124,7 @@ public class InvoiceService {
         return invoiceRepository.findCompanyInvoicesByStatusAndDateRange(
                 companyId,
                 pageable,
-                List.of("OPEN", "PARTIAL"),
+                List.of( InvoiceStatus.OPEN, InvoiceStatus.PARTIAL),
                 resolvedFrom,
                 resolvedTo
         );
@@ -184,7 +196,7 @@ public class InvoiceService {
                 .invoiceDate(dto.getInvoiceDate())
                 .dueDate(dto.getDueDate())
                 .note(dto.getNote())
-                .status("OPEN")
+                .status(InvoiceStatus.DRAFT)
                 .generated(dto.getGenerated())
                 .customer(customer)
                 .active(true)
@@ -279,6 +291,47 @@ public class InvoiceService {
     }
 
 
+    // Approve Invoice
+    @Transactional
+    public Invoice approveInvoice(Long invoiceId) {
+
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Invoice not found"));
+
+        if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Only DRAFT invoices can be approved"
+            );
+        }
+
+        invoice.setStatus(InvoiceStatus.OPEN);
+        return invoiceRepository.save(invoice);
+    }
+
+
+    //Get Draft Invoices
+    @Transactional()
+    public Page<Invoice> getDraftInvoicesByCompany(
+            Long companyId,
+            int page,
+            int size
+    ) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        return invoiceRepository.findCompanyInvoicesByStatus(
+                companyId,
+                InvoiceStatus.DRAFT,
+                pageable
+        );
+    }
+
+
 
     //Generate invoice number
     private String generateUniqueInvoiceNumber() {
@@ -358,7 +411,7 @@ public class InvoiceService {
             return;
         }
 
-        BigDecimal outstanding = invoiceRepository.getCustomerOutstandingBalance(customer.getId());
+        BigDecimal outstanding = invoiceRepository.getCustomerOutstandingBalance(customer.getId() , List.of(InvoiceStatus.OPEN, InvoiceStatus.PARTIAL));
         if (outstanding == null) {
             outstanding = BigDecimal.ZERO;
         }
@@ -382,7 +435,14 @@ public class InvoiceService {
 
     // Get Single customer invoice
     public List<Invoice> getSingleCustomerInvoice(Long customerId) {
-        return invoiceRepository.findByCustomerIdAndDeletedFalseAndStatusNotIn(customerId , List.of("WRITTEN_OFF", "PAID"));
+        return invoiceRepository.findByCustomerIdAndDeletedFalseAndStatusNotIn(
+            customerId,
+            List.of(
+                InvoiceStatus.WRITTEN_OFF,
+                InvoiceStatus.PAID
+            )
+
+        );
     }
 
     // Invoice By Id
@@ -433,7 +493,7 @@ public class InvoiceService {
     // Get all Overdue Invoices of the company and their balance is greater than 0
     public List<OverdueInvoiceResponseDTO> getOverdueInvoicesByCompany(Long companyId) {
         List<Object[]> rows =
-            invoiceRepository.findOverdueInvoicesByCompany(companyId);
+            invoiceRepository.findOverdueInvoicesByCompany(companyId , List.of( InvoiceStatus.OPEN, InvoiceStatus.PARTIAL));
 
         List<OverdueInvoiceResponseDTO> response = new ArrayList<>();
 
@@ -459,32 +519,39 @@ public class InvoiceService {
     // Get All invoices of the company based on the filters
     public Page<Invoice> getCompanyInvoices(
             Long companyId,
-            List<String> statuses,
+            List<InvoiceStatus> statuses,
             LocalDate fromDate,
             LocalDate toDate,
             int page,
             int size
     ) {
-        // If statuses is empty list [], treat it as no filter (otherwise IN () breaks)
+
         if (statuses != null && statuses.isEmpty()) {
             statuses = null;
         }
 
-        // Optional: validate date range
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fromDate cannot be after toDate");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "fromDate cannot be after toDate"
+            );
         }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "invoiceDate"));
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "invoiceDate")
+        );
 
         return invoiceRepository.findCompanyInvoicesFiltered(
                 companyId,
-                statuses,     // null => no status filter
-                fromDate,     // null => no from filter
-                toDate,       // null => no to filter
+                statuses,
+                fromDate,
+                toDate,
                 pageable
         );
     }
+
 
 
     //Calculate Invoice Reports(CURRENT , 0-30 , 30-60 , 60-90 , 90>)
@@ -494,6 +561,7 @@ public class InvoiceService {
         InvoiceAgingProjection p =
             invoiceRepository.getInvoiceAgingReport(
                 companyId,
+                List.of( InvoiceStatus.OPEN, InvoiceStatus.PARTIAL),
                 today,
                 today.minusDays(30),
                 today.minusDays(60),

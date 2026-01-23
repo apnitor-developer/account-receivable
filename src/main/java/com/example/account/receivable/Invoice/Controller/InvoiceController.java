@@ -23,6 +23,7 @@ import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendin
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceAgingDto;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceStatusBreakdownResponseDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Service.InvoiceService;
 
 
@@ -36,7 +37,7 @@ public class InvoiceController {
     }
 
 
-    //Add invoice
+    //Add invoice API
     @PostMapping("/{customerId}")
     public ResponseEntity<ApiResponse<Invoice>> createInvoice(
         @PathVariable("customerId") Long customerId,
@@ -48,6 +49,39 @@ public class InvoiceController {
             invoice
         );
         return ResponseEntity.status(201).body(response);
+    }
+
+
+    // Invoice Approved API
+    @PostMapping("/approve/{invoiceId}")
+    public ResponseEntity<ApiResponse<Invoice>> approveInvoice(
+            @PathVariable Long invoiceId
+    ) {
+        Invoice invoice = invoiceService.approveInvoice(invoiceId);
+
+        return ResponseEntity.ok(
+            ApiResponse.successResponse(200, "Invoice approved", invoice)
+        );
+    }
+
+
+    //Get Company Draft Invoice API
+    @GetMapping("/company/{companyId}/drafts")
+    public ResponseEntity<ApiResponse<Page<Invoice>>> getCompanyDraftInvoices(
+            @PathVariable Long companyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<Invoice> drafts =
+                invoiceService.getDraftInvoicesByCompany(companyId, page, size);
+
+        return ResponseEntity.ok(
+                ApiResponse.successResponse(
+                        200,
+                        "Company draft invoices fetched successfully",
+                        drafts
+                )
+        );
     }
 
     //Send Invoice
@@ -222,7 +256,7 @@ public class InvoiceController {
     @GetMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<Page<Invoice>>> getCompanyInvoices(
             @PathVariable Long companyId,
-            @RequestParam(required = false) List<String> statuses,
+            @RequestParam(required = false) List<InvoiceStatus> statuses,
             @RequestParam(required = false)
             @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
             LocalDate fromDate,

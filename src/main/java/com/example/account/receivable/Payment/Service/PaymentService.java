@@ -31,6 +31,7 @@ import com.example.account.receivable.GL.Enum.GlReferenceType;
 import com.example.account.receivable.GL.Service.GlTransactionService;
 import com.example.account.receivable.HelperMethods.CompanyResolver;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.Payment.MonthlyPaymentProjection;
 import com.example.account.receivable.Payment.PaymentMethodReportProjection;
@@ -131,9 +132,9 @@ public class PaymentService {
 
             // update status
             if (invoice.getBalanceDue().compareTo(BigDecimal.ZERO) == 0) {
-                invoice.setStatus("PAID");
+                invoice.setStatus(InvoiceStatus.PAID);
             } else {
-                invoice.setStatus("PARTIAL");
+                invoice.setStatus(InvoiceStatus.PARTIAL);
             }
 
             invoice.setLastPaymentDate(LocalDate.now());

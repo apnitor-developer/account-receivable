@@ -30,6 +30,7 @@ import com.example.account.receivable.GL.Enum.GlReferenceType;
 import com.example.account.receivable.GL.Service.GlTransactionService;
 import com.example.account.receivable.HelperMethods.CompanyResolver;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -311,12 +312,12 @@ public class CreditMemoService {
         BigDecimal total = invoice.getTotalAmount() == null ? BigDecimal.ZERO : invoice.getTotalAmount();
 
         if (due.compareTo(BigDecimal.ZERO) == 0) {
-            invoice.setStatus("PAID");
+            invoice.setStatus(InvoiceStatus.PAID);
             invoice.setLastPaymentDate(LocalDate.now()); // optional; it's not cash payment, but marks settlement
         } else if (due.compareTo(total) < 0) {
-            invoice.setStatus("PARTIAL");
+            invoice.setStatus(InvoiceStatus.PARTIAL);
         } else {
-            invoice.setStatus("OPEN");
+            invoice.setStatus(InvoiceStatus.OPEN);
         }
     }
 

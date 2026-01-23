@@ -18,6 +18,7 @@ import com.example.account.receivable.GL.Dto.GlTransactionCreateRequest;
 import com.example.account.receivable.GL.Enum.GlReferenceType;
 import com.example.account.receivable.GL.Service.GlTransactionService;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.WriteOff.Dto.CompanyWriteOffResponse;
 import com.example.account.receivable.WriteOff.Dto.CreateWriteOffRequest;
@@ -50,8 +51,8 @@ public class InvoiceWriteOffService {
             Invoice invoice = invoiceRepository.findById(invoiceId)
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
 
-            // ❌ DO NOT change invoice status here
-            if ("WRITTEN_OFF".equalsIgnoreCase(invoice.getStatus())) {
+            // DO NOT change invoice status here
+            if (invoice.getStatus() == InvoiceStatus.WRITTEN_OFF) {
                     throw new ResponseStatusException(
                                     HttpStatus.BAD_REQUEST,
                                     "Invoice already written off");
@@ -105,7 +106,7 @@ public class InvoiceWriteOffService {
 
             // Update invoice status
             Invoice invoice = writeOff.getInvoice();
-            invoice.setStatus("WRITTEN_OFF");
+            invoice.setStatus(InvoiceStatus.WRITTEN_OFF);
 
             invoiceRepository.save(invoice);
 

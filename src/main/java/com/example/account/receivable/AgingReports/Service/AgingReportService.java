@@ -4,6 +4,7 @@ import com.example.account.receivable.AgingReports.DTO.AgingReportResponse;
 import com.example.account.receivable.AgingReports.DTO.CustomerAgingDto;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,8 +43,10 @@ public class AgingReportService {
 
             // filter by status (OPEN, PARTIAL, etc.) – case insensitive
             if (status != null && !status.isBlank()) {
-                String invStatus = inv.getStatus();
-                if (invStatus == null || !invStatus.equalsIgnoreCase(status)) {
+                InvoiceStatus invStatus = inv.getStatus();
+
+                if (invStatus == null ||
+                    !invStatus.name().equalsIgnoreCase(status)) {
                     continue;
                 }
             }

@@ -15,16 +15,17 @@ import com.example.account.receivable.Dashboard.CompanyInvoiceMonthProjection;
 import com.example.account.receivable.Invoice.InvoiceAgingProjection;
 import com.example.account.receivable.Invoice.InvoiceStatusProjection;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 
 public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
     Page<Invoice> findByDeletedFalse(Pageable pageable);
 
-    List<Invoice> findByCustomerIdAndDeletedFalseAndStatusNotIn(Long customerId , List<String> statuses);
+    List<Invoice> findByCustomerIdAndDeletedFalseAndStatusNotIn(Long customerId , List<InvoiceStatus> statuses);
 
     List<Invoice> findByCustomerId(Long customerId);
 
     // Get Invoices List based on the Status(OPEN , PARTIAL , PAID)
-    List<Invoice> findByCustomerIdAndStatusIn(Long customerId, List<String> statuses);
+    List<Invoice> findByCustomerIdAndStatusIn(Long customerId, List<InvoiceStatus> statuses);
 
     // Check if an invoice number already exists (manual or generated)
     boolean existsByInvoiceNumber(String invoiceNumber);
@@ -46,9 +47,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
         WHERE i.customer.id = :customerId
         AND i.deleted = false
         AND i.balanceDue > 0
-        AND i.status IN ('OPEN', 'PARTIAL')
+        AND i.status IN :statuses
     """)
-    BigDecimal getCustomerOutstandingBalance(@Param("customerId") Long customerId);
+    BigDecimal getCustomerOutstandingBalance(@Param("customerId") Long customerId , @Param("statuses") List<InvoiceStatus> statuses);
 
 
 
@@ -140,10 +141,30 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
     Page<Invoice> findCompanyInvoicesByStatusAndDateRange(
             @Param("companyId") Long companyId,
             Pageable pageable,
-            @Param("statuses") List<String> statuses,
+            @Param("statuses") List<InvoiceStatus> statuses,
             @Param("dateFrom") LocalDate dateFrom,
             @Param("dateTo") LocalDate dateTo
     );
+
+
+    // GET Company Draft Invoices
+    @Query("""
+        SELECT i
+        FROM Invoice i
+        JOIN i.customer c
+        JOIN c.companyCompanies cc
+        WHERE cc.company.id = :companyId
+        AND i.status = :status
+        AND i.deleted = false
+        AND c.deleted = false
+    """)
+    Page<Invoice> findCompanyInvoicesByStatus(
+            @Param("companyId") Long companyId,
+            @Param("status") InvoiceStatus status,
+            Pageable pageable
+    );
+
+
 
 
     //Query used for the Aging
@@ -214,11 +235,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
             AND i.deleted = false
             AND c.deleted = false
             AND i.balanceDue > 0
-            AND i.status IN ('OPEN', 'PARTIAL')
+            AND i.status IN :statuses
             AND i.dueDate < CURRENT_DATE
         """)
         List<Object[]> findOverdueInvoicesByCompany(
-            @Param("companyId") Long companyId
+            @Param("companyId") Long companyId,
+            @Param("statuses") List<InvoiceStatus> statuses
         );
 
 
@@ -237,7 +259,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
         """)
         Page<Invoice> findCompanyInvoicesFiltered(
                 @Param("companyId") Long companyId,
-                @Param("statuses") List<String> statuses,
+                @Param("statuses") List<InvoiceStatus> statuses,
                 @Param("fromDate") LocalDate fromDate,
                 @Param("toDate") LocalDate toDate,
                 Pageable pageable
@@ -260,10 +282,11 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
             AND i.deleted = false
             AND c.deleted = false
             AND i.balanceDue > 0
-            AND i.status IN ('OPEN','PARTIAL')
+            AND i.status IN :statuses
             """)
         InvoiceAgingProjection getInvoiceAgingReport(
                 @Param("companyId") Long companyId,
+                @Param("statuses") List<InvoiceStatus> statuses,
                 @Param("today") LocalDate today,
                 @Param("todayMinus30") LocalDate todayMinus30,
                 @Param("todayMinus60") LocalDate todayMinus60,
@@ -275,10 +298,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
         //Query Used to  Cal Invoice Reports(OPEN ,PARTIAL , PAID , WRITTEN_OFF)
         @Query("""
             SELECT
-                SUM(CASE WHEN i.status = 'OPEN' THEN 1 ELSE 0 END) AS open,
-                SUM(CASE WHEN i.status = 'PARTIAL' THEN 1 ELSE 0 END) AS partial,
-                SUM(CASE WHEN i.status = 'PAID' THEN 1 ELSE 0 END) AS paid,
-                SUM(CASE WHEN i.status = 'WRITTEN_OFF' THEN 1 ELSE 0 END) AS writtenOff
+                SUM(CASE WHEN i.status = com.example.account.receivable.Invoice.Enum.InvoiceStatus.OPEN THEN 1 ELSE 0 END) AS open,
+                SUM(CASE WHEN i.status = com.example.account.receivable.Invoice.Enum.InvoiceStatus.PARTIAL THEN 1 ELSE 0 END) AS partial,
+                SUM(CASE WHEN i.status = com.example.account.receivable.Invoice.Enum.InvoiceStatus.PAID THEN 1 ELSE 0 END) AS paid,
+                SUM(CASE WHEN i.status = com.example.account.receivable.Invoice.Enum.InvoiceStatus.WRITTEN_OFF THEN 1 ELSE 0 END) AS writtenOff
             FROM Invoice i
             JOIN i.customer c
             JOIN c.companyCompanies cc
