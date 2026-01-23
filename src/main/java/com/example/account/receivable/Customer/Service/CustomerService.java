@@ -293,6 +293,7 @@ public class CustomerService {
         dunningCreditSettings.setLevel2(customerDunningCreditSettingsDTO.getLevel2());
         dunningCreditSettings.setLevel3(customerDunningCreditSettingsDTO.getLevel3());
         dunningCreditSettings.setLevel4(customerDunningCreditSettingsDTO.getLevel4());
+        dunningCreditSettings.setPaymentTerms(customerDunningCreditSettingsDTO.getPaymentTerms());
 
         return customerDunningCreditSettingsRepository.save(dunningCreditSettings);
     }

@@ -26,6 +26,7 @@ public class CustomerDunningCreditSettings {
     private String level2;
     private String level3;
     private String level4;
+    private String paymentTerms;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
