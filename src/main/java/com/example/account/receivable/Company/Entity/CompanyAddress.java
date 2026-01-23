@@ -51,6 +51,8 @@ public class CompanyAddress {
     @Column(name = "primary_contact_email")
     private String primaryContactEmail;
 
+    private String position;
+
     @Column(name = "primary_contact_phone")
     private String primaryContactPhone;
 

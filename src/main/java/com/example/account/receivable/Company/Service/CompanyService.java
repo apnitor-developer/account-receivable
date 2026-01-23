@@ -103,6 +103,7 @@ public class CompanyService {
 
             address.setPrimaryContactName(dto.getPrimaryContactName());
             address.setPrimaryContactEmail(dto.getPrimaryContactEmail());
+            address.setPosition(dto.getPosition());
             address.setPrimaryContactPhone(dto.getPrimaryContactPhone());
             address.setWebsite(dto.getWebsite());
             address.setPrimaryContactCountry(dto.getPrimaryContactCountry());

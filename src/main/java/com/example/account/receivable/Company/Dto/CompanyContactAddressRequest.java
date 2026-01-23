@@ -13,9 +13,11 @@ public class CompanyContactAddressRequest {
 
     private String primaryContactName;
     private String primaryContactEmail;
+    private String position;
 
     private String primaryContactPhone;
     private String website;
     private String primaryContactCountry;
+    
 }
 
