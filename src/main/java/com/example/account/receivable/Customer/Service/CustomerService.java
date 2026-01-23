@@ -171,6 +171,10 @@ public class CustomerService {
         customer.setCustomerId(randomNumber);
         customer.setEmail(customerDTO.getEmail());
         customer.setCustomerType(customerDTO.getCustomerType());
+        customer.setPhoneNumber(customerDTO.getPhoneNumber());
+        customer.setFaceBook(customerDTO.getFaceBook());
+        customer.setLinkedin(customer.getLinkedin());
+        customer.setTwitter(customerDTO.getTwitter());
 
         // Save customer first
         Customer savedCustomer = customerRepository.save(customer);

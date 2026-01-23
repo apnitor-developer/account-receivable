@@ -38,6 +38,11 @@ public class Customer {
 
     private String customerType;
 
+    private String phoneNumber;
+    private String faceBook;
+    private String linkedin;
+    private String twitter;
+
     @Column(nullable =  true)
     private boolean deleted = false;
 
