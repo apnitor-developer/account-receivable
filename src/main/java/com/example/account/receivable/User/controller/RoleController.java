@@ -2,6 +2,7 @@ package com.example.account.receivable.User.controller;
 
 import com.example.account.receivable.Company.Dto.RoleDto;
 import com.example.account.receivable.Company.Dto.RoleResponse;
+import com.example.account.receivable.User.dto.UpdateRoleDto;
 import com.example.account.receivable.User.service.RoleService;
 import com.example.account.receivable.Common.ApiResponse;
 
@@ -64,6 +65,25 @@ public class RoleController {
                         200,
                         "Role fetched successfully",
                         roleService.getRole(id)
+                )
+        );
+    }
+
+
+    // UPDATE role
+    @PutMapping("/{roleId}/company/{companyId}")
+    public ResponseEntity<ApiResponse<RoleResponse>> updateRole(
+            @PathVariable Long roleId,
+            @PathVariable Long companyId,
+            @RequestBody UpdateRoleDto request
+    ) {
+        RoleResponse response = roleService.updateRole(roleId, companyId, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.successResponse(
+                        HttpStatus.OK.value(),
+                        "Role updated successfully",
+                        response
                 )
         );
     }
