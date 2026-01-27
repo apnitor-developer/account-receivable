@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Invoice</title>
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .header-table td {
+            vertical-align: top;
+            padding: 5px;
+        }
+
+        .title {
+            font-size: 26px;
+            font-weight: bold;
+            text-align: right;
+            color: #2b6cb0;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+
+        table.items {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table.items th,
+        table.items td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-size: 11px;
+        }
+
+        table.items th {
+            background-color: #f2f2f2;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .totals {
+            width: 40%;
+            float: right;
+            margin-top: 20px;
+        }
+
+        .totals td {
+            padding: 6px;
+            font-size: 12px;
+        }
+
+        .totals .grand {
+            font-weight: bold;
+            border-top: 2px solid #333;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <table class="header-table">
+        <tr>
+            <td>
+                <strong th:text="${company.legalName}">Company Name</strong><br/>
+                <span th:if="${company.companyAddress != null}"
+                      th:text="${company.companyAddress.primaryContactEmail}"></span><br/>
+                <span th:if="${company.companyAddress != null}"
+                      th:text="${company.companyAddress.primaryContactPhone}"></span>
+            </td>
+            <td class="title">
+                INVOICE<br/>
+                <span style="font-size:12px;">
+                    Invoice #: <span th:text="${invoice.invoiceNumber}"></span><br/>
+                    Date: <span th:text="${invoice.invoiceDate}"></span><br/>
+                    Due Date: <span th:text="${invoice.dueDate}"></span>
+                </span>
+            </td>
+        </tr>
+    </table>
+
+    <!-- BILL TO -->
+    <div class="section-title">Bill To</div>
+    <strong th:text="${customer.customerName}"></strong><br/>
+    <span th:text="${customer.email}"></span>
+
+    <!-- ITEMS -->
+    <div class="section-title">Invoice Items</div>
+    <table class="items">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="right">Qty</th>
+                <th class="right">Rate</th>
+                <th class="right">Tax</th>
+                <th class="right">Amount</th>
+                <th class="right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="item : ${invoice.items}">
+                <td th:text="${item.itemName} + ' - ' + ${item.description}"></td>
+                <td class="right" th:text="${item.quantity}"></td>
+                <td class="right" th:text="${item.rate}"></td>
+                <td class="right" th:text="${item.taxAmount}"></td>
+                <td class="right" th:text="${item.amount}"></td>
+                <td class="right" th:text="${item.total}"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- TOTALS -->
+    <table class="totals">
+        <tr>
+            <td>Subtotal</td>
+            <td class="right" th:text="${invoice.subTotal}"></td>
+        </tr>
+        <tr>
+            <td>Total</td>
+            <td class="right" th:text="${invoice.totalAmount}"></td>
+        </tr>
+        <tr class="grand">
+            <td>Balance Due</td>
+            <td class="right" th:text="${invoice.balanceDue}"></td>
+        </tr>
+    </table>
+
+    <div style="clear:both;"></div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        Thank you for your business.<br/>
+        Please make the payment on or before the due date.
+    </div>
+
+</div>
+
+</body>
+</html>

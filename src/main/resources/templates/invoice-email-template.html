@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background:#f4f4f4;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:20px;">
+    <tr>
+        <td align="center">
+
+            <!-- MAIN CARD -->
+            <table width="600" cellpadding="0" cellspacing="0"
+                   style="background:#ffffff; padding:20px; border-radius:6px;">
+
+                <!-- HEADER -->
+                <tr>
+                    <td>
+                        <table width="100%">
+                            <tr>
+                                <td>
+                                    <strong th:text="${company.legalName}">Company Name</strong><br/>
+                                    <span th:if="${company.companyAddress != null}"
+                                          th:text="${company.companyAddress.primaryContactEmail}"></span><br/>
+                                    <span th:if="${company.companyAddress != null}"
+                                          th:text="${company.companyAddress.primaryContactPhone}"></span>
+                                </td>
+                                <td align="right">
+                                    <h2 style="margin:0;">INVOICE</h2>
+                                    <p style="margin:4px 0;">
+                                        <strong>#</strong>
+                                        <span th:text="${invoice.invoiceNumber}"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- META -->
+                <tr>
+                    <td style="padding-top:10px;">
+                        <strong>Date:</strong>
+                        <span th:text="${invoice.invoiceDate}"></span><br/>
+                        <strong>Due Date:</strong>
+                        <span th:text="${invoice.dueDate}"></span>
+                    </td>
+                </tr>
+
+                <!-- BILL TO -->
+                <tr>
+                    <td style="padding-top:20px;">
+                        <strong>Bill To</strong><br/>
+                        <span th:text="${customer.customerName}"></span><br/>
+                        <span th:text="${customer.email}"></span>
+                    </td>
+                </tr>
+
+                <!-- ITEMS -->
+                <tr>
+                    <td style="padding-top:20px;">
+                        <table width="100%" cellpadding="6" cellspacing="0" border="1"
+                               style="border-collapse:collapse; font-size:13px;">
+                            <tr style="background:#f0f0f0;">
+                                <th align="left">Description</th>
+                                <th align="right">Qty</th>
+                                <th align="right">Rate</th>
+                                <th align="right">Total</th>
+                            </tr>
+                            <tr th:each="item : ${invoice.items}">
+                                <td th:text="${item.itemName} + ' - ' + ${item.description}"></td>
+                                <td align="right" th:text="${item.quantity}"></td>
+                                <td align="right" th:text="${item.rate}"></td>
+                                <td align="right" th:text="${item.total}"></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- TOTALS -->
+                <tr>
+                    <td style="padding-top:15px;" align="right">
+                        <strong>Total:</strong>
+                        <span th:text="${invoice.totalAmount}"></span><br/>
+                        <strong>Balance Due:</strong>
+                        <span th:text="${invoice.balanceDue}"></span>
+                    </td>
+                </tr>
+
+                <!-- FOOTER -->
+                <tr>
+                    <td style="padding-top:30px; text-align:center; font-size:13px; color:#666;">
+                        Thank you for your business <br/>
+                        Please make the payment on or before the due date.
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

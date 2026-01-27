@@ -2,93 +2,217 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title>Invoice</title>
+
     <style>
-        body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-        .header { width: 100%; margin-bottom: 30px; }
-        .right { text-align: right; }
-        .section-title { font-size: 18px; margin-top: 30px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 10px; border: 1px solid #ddd; }
-        th { background: #f5f5f5; }
-        .text-right { text-align:right; }
-        .summary-table td { border: none; padding: 5px; }
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background: #f7f9fc;
+            margin: 0;
+            padding: 40px;
+            color: #333;
+        }
+
+        .invoice-container {
+            max-width: 900px;
+            margin: auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .company-info h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .company-info p {
+            margin: 4px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .invoice-title {
+            text-align: right;
+        }
+
+        .invoice-title h1 {
+            margin: 0;
+            font-size: 32px;
+            color: #2b6cb0;
+        }
+
+        .invoice-title p {
+            margin: 4px 0;
+            font-size: 14px;
+        }
+
+        /* BILL TO */
+        .section {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2b6cb0;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        thead th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        tbody td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        /* TOTALS */
+        .totals {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .totals table {
+            width: 300px;
+        }
+
+        .totals td {
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .totals tr:last-child td {
+            font-size: 16px;
+            font-weight: bold;
+            border-top: 2px solid #333;
+            padding-top: 12px;
+        }
+
+        /* FOOTER */
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 14px;
+            color: #777;
+        }
     </style>
 </head>
 
 <body>
 
+<div class="invoice-container">
+
     <!-- HEADER -->
     <div class="header">
-        <h1 class="right">INVOICE</h1>
+        <div class="company-info">
+            <h2 th:text="${company.legalName}">Company Name</h2>
+            <p th:if="${company.companyAddress != null}"
+               th:text="${company.companyAddress.primaryContactEmail}"></p>
+            <p th:if="${company.companyAddress != null}"
+               th:text="${company.companyAddress.primaryContactPhone}"></p>
+        </div>
 
-        <p><strong>Invoice Number:</strong> <span th:text="${invoice.invoiceNumber}"></span></p>
-        <p><strong>Date:</strong> <span th:text="${invoice.invoiceDate}"></span></p>
-        <p><strong>Due Date:</strong> <span th:text="${invoice.dueDate}"></span></p>
-
-        <span th:if="${company.companyAddress != null}"
-            th:text="${company.companyAddress.primaryContactPhone}">
-        </span>
+        <div class="invoice-title">
+            <h1>INVOICE</h1>
+            <p><strong>Invoice #:</strong> <span th:text="${invoice.invoiceNumber}"></span></p>
+            <p><strong>Date:</strong> <span th:text="${invoice.invoiceDate}"></span></p>
+            <p><strong>Due Date:</strong> <span th:text="${invoice.dueDate}"></span></p>
+        </div>
     </div>
 
-    <!-- CUSTOMER INFO -->
-    <div>
-        <h3 class="section-title">Bill To</h3>
+    <!-- BILL TO -->
+    <div class="section">
+        <div class="section-title">Bill To</div>
         <p><strong th:text="${invoice.customer.customerName}"></strong></p>
         <p th:text="${invoice.customer.email}"></p>
     </div>
 
-    <!-- ITEMS TABLE -->
-    <div>
-        <h3 class="section-title">Invoice Items</h3>
+    <!-- ITEMS -->
+    <div class="section">
+        <div class="section-title">Invoice Items</div>
 
         <table>
             <thead>
                 <tr>
                     <th>Description</th>
-                    <th>Qty</th>
-                    <th>Rate</th>
-                    <th>Tax</th>
-                    <th>Amount</th>
-                    <th>Total</th>
+                    <th class="text-right">Qty</th>
+                    <th class="text-right">Rate</th>
+                    <th class="text-right">Tax</th>
+                    <th class="text-right">Amount</th>
+                    <th class="text-right">Total</th>
                 </tr>
             </thead>
             <tbody>
                 <tr th:each="item : ${invoice.items}">
                     <td th:text="${item.itemName} + ' - ' + ${item.description}"></td>
-                    <td th:text="${item.quantity}"></td>
-                    <td th:text="${item.rate}"></td>
-                    <td th:text="${item.taxAmount}"></td>
-                    <td th:text="${item.amount}"></td>
-                    <td th:text="${item.total}"></td>
+                    <td class="text-right" th:text="${item.quantity}"></td>
+                    <td class="text-right" th:text="${item.rate}"></td>
+                    <td class="text-right" th:text="${item.taxAmount}"></td>
+                    <td class="text-right" th:text="${item.amount}"></td>
+                    <td class="text-right" th:text="${item.total}"></td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <!-- SUMMARY -->
-    <div class="right" style="margin-top: 30px; width: 40%; float: right;">
-        <table class="summary-table">
+    <!-- TOTALS -->
+    <div class="totals">
+        <table>
             <tr>
-                <td><strong>Subtotal:</strong></td>
-                <td th:text="${invoice.subTotal}"></td>
+                <td>Subtotal</td>
+                <td class="text-right" th:text="${invoice.subTotal}"></td>
             </tr>
             <tr>
-                <td><strong>Total Amount:</strong></td>
-                <td th:text="${invoice.totalAmount}"></td>
+                <td>Total</td>
+                <td class="text-right" th:text="${invoice.totalAmount}"></td>
             </tr>
             <tr>
-                <td><strong>Balance Due:</strong></td>
-                <td th:text="${invoice.balanceDue}"></td>
+                <td>Balance Due</td>
+                <td class="text-right" th:text="${invoice.balanceDue}"></td>
             </tr>
         </table>
     </div>
 
-    <div style="clear:both;"></div>
+    <!-- FOOTER -->
+    <div class="footer">
+        Thank you for your business  
+        <br/>
+        Please make the payment on or before the due date.
+    </div>
 
-    <!-- FOOTER MESSAGE -->
-    <p style="margin-top: 60px; text-align:center;">
-        Thank you for your business!
-    </p>
+</div>
 
 </body>
 </html>

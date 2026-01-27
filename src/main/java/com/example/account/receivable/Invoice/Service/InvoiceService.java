@@ -74,15 +74,16 @@ public class InvoiceService {
             );
         }
 
-        String html = invoiceTemplateService.generateHtml(invoice , company);
+        String emailHtml = invoiceTemplateService.generateEmailHtml(invoice, company);
+        String pdfHtml   = invoiceTemplateService.generatePdfHtml(invoice, company);
 
-        byte[] pdf = pdfGeneratorService.generatePdf(html);
+        byte[] pdf = pdfGeneratorService.generatePdf(pdfHtml);
 
         String customerEmail = invoice.getCustomer().getEmail();
         
         String subject = "Invoice " + invoice.getInvoiceNumber();
 
-        emailService.sendWithAttachment(customerEmail, subject, html, pdf);
+        emailService.sendWithAttachment(customerEmail, subject, emailHtml, pdf);
 
     }
 

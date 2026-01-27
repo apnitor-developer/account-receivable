@@ -14,14 +14,25 @@ public class InvoiceTemplateService {
 
     private final TemplateEngine templateEngine;
 
-    public String generateHtml(Invoice invoice , Company company) {
+
+    // PDF ONLY
+    public String generatePdfHtml(Invoice invoice, Company company) {
         Context ctx = new Context();
-
         ctx.setVariable("invoice", invoice);
-        ctx.setVariable("customer", invoice.getCustomer());
         ctx.setVariable("company", company);
+        ctx.setVariable("customer", invoice.getCustomer());
 
-        return templateEngine.process("invoice-template", ctx);
+        return templateEngine.process("invoice-pdf-template", ctx);
+    }
+
+    // EMAIL ONLY
+    public String generateEmailHtml(Invoice invoice, Company company) {
+        Context ctx = new Context();
+        ctx.setVariable("invoice", invoice);
+        ctx.setVariable("company", company);
+        ctx.setVariable("customer", invoice.getCustomer());
+
+        return templateEngine.process("invoice-email-template", ctx);
     }
 
     public String generateHtmlReminder(Invoice invoice , Company company) {
