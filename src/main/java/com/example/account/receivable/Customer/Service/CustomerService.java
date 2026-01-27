@@ -975,11 +975,38 @@ public class CustomerService {
                         TemplateTab.builder()
                                 .tab("Main")
                                 .fields(List.of(
-                                        field("customerName", "Customer Name", true, "string",
+                                        field("customerName", "Company Name", true, "string",
                                                 Map.of("minLength", 2, "pattern", "letters_and_spaces")),
-                                        field("customerType", "Customer Type", true, "string",
+                                        field("customerType", "Company Type", true, "string",
                                                 Map.of("pattern", "letters_and_spaces")),
-                                        field("email", "Email", true, "email", null)))
+                                        field("email", "Email", true, "email", null),
+                                        field(
+                                                "phoneNumber",
+                                                "Phone Number",
+                                                true,
+                                                "string",
+                                                Map.of("pattern", "phone")),
+
+                                        field(
+                                                "faceBook",
+                                                "Facebook",
+                                                false,
+                                                "url",
+                                                null),
+
+                                        field(
+                                                "linkedin",
+                                                "LinkedIn",
+                                                false,
+                                                "url",
+                                                null),
+
+                                        field(
+                                                "twitter",
+                                                "Twitter",
+                                                false,
+                                                "url",
+                                                null)))
                                 .build(),
 
                         // ADDRESS TAB
@@ -1021,6 +1048,7 @@ public class CustomerService {
                                 .fields(List.of(
                                         field("creditLimit", "Credit Limit", true, "number",
                                                 Map.of("min", 0)),
+                                        field("paymentTerms","Payment Terms",false,"string",null),
                                         field("dunningLevel", "Dunning Level", true, "string", null),
                                         field("pastDue", "Past Due (Days)", true, "number", null),
                                         field("level1", "Level 1 (Days)", true, "number", null),
