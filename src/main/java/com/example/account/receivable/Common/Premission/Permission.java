@@ -24,6 +24,7 @@ public enum Permission {
     CREATE_INVOICE,
     EDIT_INVOICE,
     DELETE_INVOICE,
+    APPROVE_INVOICE,
 
 
     // =========================
