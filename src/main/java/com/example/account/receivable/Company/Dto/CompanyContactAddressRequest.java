@@ -1,5 +1,6 @@
 package com.example.account.receivable.Company.Dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
@@ -15,7 +16,9 @@ public class CompanyContactAddressRequest {
     private String primaryContactEmail;
     private String position;
 
+    @NotNull
     private String primaryContactPhone;
+    
     private String website;
     private String primaryContactCountry;
     

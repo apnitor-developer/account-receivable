@@ -24,6 +24,10 @@
         <p><strong>Invoice Number:</strong> <span th:text="${invoice.invoiceNumber}"></span></p>
         <p><strong>Date:</strong> <span th:text="${invoice.invoiceDate}"></span></p>
         <p><strong>Due Date:</strong> <span th:text="${invoice.dueDate}"></span></p>
+
+        <span th:if="${company.companyAddress != null}"
+            th:text="${company.companyAddress.primaryContactPhone}">
+        </span>
     </div>
 
     <!-- CUSTOMER INFO -->

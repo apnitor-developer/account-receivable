@@ -45,7 +45,7 @@ public class CompanyAddress {
     private String addressCountry;
 
     // Primary contact
-    @Column(name = "primary_contact_name")
+    @Column(name = "primary_contact_name" , nullable = false)
     private String primaryContactName;
 
     @Column(name = "primary_contact_email")

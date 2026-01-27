@@ -59,9 +59,12 @@ public class InvoiceService {
     private final PdfGeneratorService pdfGeneratorService;
 
     
-    public void sendInvoiceEmail(Long invoiceId) {
+    public void sendInvoiceEmail(Long invoiceId , Long companyId) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found"));
+
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
 
 
         if (invoice.getStatus() != InvoiceStatus.OPEN) {
@@ -71,7 +74,7 @@ public class InvoiceService {
             );
         }
 
-        String html = invoiceTemplateService.generateHtml(invoice);
+        String html = invoiceTemplateService.generateHtml(invoice , company);
 
         byte[] pdf = pdfGeneratorService.generatePdf(html);
 

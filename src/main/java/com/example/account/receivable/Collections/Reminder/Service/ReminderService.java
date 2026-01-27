@@ -10,6 +10,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.account.receivable.Common.EmailService;
 import com.example.account.receivable.Common.InvoiceTemplateService;
 import com.example.account.receivable.Common.PdfGeneratorService;
+import com.example.account.receivable.Company.Entity.Company;
+import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
@@ -23,8 +25,9 @@ public class ReminderService {
     private final InvoiceTemplateService invoiceTemplateService;
     private final PdfGeneratorService pdfGeneratorService;
     private final EmailService emailService;
+    private final CompanyRepository companyRepository;
 
-    public void sendInvoiceReminder(Long invoiceId) {
+    public void sendInvoiceReminder(Long invoiceId , Long companyId) {
 
         Invoice invoice = invoiceRepository.findById(invoiceId)
             .orElseThrow(() ->
@@ -33,6 +36,9 @@ public class ReminderService {
                     "Invoice not found"
                 )
             );
+
+            Company company = companyRepository.findById(companyId)
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
 
         // 🔒 Business validations
         if (invoice.isDeleted()) {
@@ -57,7 +63,7 @@ public class ReminderService {
         }
 
         // 🧾 Generate email HTML (reuse existing template)
-        String html = invoiceTemplateService.generateHtmlReminder(invoice);
+        String html = invoiceTemplateService.generateHtmlReminder(invoice , company);
 
         // 📄 Generate PDF
         byte[] pdf = pdfGeneratorService.generatePdf(html);

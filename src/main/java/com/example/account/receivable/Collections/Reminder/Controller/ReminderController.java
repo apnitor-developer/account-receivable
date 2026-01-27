@@ -18,11 +18,11 @@ public class ReminderController {
 
     private final ReminderService reminderService;
 
-    @PostMapping("/invoice/{invoiceId}")
+    @PostMapping("/invoice/{companyId}/{invoiceId}")
     public ResponseEntity<ApiResponse<String>>
-    sendInvoiceReminder(@PathVariable Long invoiceId) {
+    sendInvoiceReminder(@PathVariable Long invoiceId , @PathVariable Long companyId) {
 
-        reminderService.sendInvoiceReminder(invoiceId);
+        reminderService.sendInvoiceReminder(invoiceId , companyId);
 
         return ResponseEntity.ok(
             ApiResponse.successResponse(

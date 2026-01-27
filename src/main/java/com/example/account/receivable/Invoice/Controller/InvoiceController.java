@@ -85,11 +85,12 @@ public class InvoiceController {
     }
 
     //Send Invoice
-    @PostMapping("/send/{invoiceId}")
+    @PostMapping("/send/{companyId}/{invoiceId}")
     public ResponseEntity<ApiResponse<String>> sendInvoice(
-            @PathVariable Long invoiceId
+            @PathVariable Long invoiceId,
+            @PathVariable Long companyId
     ) {
-        invoiceService.sendInvoiceEmail(invoiceId);
+        invoiceService.sendInvoiceEmail(invoiceId , companyId);
 
         ApiResponse<String> res = ApiResponse.successResponse(
                 200,
