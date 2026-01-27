@@ -437,6 +437,10 @@ public class CustomerService {
         updateIfNotNull(dto.getCustomerName(),  customer::setCustomerName);
         updateIfNotNull(dto.getEmail(),        customer::setEmail);
         updateIfNotNull(dto.getCustomerType(), customer::setCustomerType);
+        updateIfNotNull(dto.getPhoneNumber(), customer::setPhoneNumber);
+        updateIfNotNull(dto.getFaceBook(), customer::setFaceBook);
+        updateIfNotNull(dto.getLinkedin(), customer::setLinkedin);
+        updateIfNotNull(dto.getTwitter(), customer::setTwitter);
 
 
         // --- ADDRESS ---
@@ -570,6 +574,7 @@ public class CustomerService {
             updateIfNotNull(dcDto.getLevel2(),            dc::setLevel2);
             updateIfNotNull(dcDto.getLevel3(),            dc::setLevel3);
             updateIfNotNull(dcDto.getLevel4(),            dc::setLevel4);
+            updateIfNotNull(dcDto.getPaymentTerms(),      dc::setPaymentTerms);
 
             customerDunningCreditSettingsRepository.save(dc);
         }

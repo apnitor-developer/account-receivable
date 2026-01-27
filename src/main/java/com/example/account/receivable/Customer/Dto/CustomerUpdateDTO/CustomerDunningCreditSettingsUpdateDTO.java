@@ -15,4 +15,5 @@ public class CustomerDunningCreditSettingsUpdateDTO {
     private String level2;
     private String level3;
     private String level4;
+    private String paymentTerms;
 }

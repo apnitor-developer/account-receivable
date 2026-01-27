@@ -12,6 +12,10 @@ public class CustomerFullUpdateDTO {
     private Long customerId;
     private String email;
     private String customerType;
+    private String phoneNumber;
+    private String faceBook;
+    private String linkedin;
+    private String twitter;
 
     // ADDRESS (if present → replace addresses)
     private CustomerAddressUpdateDTO addresses;
