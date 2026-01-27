@@ -80,6 +80,7 @@ public enum Permission {
     // ROLES
     VIEW_ROLES,
     CREATE_ROLES,
+    UPDATE_ROLE,
     VIEW_CODE,
     CREATE_CODE,
     UPDATE_CODE,
