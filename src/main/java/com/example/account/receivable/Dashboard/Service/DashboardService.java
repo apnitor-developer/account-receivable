@@ -19,6 +19,7 @@ import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Dashboard.CompanyInvoiceMonthProjection;
 import com.example.account.receivable.Dashboard.DTO.CompanyInvoiceMonthlySeriesResponse;
 import com.example.account.receivable.Dashboard.DTO.DashboardSummaryResponse;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.Payment.Repository.PaymentRepository;
 
@@ -37,6 +38,7 @@ public class DashboardService {
 
         
         LocalDate today = LocalDate.now();
+        LocalDate overdue30Days = today.minusDays(30);
 
         // Payments:
         //(total Payment)
@@ -62,6 +64,13 @@ public class DashboardService {
         long pendingInvoices = invoiceRepository.countPendingByCompany(companyId);
 
 
+        BigDecimal overdueMoreThan30Days =
+            invoiceRepository.getInvoicesOverdueMoreThan30Days(
+                    companyId,
+                    overdue30Days,
+                    List.of(InvoiceStatus.OPEN, InvoiceStatus.PARTIAL)
+            );
+
         // Current Promise to Pay
         BigDecimal currentPromiseToPay =
                 promiseToPayRepo.getCurrentPromiseAmountByCompany(
@@ -78,7 +87,8 @@ public class DashboardService {
             currentReceivables,
             totalInvoices,
             pendingInvoices,
-            currentPromiseToPay
+            currentPromiseToPay,
+            overdueMoreThan30Days
         );
     }
 

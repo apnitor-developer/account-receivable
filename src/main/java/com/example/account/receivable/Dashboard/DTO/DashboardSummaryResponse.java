@@ -23,4 +23,6 @@ public class DashboardSummaryResponse {
     private long pendingInvoices;
 
     private BigDecimal currentPromiseToPay;
+
+    private BigDecimal  overdueMoreThan30Days;
 }

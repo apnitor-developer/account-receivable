@@ -343,5 +343,27 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
 
 
 
+    //Overdue by more than 30 days
+    @Query("""
+        SELECT COALESCE(SUM(i.balanceDue), 0)
+        FROM Invoice i
+        JOIN i.customer c
+        JOIN CompanyCustomers cc ON cc.customer = c
+        WHERE cc.company.id = :companyId
+        AND i.deleted = false
+        AND c.deleted = false
+        AND i.balanceDue > 0
+        AND i.dueDate < :overdueDate
+        AND i.status IN :statuses
+    """)
+    BigDecimal getInvoicesOverdueMoreThan30Days(
+            @Param("companyId") Long companyId,
+            @Param("overdueDate") LocalDate overdueDate,
+            @Param("statuses") List<InvoiceStatus> statuses 
+    );
+
+
+
+
 
 }
