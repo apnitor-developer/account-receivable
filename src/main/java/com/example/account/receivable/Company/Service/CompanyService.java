@@ -530,6 +530,9 @@ public class CompanyService {
         if (request.getAddressCountry() != null)
             address.setAddressCountry(request.getAddressCountry());
 
+        if(request.getPosition() != null)
+            address.setPosition(request.getPosition());
+
         if (request.getPrimaryContactName() != null)
             address.setPrimaryContactName(request.getPrimaryContactName());
 

@@ -9,6 +9,7 @@ public class AddressRequestDto {
     private String stateProvince;
     private String postalCode;
     private String addressCountry;
+    private String position;
 
     private String primaryContactName;
     private String primaryContactEmail;
