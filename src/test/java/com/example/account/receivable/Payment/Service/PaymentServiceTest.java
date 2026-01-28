@@ -28,9 +28,13 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseStatus;
 import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseToPay;
 import com.example.account.receivable.Collections.PromiseToPay.Repository.PromiseToPayRepo;
+import com.example.account.receivable.Company.Entity.Company;
+import com.example.account.receivable.Customer.Entity.CompanyCustomers;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.GL.Service.GlTransactionService;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
 import com.example.account.receivable.Payment.Dto.ResponseDTO.MonthlyPaymentDto;
@@ -61,6 +65,9 @@ class PaymentServiceTest {
     @Mock
     private PromiseToPayRepo promiseToPayRepo;
 
+    @Mock
+    private GlTransactionService glTransactionService;
+
     @InjectMocks
     private PaymentService paymentService;
 
@@ -78,18 +85,17 @@ class PaymentServiceTest {
 
     @Test
     void applyPayment_appliesAmountsAndUpdatesPromises() {
-        Customer customer = new Customer();
-        customer.setId(1L);
+        Customer customer = customerWithCompany(1L);
 
         Invoice first = Invoice.builder()
                 .id(10L)
                 .balanceDue(new BigDecimal("100"))
-                .status("OPEN")
+                .status(InvoiceStatus.OPEN)
                 .build();
         Invoice second = Invoice.builder()
                 .id(11L)
                 .balanceDue(new BigDecimal("80"))
-                .status("OPEN")
+                .status(InvoiceStatus.OPEN)
                 .build();
 
         ReceivePaymentRequest request = new ReceivePaymentRequest();
@@ -129,8 +135,8 @@ class PaymentServiceTest {
         assertEquals(5L, result.getId());
         assertEquals(BigDecimal.ZERO, first.getBalanceDue());
         assertEquals(new BigDecimal("30"), second.getBalanceDue());
-        assertEquals("PAID", first.getStatus());
-        assertEquals("PARTIAL", second.getStatus());
+        assertEquals(InvoiceStatus.PAID, first.getStatus());
+        assertEquals(InvoiceStatus.PARTIAL, second.getStatus());
         assertEquals(PromiseStatus.COMPLETED, promise1.getStatus());
         assertEquals(PromiseStatus.DUE_TODAY, promise2.getStatus());
 
@@ -146,7 +152,7 @@ class PaymentServiceTest {
         LocalDate to = from.minusDays(1);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> paymentService.getPaymentsByCompanyId(5L, 0, 10, from, to));
+                () -> paymentService.getPaymentsByCompanyId(5L, 0, 10, from, to, null));
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
@@ -160,7 +166,7 @@ class PaymentServiceTest {
         when(paymentRepository.findPaymentsByCompanyIdFiltered(eq(9L), eq(from), eq(to), any(Pageable.class)))
                 .thenReturn(expected);
 
-        Page<Payment> result = paymentService.getPaymentsByCompanyId(9L, 0, 5, from, to);
+        Page<Payment> result = paymentService.getPaymentsByCompanyId(9L, 0, 5, from, to, null);
 
         assertEquals(expected, result);
 
@@ -168,6 +174,23 @@ class PaymentServiceTest {
         verify(paymentRepository).findPaymentsByCompanyIdFiltered(eq(9L), eq(from), eq(to), pageableCaptor.capture());
         assertEquals(0, pageableCaptor.getValue().getPageNumber());
         assertEquals(5, pageableCaptor.getValue().getPageSize());
+    }
+
+    @Test
+    void getPaymentsByCompanyId_whenMonthsProvidedUsesRelativeWindow() {
+        Page<Payment> expected = new PageImpl<>(List.of());
+        when(paymentRepository.findPaymentsByCompanyIdFiltered(eq(3L), any(LocalDate.class), any(LocalDate.class), any(Pageable.class)))
+                .thenReturn(expected);
+
+        Page<Payment> result = paymentService.getPaymentsByCompanyId(3L, 1, 25, null, null, 4);
+
+        assertEquals(expected, result);
+
+        ArgumentCaptor<LocalDate> fromCaptor = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
+
+        verify(paymentRepository).findPaymentsByCompanyIdFiltered(eq(3L), fromCaptor.capture(), toCaptor.capture(), any(Pageable.class));
+        assertEquals(toCaptor.getValue().minusMonths(4), fromCaptor.getValue());
     }
 
     @Test
@@ -186,6 +209,23 @@ class PaymentServiceTest {
         ArgumentCaptor<LocalDate> fromCaptor = ArgumentCaptor.forClass(LocalDate.class);
         verify(paymentRepository).getPaymentReport(eq(4L), fromCaptor.capture());
         assertEquals(LocalDate.now().minusMonths(6), fromCaptor.getValue());
+    }
+
+    private Customer customerWithCompany(Long customerId) {
+        Customer customer = new Customer();
+        customer.setId(customerId);
+
+        Company company = new Company();
+        company.setId(99L);
+        company.setLegalName("Acme");
+
+        CompanyCustomers link = new CompanyCustomers();
+        link.setCompany(company);
+        link.setCustomer(customer);
+        link.setUserId(1L);
+
+        customer.getCompanyCompanies().add(link);
+        return customer;
     }
 
     @Test

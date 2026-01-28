@@ -141,14 +141,16 @@ class AnalyticsControllersTest {
                 BigDecimal.valueOf(400),
                 80L,
                 20L,
-                BigDecimal.valueOf(75)
+                BigDecimal.valueOf(75),
+                BigDecimal.valueOf(60)
         );
         when(dashboardService.getDashboardSummary(11L)).thenReturn(summary);
 
         mockMvc.perform(get("/dashboard/summary/company/{companyId}", 11L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.totalCustomers").value(10))
-                .andExpect(jsonPath("$.data.totalReceivables").value(900));
+                .andExpect(jsonPath("$.data.totalReceivables").value(900))
+                .andExpect(jsonPath("$.data.overdueMoreThan30Days").value(60));
 
         verify(dashboardService).getDashboardSummary(11L);
     }

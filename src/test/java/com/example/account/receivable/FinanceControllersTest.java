@@ -2,6 +2,7 @@ package com.example.account.receivable;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,6 +36,7 @@ import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendin
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceAgingDto;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceStatusBreakdownResponseDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Service.InvoiceService;
 import com.example.account.receivable.Payment.Controller.PaymentController;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
@@ -97,11 +99,11 @@ class FinanceControllersTest {
 
     @Test
     void sendInvoice_dispatchesEmail() throws Exception {
-        mockMvc.perform(post("/invoice/send/{invoiceId}", 3L))
+        mockMvc.perform(post("/invoice/send/{companyId}/{invoiceId}", 2L, 3L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("sent"));
 
-        verify(invoiceService).sendInvoiceEmail(3L);
+        verify(invoiceService).sendInvoiceEmail(3L, 2L);
     }
 
     @Test
@@ -206,7 +208,7 @@ class FinanceControllersTest {
     @Test
     void getCompanyOpenPartialInvoices_returnsPage() throws Exception {
         Page<Invoice> page = new PageImpl<>(List.of(sampleInvoice()));
-        when(invoiceService.getOpenAndPartialInvoicesByCompanyId(eq(3L), eq(1), eq(20), any(LocalDate.class), any(LocalDate.class)))
+        when(invoiceService.getOpenAndPartialInvoicesByCompanyId(eq(3L), eq(1), eq(20), any(LocalDate.class), any(LocalDate.class), eq(2)))
                 .thenReturn(page);
 
         mockMvc.perform(
@@ -215,17 +217,18 @@ class FinanceControllersTest {
                         .param("size", "20")
                         .param("dateFrom", "2026-01-01")
                         .param("dateTo", "2026-01-31")
+                        .param("months", "2")
         )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].invoiceNumber").value("INV-001"));
 
-        verify(invoiceService).getOpenAndPartialInvoicesByCompanyId(eq(3L), eq(1), eq(20), any(LocalDate.class), any(LocalDate.class));
+        verify(invoiceService).getOpenAndPartialInvoicesByCompanyId(eq(3L), eq(1), eq(20), any(LocalDate.class), any(LocalDate.class), eq(2));
     }
 
     @Test
     void getCompanyInvoices_appliesFilters() throws Exception {
         Page<Invoice> page = new PageImpl<>(List.of(sampleInvoice()));
-        List<String> statuses = List.of("OPEN", "PARTIAL");
+        List<InvoiceStatus> statuses = List.of(InvoiceStatus.OPEN, InvoiceStatus.PARTIAL);
         when(invoiceService.getCompanyInvoices(eq(5L), eq(statuses), any(LocalDate.class), any(LocalDate.class), eq(0), eq(5)))
                 .thenReturn(page);
 
@@ -327,7 +330,7 @@ class FinanceControllersTest {
         Page<Payment> page = new PageImpl<>(List.of(
                 Payment.builder().id(3L).paymentAmount(BigDecimal.TEN).paymentMethod(PaymentMethod.UPI).build()
         ));
-        when(paymentService.getPaymentsByCompanyId(eq(6L), eq(0), eq(10), any(LocalDate.class), any(LocalDate.class))).thenReturn(page);
+        when(paymentService.getPaymentsByCompanyId(eq(6L), eq(0), eq(10), any(LocalDate.class), any(LocalDate.class), isNull())).thenReturn(page);
 
         mockMvc.perform(
                 get("/payment/company/{companyId}/filter", 6L)
@@ -337,7 +340,7 @@ class FinanceControllersTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].paymentMethod").value("UPI"));
 
-        verify(paymentService).getPaymentsByCompanyId(eq(6L), eq(0), eq(10), any(LocalDate.class), any(LocalDate.class));
+        verify(paymentService).getPaymentsByCompanyId(eq(6L), eq(0), eq(10), any(LocalDate.class), any(LocalDate.class), isNull());
     }
 
     @Test

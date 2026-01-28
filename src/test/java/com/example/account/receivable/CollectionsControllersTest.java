@@ -235,13 +235,13 @@ class CollectionsControllersTest {
 
     @Test
     void sendInvoiceReminder_dispatchesToService() throws Exception {
-        doNothing().when(reminderService).sendInvoiceReminder(5L);
+        doNothing().when(reminderService).sendInvoiceReminder(5L, 9L);
 
-        mockMvc.perform(post("/api/reminders/invoice/{invoiceId}", 5L))
+        mockMvc.perform(post("/api/reminders/invoice/{companyId}/{invoiceId}", 9L, 5L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("OK"));
 
-        verify(reminderService).sendInvoiceReminder(5L);
+        verify(reminderService).sendInvoiceReminder(5L, 9L);
     }
 
     @TestConfiguration

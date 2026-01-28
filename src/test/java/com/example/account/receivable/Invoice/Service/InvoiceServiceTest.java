@@ -17,22 +17,30 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.account.receivable.Common.EmailService;
 import com.example.account.receivable.Common.InvoiceTemplateService;
 import com.example.account.receivable.Common.PdfGeneratorService;
+import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.Customer.Entity.CompanyCustomers;
 import com.example.account.receivable.Customer.Entity.CustomerDunningCreditSettings;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.GL.Service.GlTransactionService;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
 import com.example.account.receivable.Invoice.Dto.InvoiceItemDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceItemRepo;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
@@ -60,13 +68,15 @@ class InvoiceServiceTest {
     @Mock
     private CompanyRepository companyRepository;
 
+    @Mock
+    private GlTransactionService glTransactionService;
+
     @InjectMocks
     private InvoiceService invoiceService;
 
     @Test
     void createInvoice_generatedNumberCalculatesTotals() {
-        Customer customer = new Customer();
-        customer.setId(3L);
+        Customer customer = customerWithCompany(3L);
 
         when(customerRepository.findById(3L)).thenReturn(Optional.of(customer));
         when(invoiceRepository.findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc("INV-"))
@@ -94,13 +104,12 @@ class InvoiceServiceTest {
         assertEquals(new BigDecimal("120"), result.getSubTotal());
         assertEquals(new BigDecimal("130"), result.getTotalAmount());
         assertEquals(new BigDecimal("130"), result.getBalanceDue());
-        assertEquals("OPEN", result.getStatus());
+        assertEquals(InvoiceStatus.DRAFT, result.getStatus());
     }
 
     @Test
     void createInvoice_whenManualNumberExists_throwsConflict() {
-        Customer customer = new Customer();
-        customer.setId(1L);
+        Customer customer = customerWithCompany(1L);
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(invoiceRepository.existsByInvoiceNumber("INV-9000")).thenReturn(true);
 
@@ -116,8 +125,7 @@ class InvoiceServiceTest {
 
     @Test
     void createInvoice_whenCreditLimitExceeded_throwsBadRequest() {
-        Customer customer = new Customer();
-        customer.setId(9L);
+        Customer customer = customerWithCompany(9L);
         CustomerDunningCreditSettings dunning = new CustomerDunningCreditSettings();
         dunning.setCreditLimit(10.0);
         customer.setDunning(dunning);
@@ -126,7 +134,7 @@ class InvoiceServiceTest {
         when(invoiceRepository.findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc("INV-"))
                 .thenReturn(Optional.empty());
         when(invoiceRepository.existsByInvoiceNumber(anyString())).thenReturn(false);
-        when(invoiceRepository.getCustomerOutstandingBalance(9L)).thenReturn(new BigDecimal("8"));
+        when(invoiceRepository.getCustomerOutstandingBalance(eq(9L), anyList())).thenReturn(new BigDecimal("8"));
 
         InvoiceDto dto = new InvoiceDto();
         dto.setGenerated(true);
@@ -147,14 +155,21 @@ class InvoiceServiceTest {
                 .id(11L)
                 .invoiceNumber("INV-1001")
                 .customer(customer)
+                .status(InvoiceStatus.OPEN)
                 .build();
 
-        when(invoiceRepository.findById(11L)).thenReturn(Optional.of(invoice));
-        when(invoiceTemplateService.generateHtml(invoice)).thenReturn("<html>invoice</html>");
-        byte[] pdf = "pdf".getBytes(StandardCharsets.UTF_8);
-        when(pdfGeneratorService.generatePdf("<html>invoice</html>")).thenReturn(pdf);
+        Company company = new Company();
+        company.setId(20L);
+        company.setLegalName("Wayne Corp");
 
-        invoiceService.sendInvoiceEmail(11L);
+        when(invoiceRepository.findById(11L)).thenReturn(Optional.of(invoice));
+        when(companyRepository.findById(20L)).thenReturn(Optional.of(company));
+        when(invoiceTemplateService.generateEmailHtml(invoice, company)).thenReturn("<html>invoice</html>");
+        when(invoiceTemplateService.generatePdfHtml(invoice, company)).thenReturn("<html>pdf</html>");
+        byte[] pdf = "pdf".getBytes(StandardCharsets.UTF_8);
+        when(pdfGeneratorService.generatePdf("<html>pdf</html>")).thenReturn(pdf);
+
+        invoiceService.sendInvoiceEmail(11L, 20L);
 
         verify(emailService).sendWithAttachment(
                 eq("client@example.com"),
@@ -162,6 +177,42 @@ class InvoiceServiceTest {
                 eq("<html>invoice</html>"),
                 eq(pdf)
         );
+    }
+
+    @Test
+    void getOpenAndPartialInvoices_whenMonthsProvidedUsesRelativeWindow() {
+        Page<Invoice> page = new PageImpl<>(List.of());
+        when(invoiceRepository.findCompanyInvoicesByStatusAndDateRange(
+                eq(5L),
+                any(Pageable.class),
+                anyList(),
+                any(LocalDate.class),
+                any(LocalDate.class)
+        )).thenReturn(page);
+
+        Page<Invoice> result = invoiceService.getOpenAndPartialInvoicesByCompanyId(
+                5L,
+                0,
+                10,
+                null,
+                null,
+                3
+        );
+
+        assertEquals(page, result);
+
+        ArgumentCaptor<LocalDate> fromCaptor = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
+
+        verify(invoiceRepository).findCompanyInvoicesByStatusAndDateRange(
+                eq(5L),
+                any(Pageable.class),
+                eq(List.of(InvoiceStatus.DRAFT, InvoiceStatus.OPEN, InvoiceStatus.PARTIAL)),
+                fromCaptor.capture(),
+                toCaptor.capture()
+        );
+
+        assertEquals(toCaptor.getValue().minusMonths(3), fromCaptor.getValue());
     }
 
     private InvoiceItemDto item(String name, String rate, int quantity, String tax) {
@@ -172,5 +223,22 @@ class InvoiceServiceTest {
         dto.setTax(tax);
         dto.setDescription("desc");
         return dto;
+    }
+
+    private Customer customerWithCompany(Long customerId) {
+        Customer customer = new Customer();
+        customer.setId(customerId);
+
+        Company company = new Company();
+        company.setId(42L);
+        company.setLegalName("Acme Corp");
+
+        CompanyCustomers link = new CompanyCustomers();
+        link.setCompany(company);
+        link.setCustomer(customer);
+        link.setUserId(1L);
+
+        customer.getCompanyCompanies().add(link);
+        return customer;
     }
 }

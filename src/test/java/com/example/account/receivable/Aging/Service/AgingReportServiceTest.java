@@ -18,6 +18,7 @@ import com.example.account.receivable.AgingReports.DTO.CustomerAgingDto;
 import com.example.account.receivable.AgingReports.Service.AgingReportService;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,11 +35,11 @@ class AgingReportServiceTest {
         LocalDate asOf = LocalDate.of(2024, 6, 30);
         Customer customer = buildCustomer(1L, "Acme");
 
-        Invoice current = invoice(customer, "OPEN", asOf.plusDays(3), "20");
-        Invoice bucket30 = invoice(customer, "OPEN", asOf.minusDays(10), "30");
-        Invoice bucket60 = invoice(customer, "OPEN", asOf.minusDays(45), "40");
-        Invoice bucket90 = invoice(customer, "OPEN", asOf.minusDays(70), "10");
-        Invoice over90 = invoice(customer, "OPEN", asOf.minusDays(130), "50");
+        Invoice current = invoice(customer, InvoiceStatus.OPEN, asOf.plusDays(3), "20");
+        Invoice bucket30 = invoice(customer, InvoiceStatus.OPEN, asOf.minusDays(10), "30");
+        Invoice bucket60 = invoice(customer, InvoiceStatus.OPEN, asOf.minusDays(45), "40");
+        Invoice bucket90 = invoice(customer, InvoiceStatus.OPEN, asOf.minusDays(70), "10");
+        Invoice over90 = invoice(customer, InvoiceStatus.OPEN, asOf.minusDays(130), "50");
 
         when(invoiceRepository.findOpenInvoicesByCompany(5L))
                 .thenReturn(List.of(current, bucket30, bucket60, bucket90, over90));
@@ -60,9 +61,9 @@ class AgingReportServiceTest {
         Customer customer1 = buildCustomer(1L, "Acme");
         Customer customer2 = buildCustomer(2L, "Globex");
 
-        Invoice targetInvoice = invoice(customer1, "OPEN", asOf.minusDays(5), "25");
-        Invoice wrongCustomer = invoice(customer2, "OPEN", asOf.minusDays(15), "30");
-        Invoice wrongStatus = invoice(customer1, "PAID", asOf.minusDays(20), "40");
+        Invoice targetInvoice = invoice(customer1, InvoiceStatus.OPEN, asOf.minusDays(5), "25");
+        Invoice wrongCustomer = invoice(customer2, InvoiceStatus.OPEN, asOf.minusDays(15), "30");
+        Invoice wrongStatus = invoice(customer1, InvoiceStatus.PAID, asOf.minusDays(20), "40");
 
         when(invoiceRepository.findOpenInvoicesByCompany(9L))
                 .thenReturn(List.of(targetInvoice, wrongCustomer, wrongStatus));
@@ -82,7 +83,7 @@ class AgingReportServiceTest {
         return customer;
     }
 
-    private Invoice invoice(Customer customer, String status, LocalDate dueDate, String balance) {
+    private Invoice invoice(Customer customer, InvoiceStatus status, LocalDate dueDate, String balance) {
         Invoice invoice = new Invoice();
         invoice.setCustomer(customer);
         invoice.setStatus(status);

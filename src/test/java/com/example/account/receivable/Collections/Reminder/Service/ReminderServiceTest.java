@@ -23,6 +23,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.account.receivable.Common.EmailService;
 import com.example.account.receivable.Common.InvoiceTemplateService;
 import com.example.account.receivable.Common.PdfGeneratorService;
+import com.example.account.receivable.Company.Entity.Company;
+import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
@@ -42,22 +44,27 @@ class ReminderServiceTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private CompanyRepository companyRepository;
+
     @InjectMocks
     private ReminderService reminderService;
 
     @Test
     void sendInvoiceReminder_whenInvoiceValid_sendsEmailWithArtifacts() {
         Invoice invoice = buildInvoice(false, new BigDecimal("120.00"), LocalDate.now().minusDays(5));
+        Company company = buildCompany();
         when(invoiceRepository.findById(55L)).thenReturn(Optional.of(invoice));
+        when(companyRepository.findById(8L)).thenReturn(Optional.of(company));
 
         String html = "<html>reminder</html>";
         byte[] pdf = new byte[] {1, 2, 3};
-        when(invoiceTemplateService.generateHtmlReminder(invoice)).thenReturn(html);
+        when(invoiceTemplateService.generateHtmlReminder(invoice, company)).thenReturn(html);
         when(pdfGeneratorService.generatePdf(html)).thenReturn(pdf);
 
-        reminderService.sendInvoiceReminder(55L);
+        reminderService.sendInvoiceReminder(55L, 8L);
 
-        verify(invoiceTemplateService).generateHtmlReminder(invoice);
+        verify(invoiceTemplateService).generateHtmlReminder(invoice, company);
         verify(pdfGeneratorService).generatePdf(html);
         verify(emailService).sendWithAttachment(eq("customer@example.com"), anyString(), eq(html), eq(pdf));
     }
@@ -66,7 +73,22 @@ class ReminderServiceTest {
     void sendInvoiceReminder_whenInvoiceMissing_throwsNotFound() {
         when(invoiceRepository.findById(1L)).thenReturn(Optional.empty());
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> reminderService.sendInvoiceReminder(1L));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> reminderService.sendInvoiceReminder(1L, 2L));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        verifyNoInteractions(invoiceTemplateService, pdfGeneratorService, emailService);
+    }
+
+    @Test
+    void sendInvoiceReminder_whenCompanyMissing_throwsNotFound() {
+        Invoice invoice = buildInvoice(false, new BigDecimal("10"), LocalDate.now().minusDays(2));
+        when(invoiceRepository.findById(9L)).thenReturn(Optional.of(invoice));
+        when(companyRepository.findById(5L)).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> reminderService.sendInvoiceReminder(9L, 5L)
+        );
+
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         verifyNoInteractions(invoiceTemplateService, pdfGeneratorService, emailService);
     }
@@ -75,8 +97,9 @@ class ReminderServiceTest {
     void sendInvoiceReminder_whenInvoiceDeleted_throwsBadRequest() {
         Invoice invoice = buildInvoice(true, new BigDecimal("50"), LocalDate.now().minusDays(1));
         when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(companyRepository.findById(2L)).thenReturn(Optional.of(buildCompany()));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> reminderService.sendInvoiceReminder(1L));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> reminderService.sendInvoiceReminder(1L, 2L));
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         verifyNoInteractions(invoiceTemplateService, pdfGeneratorService, emailService);
     }
@@ -85,8 +108,9 @@ class ReminderServiceTest {
     void sendInvoiceReminder_whenInvoiceHasNoBalance_throwsBadRequest() {
         Invoice invoice = buildInvoice(false, BigDecimal.ZERO, LocalDate.now().minusDays(1));
         when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(companyRepository.findById(2L)).thenReturn(Optional.of(buildCompany()));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> reminderService.sendInvoiceReminder(1L));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> reminderService.sendInvoiceReminder(1L, 2L));
         assertEquals("Invoice has no pending balance", ex.getReason());
         verifyNoInteractions(invoiceTemplateService, pdfGeneratorService, emailService);
     }
@@ -95,8 +119,9 @@ class ReminderServiceTest {
     void sendInvoiceReminder_whenInvoiceNotOverdue_throwsBadRequest() {
         Invoice invoice = buildInvoice(false, new BigDecimal("10"), LocalDate.now().plusDays(2));
         when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(companyRepository.findById(2L)).thenReturn(Optional.of(buildCompany()));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> reminderService.sendInvoiceReminder(1L));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> reminderService.sendInvoiceReminder(1L, 2L));
         assertEquals("Invoice is not overdue", ex.getReason());
         verifyNoInteractions(invoiceTemplateService, pdfGeneratorService, emailService);
     }
@@ -114,5 +139,12 @@ class ReminderServiceTest {
             .build();
         invoice.setDeleted(deleted);
         return invoice;
+    }
+
+    private Company buildCompany() {
+        Company company = new Company();
+        company.setId(8L);
+        company.setLegalName("Acme Inc");
+        return company;
     }
 }
