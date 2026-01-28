@@ -20,7 +20,7 @@ public class CustomerResponseDTO {
     private String customerType;
     private String phoneNumber;
     private String linkedin;
-    private String facebook;
+    private String faceBook;
     private String twitter;
     private boolean deleted;
     private Instant createdAt;

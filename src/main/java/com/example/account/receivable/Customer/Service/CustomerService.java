@@ -114,7 +114,7 @@ public class CustomerService {
         dto.setCustomerType(customer.getCustomerType());
         dto.setPhoneNumber(customer.getPhoneNumber());
         dto.setLinkedin(customer.getLinkedin());
-        dto.setFacebook(customer.getFaceBook());
+        dto.setFaceBook(customer.getFaceBook());
         dto.setTwitter(customer.getTwitter());
         dto.setDeleted(customer.isDeleted());
         dto.setCreatedAt(customer.getCreatedAt());
