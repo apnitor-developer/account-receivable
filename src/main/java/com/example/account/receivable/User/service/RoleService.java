@@ -88,7 +88,7 @@ public class RoleService {
                 // ❌ Global roles cannot be updated
                 if (role.getCompany() == null) {
                 throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST, "Role cannot be updated");
+                                HttpStatus.BAD_REQUEST, "Global roles cannot be updated");
                 }
 
                 // ❌ Ensure role belongs to company
