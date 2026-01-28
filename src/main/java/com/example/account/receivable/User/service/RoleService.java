@@ -82,16 +82,18 @@ public class RoleService {
         ) {
 
                 Role role = roleRepository.findById(roleId)
-                        .orElseThrow(() -> new RuntimeException("Role not found"));
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "Role not found"));
 
                 // ❌ Global roles cannot be updated
                 if (role.getCompany() == null) {
-                throw new IllegalStateException("Global roles cannot be updated");
+                throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST, "Role cannot be updated");
                 }
 
                 // ❌ Ensure role belongs to company
                 if (!role.getCompany().getId().equals(companyId)) {
-                throw new IllegalStateException("Role does not belong to this company");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Role does not belong to this company");
                 }
 
                 // ✅ Update name if provided
