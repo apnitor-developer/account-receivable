@@ -2,24 +2,18 @@ package com.example.account.receivable.Common.Premission;
 
 public enum Permission {
 
-    // =========================
     // DASHBOARD
-    // =========================
     VIEW_DASHBOARD,
 
 
-    // =========================
-    // CUSTOMERS (TAB + ACTIONS)
-    // =========================
+    // CUSTOMERS
     VIEW_CUSTOMERS,
     CREATE_CUSTOMER,
     EDIT_CUSTOMER,
     DELETE_CUSTOMER,
 
 
-    // =========================
     // INVOICES
-    // =========================
     VIEW_INVOICES,
     CREATE_INVOICE,
     EDIT_INVOICE,
@@ -27,28 +21,30 @@ public enum Permission {
     APPROVE_INVOICE,
 
 
-    // =========================
     // PAYMENTS
-    // =========================
     VIEW_PAYMENTS,
     APPLY_PAYMENT,
 
-    // =========================
+
     // AGING & REPORTS
-    // =========================
     VIEW_AGING_REPORTS,
 
 
-    // =========================
-    // COLLECTIONS & PROMISE TO PAY & DISPUTE
-    // =========================
+    // COLLECTIONS
     VIEW_COLLECTIONS,
-    VIEW_PROMISE_TO_PAY,
-    CREATE_PROMISE_TO_PAY,
-    VIEW_DISPUTE,
-    CREATE_DISPUTE,
+
+    // REMINDER
     VIEW_REMINDER,
     SEND_REMINDER,
+
+    // PROMISE TO PAY
+    VIEW_PROMISE_TO_PAY,
+    CREATE_PROMISE_TO_PAY,
+
+    // DISPUTE
+    VIEW_DISPUTE,
+    CREATE_DISPUTE,
+
 
 
     // CREDIT MEMOS
@@ -63,9 +59,7 @@ public enum Permission {
     APPROVE_WRITE_OFF,
 
 
-    // =========================
     // COMPANY
-    // =========================
     VIEW_COMPANY,
     CREATE_COMPANY,
     DELETE_COMPANY,
@@ -81,10 +75,16 @@ public enum Permission {
     VIEW_ROLES,
     CREATE_ROLES,
     UPDATE_ROLE,
-    VIEW_CODE,
-    CREATE_CODE,
-    UPDATE_CODE,
-    DELETE_CODE,
+
+
+    // SECURITY_REPORT
+    VIEW_SECURITY_REPORT,
+
+    // AR Code
+    VIEW_AR_CODE,
+    CREATE_AR_CODE,
+    UPDATE_AR_CODE,
+    DELETE_AR_CODE,
 
     //GL Codes
     VIEW_GL_CODE,

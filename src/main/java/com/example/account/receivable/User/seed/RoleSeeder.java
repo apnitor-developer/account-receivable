@@ -43,7 +43,8 @@ public class RoleSeeder {
                 Permission.EDIT_INVOICE,
                 Permission.VIEW_PAYMENTS,
                 Permission.APPLY_PAYMENT,
-                Permission.VIEW_AGING_REPORTS
+                Permission.VIEW_AGING_REPORTS,
+                Permission.VIEW_COMPANY
             )
         );
 
@@ -57,7 +58,8 @@ public class RoleSeeder {
                 Permission.VIEW_CUSTOMERS,
                 Permission.VIEW_INVOICES,
                 Permission.VIEW_PAYMENTS,
-                Permission.APPLY_PAYMENT
+                Permission.APPLY_PAYMENT,
+                Permission.VIEW_COMPANY
             )
         );
 
@@ -70,7 +72,8 @@ public class RoleSeeder {
             EnumSet.of(
                 Permission.VIEW_CUSTOMERS,
                 Permission.CREATE_CUSTOMER,
-                Permission.EDIT_CUSTOMER
+                Permission.EDIT_CUSTOMER,
+                Permission.VIEW_COMPANY
             )
         );
 
@@ -89,7 +92,8 @@ public class RoleSeeder {
                 Permission.VIEW_COLLECTIONS,
                 Permission.APPROVE_MEMOS,
                 Permission.APPROVE_WRITE_OFF,
-                Permission.VIEW_WRITE_OFF
+                Permission.VIEW_WRITE_OFF,
+                Permission.VIEW_COMPANY
             )
         );
 
