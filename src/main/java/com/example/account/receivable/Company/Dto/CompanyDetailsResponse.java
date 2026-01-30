@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.example.account.receivable.Common.Enum.CurrencyEnum;
 import com.example.account.receivable.Company.Entity.*;
 import com.example.account.receivable.User.entity.Users;
 
@@ -75,7 +76,7 @@ public class CompanyDetailsResponse {
         private String bankName;
         private String accountNumber;
         private String ifscSwift;
-        private String currency;
+        private CurrencyEnum currency;
         private Boolean isDefault;
     }
 

@@ -3,8 +3,12 @@ package com.example.account.receivable.Company.Controller;
 import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Entity.CompanyAddress;
+import com.example.account.receivable.Company.Entity.CompanyBankAccount;
 import com.example.account.receivable.Company.Service.CompanyService;
 import com.example.account.receivable.User.entity.Users;
+
+import jakarta.validation.Valid;
+
 import com.example.account.receivable.Common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -187,24 +191,72 @@ public class CompanyController {
         }
 
         // STEP 3 – banking + payment methods
+        // @PostMapping("/{id}/banking")
+        // public ResponseEntity<ApiResponse<Company>> saveBanking(
+        //         @PathVariable Long id,
+        //         @RequestBody BankingStepRequest request) {
+
+        //         companyService.upsertBankingAndPayment(id, request);
+
+        //         Company details = companyService.getCompanyDetails(id);
+
+        //         ApiResponse<Company> body =
+        //                 ApiResponse.successResponse(
+        //                         HttpStatus.OK.value(),
+        //                         "Banking and payment settings saved successfully",
+        //                         details
+        //                 );
+
+        //         return ResponseEntity.ok(body);
+        // }
+
+
+
+        // Create bank accounts
         @PostMapping("/{id}/banking")
-        public ResponseEntity<ApiResponse<Company>> saveBanking(
+        public ResponseEntity<ApiResponse<CompanyBankAccount>> createBankAccount(
                 @PathVariable Long id,
-                @RequestBody BankingStepRequest request) {
+                @RequestBody @Valid BankAccountRequest request
+        ) {
 
-                companyService.upsertBankingAndPayment(id, request);
+        CompanyBankAccount bankAccount =
+                companyService.createBankAccount(id, request);
 
-                Company details = companyService.getCompanyDetails(id);
+        ApiResponse<CompanyBankAccount> body =
+                ApiResponse.successResponse(
+                        HttpStatus.OK.value(),
+                        "Bank account created successfully",
+                        bankAccount
+                );
 
-                ApiResponse<Company> body =
-                        ApiResponse.successResponse(
-                                HttpStatus.OK.value(),
-                                "Banking and payment settings saved successfully",
-                                details
-                        );
-
-                return ResponseEntity.ok(body);
+        return ResponseEntity.ok(body);
         }
+
+
+
+        // Update bank account
+        @PutMapping("/{companyId}/bank-accounts/{bankAccountId}")
+        public ResponseEntity<ApiResponse<CompanyBankAccount>> updateBankAccount(
+                @PathVariable Long companyId,
+                @PathVariable Long bankAccountId,
+                @RequestBody @Valid BankAccountRequest request
+        ) {
+
+        CompanyBankAccount updated =
+                companyService.updateBankAccount(companyId, bankAccountId, request);
+
+        ApiResponse<CompanyBankAccount> body =
+                ApiResponse.successResponse(
+                        HttpStatus.OK.value(),
+                        "Bank account updated successfully",
+                        updated
+                );
+
+        return ResponseEntity.ok(body);
+        }
+
+
+
 
         // GET single company
         @GetMapping("/{id}")

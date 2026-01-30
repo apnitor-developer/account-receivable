@@ -80,6 +80,11 @@ public enum Permission {
     // SECURITY_REPORT
     VIEW_SECURITY_REPORT,
 
+    // Bank 
+    VIEW_BANK_ACCOUNT,
+    CREATE_BANK_ACCOUNT,
+    UPDATE_BANK_ACCOUNT,
+
     // AR Code
     VIEW_AR_CODE,
     CREATE_AR_CODE,

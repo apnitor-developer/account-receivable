@@ -373,46 +373,134 @@ public class CompanyService {
 
 
     // STEP 3 – create/update banking + payment (POST)
-   @Transactional
-    public void upsertBankingAndPayment(Long companyId, BankingStepRequest request) {
-    Company company = getCompanyOrThrow(companyId);
+//    @Transactional
+//     public void upsertBankingAndPayment(Long companyId, BankAccountRequest request) {
+//     Company company = getCompanyOrThrow(companyId);
 
     // payment settings (optional in request)
-    PaymentSettingsRequest psReq = request.getPaymentSettings();
-        if (psReq != null) {
-            CompanyPaymentSettings paymentSettings = paymentRepo.findByCompany_Id(companyId)
-                    .orElseGet(() -> CompanyPaymentSettings.builder()
-                            .company(company)
-                            .build());
+    // PaymentSettingsRequest psReq = request.getPaymentSettings();
+    //     if (psReq != null) {
+    //         CompanyPaymentSettings paymentSettings = paymentRepo.findByCompany_Id(companyId)
+    //                 .orElseGet(() -> CompanyPaymentSettings.builder()
+    //                         .company(company)
+    //                         .build());
 
-            paymentSettings.setAcceptCheck(psReq.getAcceptCheck());
-            paymentSettings.setAcceptCreditCard(psReq.getAcceptCreditCard());
-            paymentSettings.setAcceptBankTransfer(psReq.getAcceptBankTransfer());
-            paymentSettings.setAcceptCash(psReq.getAcceptCash());
-            paymentSettings.setRemittanceInstructions(psReq.getRemittanceInstructions());
+    //         paymentSettings.setAcceptCheck(psReq.getAcceptCheck());
+    //         paymentSettings.setAcceptCreditCard(psReq.getAcceptCreditCard());
+    //         paymentSettings.setAcceptBankTransfer(psReq.getAcceptBankTransfer());
+    //         paymentSettings.setAcceptCash(psReq.getAcceptCash());
+    //         paymentSettings.setRemittanceInstructions(psReq.getRemittanceInstructions());
 
-            paymentRepo.save(paymentSettings);
-        }
+    //         paymentRepo.save(paymentSettings);
+    //     }
 
         // bank accounts (optional)
-        if (request.getBankAccounts() != null) {
-            List<CompanyBankAccount> existing = bankAccountRepo.findByCompanyId(companyId);
-            bankAccountRepo.deleteAll(existing);
+    //     if (request.getBankAccounts() != null) {
+    //         List<CompanyBankAccount> existing = bankAccountRepo.findByCompanyId(companyId);
+    //         bankAccountRepo.deleteAll(existing);
 
-            for (BankAccountRequest baReq : request.getBankAccounts()) {
-                CompanyBankAccount acc = CompanyBankAccount.builder()
-                        .company(company)
-                        .bankName(baReq.getBankName())
-                        .accountNumber(baReq.getAccountNumber())
-                        .ifscSwift(baReq.getIfscSwift())
-                        .currency(baReq.getCurrency())
-                        .isDefault(baReq.getIsDefault())
-                        .build();
-                bankAccountRepo.save(acc);
-            }
-        }
+    //         for (BankAccountRequest baReq : request.getBankAccounts()) {
+    //             CompanyBankAccount acc = CompanyBankAccount.builder()
+    //                     .company(company)
+    //                     .bankName(baReq.getBankName())
+    //                     .accountNumber(baReq.getAccountNumber())
+    //                     .ifscSwift(baReq.getIfscSwift())
+    //                     .currency(baReq.getCurrency())
+    //                     .isDefault(baReq.getIsDefault())
+    //                     .build();
+    //             bankAccountRepo.save(acc);
+    //         }
+    //     }
+    // }
+
+
+
+    // create bank accounts
+    @Transactional
+    public CompanyBankAccount createBankAccount(
+            Long companyId,
+            BankAccountRequest request
+    ) {
+
+        Company company = getCompanyOrThrow(companyId);
+
+        CompanyBankAccount bankAccount = CompanyBankAccount.builder()
+                .company(company)
+                .bankName(request.getBankName())
+                .accountNumber(request.getAccountNumber())
+                .ifscSwift(request.getIfscSwift())
+                .currency(request.getCurrency())
+                .isDefault(
+                    request.getIsDefault() != null
+                        ? request.getIsDefault()
+                        : false
+                )
+                .build();
+
+        return bankAccountRepo.save(bankAccount);
     }
 
+
+
+    // Update Bank Account
+    @Transactional
+    public CompanyBankAccount updateBankAccount(
+            Long companyId,
+            Long bankAccountId,
+            BankAccountRequest request
+    ) {
+
+        CompanyBankAccount bankAccount =
+                bankAccountRepo.findById(bankAccountId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND, "Bank account not found"));
+
+        // Ensure bank account belongs to company
+        if (!bankAccount.getCompany().getId().equals(companyId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Bank account does not belong to this company"
+            );
+        }
+
+        // Update fields only if present
+        if (request.getBankName() != null) {
+            bankAccount.setBankName(request.getBankName());
+        }
+
+        if (request.getAccountNumber() != null) {
+            bankAccount.setAccountNumber(request.getAccountNumber());
+        }
+
+        if (request.getIfscSwift() != null) {
+            bankAccount.setIfscSwift(request.getIfscSwift());
+        }
+
+        if (request.getCurrency() != null) {
+            bankAccount.setCurrency(request.getCurrency());
+        }
+
+        // Handle default logic
+        if (request.getIsDefault() != null && request.getIsDefault()) {
+
+            // unset other defaults
+            bankAccountRepo.findByCompanyId(companyId)
+                .forEach(acc -> {
+                    if (!acc.getId().equals(bankAccountId)
+                            && Boolean.TRUE.equals(acc.getIsDefault())) {
+                        acc.setIsDefault(false);
+                        bankAccountRepo.save(acc);
+                    }
+                });
+
+            bankAccount.setIsDefault(true);
+        }
+
+        return bankAccountRepo.save(bankAccount);
+    }
+
+
+    
 
     public Page<Company> listCompanies(Pageable pageable) {
     return companyRepository.findByDeletedFalse(pageable);

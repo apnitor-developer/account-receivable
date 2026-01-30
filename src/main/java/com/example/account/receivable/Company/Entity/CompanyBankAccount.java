@@ -6,6 +6,7 @@ import java.time.Instant;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.example.account.receivable.Common.Enum.CurrencyEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
@@ -37,8 +38,9 @@ public class CompanyBankAccount {
     @Column(name = "ifsc_swift")
     private String ifscSwift;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "currency")
-    private String currency; // e.g. "INR"
+    private CurrencyEnum currency; // e.g. "USD" , "GBP"
 
     @Column(name = "is_default")
     private Boolean isDefault;
