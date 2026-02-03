@@ -44,7 +44,7 @@ public class Payment {
     @Column(name = "bank_deposit", nullable = false)
     private BigDecimal bankDeposit;
 
-    @Column(name = "service_fee", nullable = false)
+    @Column(name = "service_fee", nullable = true)
     private BigDecimal serviceFee;
 
     @Column(name = "payment_amount", nullable = false)
