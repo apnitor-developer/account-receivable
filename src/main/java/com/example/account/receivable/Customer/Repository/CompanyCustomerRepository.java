@@ -1,5 +1,7 @@
 package com.example.account.receivable.Customer.Repository;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,4 +27,18 @@ public interface CompanyCustomerRepository extends JpaRepository<CompanyCustomer
     Page<Customer> findActiveCustomersByCompanyId(@Param("companyId") Long companyId, Pageable pageable);
 
     boolean existsByCompany_IdAndCustomer_Id(Long companyId, Long customerId);
+
+
+    
+    @Query("""
+        select cc.customer
+        from CompanyCustomers cc
+        where cc.company.id = :companyId
+          and cc.customer.email = :email
+          and cc.customer.deleted = false
+    """)
+    Optional<Customer> findCustomerByCompanyIdAndEmail(
+            @Param("companyId") Long companyId,
+            @Param("email") String email
+    );
 }

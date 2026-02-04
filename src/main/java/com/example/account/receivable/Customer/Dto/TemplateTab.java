@@ -9,5 +9,6 @@ import lombok.Data;
 @Builder
 public class TemplateTab {
     private String tab;
+    private String description;
     private List<TemplateField> fields;
 }

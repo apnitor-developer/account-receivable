@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,9 +16,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.account.receivable.Common.ApiResponse;
+import com.example.account.receivable.Customer.Dto.ImportTemplateMetadata;
 import com.example.account.receivable.Invoice.Dto.InvoiceDto;
+import com.example.account.receivable.Invoice.Dto.InvoiceImportResultDto;
 import com.example.account.receivable.Invoice.Dto.OverdueInvoiceResponseDTO;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.CustomerWithPendingAmountResponseDTO;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceAgingDto;
@@ -25,6 +29,8 @@ import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceStatusBreak
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Service.InvoiceService;
+
+import org.springframework.http.MediaType;
 
 
 @RestController
@@ -310,6 +316,50 @@ public class InvoiceController {
                         200,
                         "Invoice status breakdown fetched successfully",
                         data
+                )
+        );
+    }
+
+
+
+    // Invoice Template
+    @GetMapping("/import/template-metadata")
+    public ResponseEntity<ApiResponse<ImportTemplateMetadata>> getInvoiceImportTemplate() {
+
+            ImportTemplateMetadata metadata =
+                    invoiceService.getTemplateMetadata();
+
+            return ResponseEntity.ok(
+                    new ApiResponse<>(
+                            HttpStatus.OK.value(),
+                            "success",
+                            "Invoice import template metadata",
+                            metadata
+                    )
+            );
+        }
+
+
+    
+    // Import Invoice
+    @PostMapping(
+            value = "/import/{companyId}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ApiResponse<InvoiceImportResultDto>> importInvoices(
+            @PathVariable("companyId") Long companyId,
+            @RequestParam("file") MultipartFile file
+    ) {
+
+        InvoiceImportResultDto result =
+                invoiceService.importInvoices(companyId, file);
+
+
+        return ResponseEntity.ok(
+            ApiResponse.successResponse(
+                        200,
+                        "Invoices Imported successfully",
+                        result
                 )
         );
     }
