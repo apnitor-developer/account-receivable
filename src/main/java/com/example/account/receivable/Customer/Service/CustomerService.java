@@ -934,11 +934,13 @@ public class CustomerService {
 
         private static String normalize(String s) {
             if (s == null) return "";
-            return s.trim()
-                    .toLowerCase()
-                    .replace(" ", "")
-                    .replace("_", "")
-                    .replace("-", "");
+            return s
+                .trim()
+                .replace("\uFEFF", "")
+                .toLowerCase()
+                .replace(" ", "")
+                .replace("_", "")
+                .replace("-", "");
         }
 
         // Get raw string
@@ -1019,7 +1021,7 @@ public class CustomerService {
                                                 "string",
                                                 Map.of(
                                                         "pattern", "letters_and_spaces",
-                                                        "example", "Enterprise"
+                                                        "example", "COMPANY or INDIVIDUAL"
                                                 )
                                         ),
                                         field(
@@ -1214,7 +1216,7 @@ public class CustomerService {
                                                 false,
                                                 "string",
                                                 Map.of(
-                                                        "example", "NET_30"
+                                                        "example", "Net 30"
                                                 )
                                         ),
                                         field(
@@ -1223,7 +1225,7 @@ public class CustomerService {
                                                 true,
                                                 "string",
                                                 Map.of(
-                                                        "example", "LEVEL_1"
+                                                        "example", "L 1"
                                                 )
                                         ),
                                         field(
