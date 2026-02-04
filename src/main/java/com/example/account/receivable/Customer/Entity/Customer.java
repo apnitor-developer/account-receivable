@@ -1,5 +1,6 @@
 package com.example.account.receivable.Customer.Entity;
 
+import com.example.account.receivable.Customer.Enum.CustomerTypeEnum;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -13,6 +14,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -36,7 +39,9 @@ public class Customer {
     @Column( nullable = false)
     private String email;
 
-    private String customerType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "customerType", nullable = false)
+    private CustomerTypeEnum customerType;
 
     private String phoneNumber;
     private String faceBook;

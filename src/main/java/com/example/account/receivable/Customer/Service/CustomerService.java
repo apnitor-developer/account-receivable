@@ -56,6 +56,7 @@ import com.example.account.receivable.Customer.Entity.CustomerDunningCreditSetti
 import com.example.account.receivable.Customer.Entity.CustomerEFT;
 import com.example.account.receivable.Customer.Entity.CustomerStatement;
 import com.example.account.receivable.Customer.Entity.CustomerVAT;
+import com.example.account.receivable.Customer.Enum.CustomerTypeEnum;
 import com.example.account.receivable.Customer.Repository.CompanyCustomerRepository;
 import com.example.account.receivable.Customer.Repository.CustomerAddressRepository;
 import com.example.account.receivable.Customer.Repository.CustomerCashApplicationRepository;
@@ -647,6 +648,10 @@ public class CustomerService {
             .errors(errors)
             .build();
 }
+
+
+
+
     private void importSingleCustomerRecord(
             Company company,
             CSVRecord record,
@@ -655,7 +660,26 @@ public class CustomerService {
         // ---- BASIC CUSTOMER DATA ----
         String email = headers.get(record, "email");
         String name = headers.get(record, "customerName");
-        String customerType = headers.get(record, "customerType");
+        String customerTypeStr = headers.get(record, "customerType");
+
+
+        if (customerTypeStr == null || customerTypeStr.isBlank()) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "customerType is required (INDIVIDUAL or COMPANY)"
+            );
+        }
+
+        CustomerTypeEnum customerType;
+        try {
+            customerType = CustomerTypeEnum.valueOf(customerTypeStr.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Invalid customerType: " + customerTypeStr +
+                ". Allowed values: INDIVIDUAL, COMPANY"
+            );
+}
 
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email is required");
@@ -964,6 +988,8 @@ public class CustomerService {
 
 
     
+
+    // Customer Template
     public ImportTemplateMetadata getTemplateMetadata() {
 
         return ImportTemplateMetadata.builder()
@@ -971,97 +997,304 @@ public class CustomerService {
                 .format("CSV")
                 .tabs(List.of(
 
-                        // MAIN TAB
+                        // ================= MAIN TAB =================
                         TemplateTab.builder()
                                 .tab("Main")
                                 .fields(List.of(
-                                        field("customerName", "Company Name", true, "string",
-                                                Map.of("minLength", 2, "pattern", "letters_and_spaces")),
-                                        field("customerType", "Company Type", true, "string",
-                                                Map.of("pattern", "letters_and_spaces")),
-                                        field("email", "Email", true, "email", null),
+                                        field(
+                                                "customerName",
+                                                "Customer Name",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "minLength", 2,
+                                                        "pattern", "letters_and_spaces",
+                                                        "example", "Acme Corporation"
+                                                )
+                                        ),
+                                        field(
+                                                "customerType",
+                                                "Customer Type",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "pattern", "letters_and_spaces",
+                                                        "example", "Enterprise"
+                                                )
+                                        ),
+                                        field(
+                                                "email",
+                                                "Email",
+                                                true,
+                                                "email",
+                                                Map.of(
+                                                        "example", "billing@acme.com"
+                                                )
+                                        ),
                                         field(
                                                 "phoneNumber",
                                                 "Phone Number",
                                                 true,
                                                 "string",
-                                                Map.of("pattern", "phone")),
-
+                                                Map.of(
+                                                        "pattern", "phone",
+                                                        "example", "+1-415-555-0199"
+                                                )
+                                        ),
                                         field(
                                                 "faceBook",
                                                 "Facebook",
                                                 false,
                                                 "url",
-                                                null),
-
+                                                Map.of(
+                                                        "example", "https://facebook.com/acmecorp"
+                                                )
+                                        ),
                                         field(
                                                 "linkedin",
                                                 "LinkedIn",
                                                 false,
                                                 "url",
-                                                null),
-
+                                                Map.of(
+                                                        "example", "https://linkedin.com/company/acme"
+                                                )
+                                        ),
                                         field(
                                                 "twitter",
                                                 "Twitter",
                                                 false,
                                                 "url",
-                                                null)))
+                                                Map.of(
+                                                        "example", "https://twitter.com/acmecorp"
+                                                )
+                                        )
+                                ))
                                 .build(),
 
-                        // ADDRESS TAB
+                        // ================= ADDRESS TAB =================
                         TemplateTab.builder()
                                 .tab("Address")
                                 .fields(List.of(
-                                        field("addressLine1", "Address Line 1", true, "string", null),
-                                        field("city", "City", true, "string", null),
-                                        field("stateProvince", "State / Province", true, "string", null),
-                                        field("postalCode", "Postal Code", true, "string",
-                                                Map.of("digitsOnly", true, "maxLength", 6)),
-                                        field("country", "Country", true, "string", null)))
+                                        field(
+                                                "addressLine1",
+                                                "Address Line 1",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "example", "123 Market Street"
+                                                )
+                                        ),
+                                        field(
+                                                "city",
+                                                "City",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "example", "San Francisco"
+                                                )
+                                        ),
+                                        field(
+                                                "stateProvince",
+                                                "State / Province",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "example", "CA"
+                                                )
+                                        ),
+                                        field(
+                                                "postalCode",
+                                                "Postal Code",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "digitsOnly", true,
+                                                        "maxLength", 6,
+                                                        "example", "94105"
+                                                )
+                                        ),
+                                        field(
+                                                "country",
+                                                "Country",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "example", "USA"
+                                                )
+                                        )
+                                ))
                                 .build(),
 
-                        // EFT TAB
+                        // ================= EFT TAB =================
                         TemplateTab.builder()
                                 .tab("EFT")
                                 .fields(List.of(
-                                        field("bankName", "Bank Name", true, "string", null),
-                                        field("ibanAccountNumber", "IBAN / Account Number", true, "string", null),
-                                        field("bankIdentifierCode", "Bank Identifier Code", true, "string", null),
-                                        field("enableAchPayments", "Enable ACH Payments", false, "boolean", null)))
+                                        field(
+                                                "bankName",
+                                                "Bank Name",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "example", "Bank of America"
+                                                )
+                                        ),
+                                        field(
+                                                "ibanAccountNumber",
+                                                "IBAN / Account Number",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "example", "GB82WEST12345698765432"
+                                                )
+                                        ),
+                                        field(
+                                                "bankIdentifierCode",
+                                                "Bank Identifier Code",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "example", "BOFAUS3N"
+                                                )
+                                        ),
+                                        field(
+                                                "enableAchPayments",
+                                                "Enable ACH Payments",
+                                                false,
+                                                "boolean",
+                                                Map.of(
+                                                        "example", true
+                                                )
+                                        )
+                                ))
                                 .build(),
 
-                        // VAT TAB (NON-MANDATORY)
+                        // ================= VAT TAB =================
                         TemplateTab.builder()
                                 .tab("VAT")
                                 .fields(List.of(
-                                        field("enableVatCodes", "Enable VAT Codes", false, "boolean", null),
-                                        fieldWithCondition("taxIdentificationNumber", "Tax Identification Number",
-                                                "enableVatCodes=true"),
-                                        fieldWithCondition("taxAgencyName", "Tax Agency Name",
-                                                "enableVatCodes=true")))
+                                        field(
+                                                "enableVatCodes",
+                                                "Enable VAT Codes",
+                                                false,
+                                                "boolean",
+                                                Map.of(
+                                                        "example", true
+                                                )
+                                        ),
+                                        fieldWithCondition(
+                                                "taxIdentificationNumber",
+                                                "Tax Identification Number",
+                                                "enableVatCodes=true"
+                                        ),
+                                        fieldWithCondition(
+                                                "taxAgencyName",
+                                                "Tax Agency Name",
+                                                "enableVatCodes=true"
+                                        )
+                                ))
                                 .build(),
 
-                        // DUNNING / CREDIT TAB
+                        // ================= DUNNING / CREDIT TAB =================
                         TemplateTab.builder()
                                 .tab("DunningCredit")
                                 .fields(List.of(
-                                        field("creditLimit", "Credit Limit", true, "number",
-                                                Map.of("min", 0)),
-                                        field("paymentTerms","Payment Terms",false,"string",null),
-                                        field("dunningLevel", "Dunning Level", true, "string", null),
-                                        field("pastDue", "Past Due (Days)", true, "number", null),
-                                        field("level1", "Level 1 (Days)", true, "number", null),
-                                        field("level2", "Level 2 (Days)", true, "number", null),
-                                        field("level3", "Level 3 (Days)", true, "number", null),
-                                        field("level4", "Level 4 (Days)", true, "number", null),
-                                        field("placeOnCreditHold", "Place on Credit Hold", false, "boolean", null)))
-                                .build()))
+                                        field(
+                                                "creditLimit",
+                                                "Credit Limit",
+                                                true,
+                                                "number",
+                                                Map.of(
+                                                        "min", 0,
+                                                        "example", 50000
+                                                )
+                                        ),
+                                        field(
+                                                "paymentTerms",
+                                                "Payment Terms",
+                                                false,
+                                                "string",
+                                                Map.of(
+                                                        "example", "NET_30"
+                                                )
+                                        ),
+                                        field(
+                                                "dunningLevel",
+                                                "Dunning Level",
+                                                true,
+                                                "string",
+                                                Map.of(
+                                                        "example", "LEVEL_1"
+                                                )
+                                        ),
+                                        field(
+                                                "pastDue",
+                                                "Past Due (Days)",
+                                                true,
+                                                "number",
+                                                Map.of(
+                                                        "example", 30
+                                                )
+                                        ),
+                                        field(
+                                                "level1",
+                                                "Level 1 (Days)",
+                                                true,
+                                                "number",
+                                                Map.of(
+                                                        "example", 15
+                                                )
+                                        ),
+                                        field(
+                                                "level2",
+                                                "Level 2 (Days)",
+                                                true,
+                                                "number",
+                                                Map.of(
+                                                        "example", 30
+                                                )
+                                        ),
+                                        field(
+                                                "level3",
+                                                "Level 3 (Days)",
+                                                true,
+                                                "number",
+                                                Map.of(
+                                                        "example", 45
+                                                )
+                                        ),
+                                        field(
+                                                "level4",
+                                                "Level 4 (Days)",
+                                                true,
+                                                "number",
+                                                Map.of(
+                                                        "example", 60
+                                                )
+                                        ),
+                                        field(
+                                                "placeOnCreditHold",
+                                                "Place on Credit Hold",
+                                                false,
+                                                "boolean",
+                                                Map.of(
+                                                        "example", false
+                                                )
+                                        )
+                                ))
+                                .build()
+                ))
                 .build();
     }
 
+    /* ================= HELPER METHODS ================= */
+
     private TemplateField field(
-            String name, String label, boolean required, String type, Map<String, Object> rules) {
+            String name,
+            String label,
+            boolean required,
+            String type,
+            Map<String, Object> rules) {
+
         return TemplateField.builder()
                 .name(name)
                 .label(label)
@@ -1071,7 +1304,11 @@ public class CustomerService {
                 .build();
     }
 
-    private TemplateField fieldWithCondition(String name, String label, String condition) {
+    private TemplateField fieldWithCondition(
+            String name,
+            String label,
+            String condition) {
+
         return TemplateField.builder()
                 .name(name)
                 .label(label)

@@ -1,5 +1,6 @@
 package com.example.account.receivable.Customer.Dto.CustomerUpdateDTO;
 
+import com.example.account.receivable.Customer.Enum.CustomerTypeEnum;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
@@ -11,7 +12,7 @@ public class CustomerFullUpdateDTO {
     private String customerName;
     private Long customerId;
     private String email;
-    private String customerType;
+    private CustomerTypeEnum customerType;
     private String phoneNumber;
     private String faceBook;
     private String linkedin;

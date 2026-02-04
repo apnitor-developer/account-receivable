@@ -1,6 +1,9 @@
 package com.example.account.receivable.Customer.Dto.CustomerDTO;
 
 import java.util.List;
+
+import com.example.account.receivable.Customer.Enum.CustomerTypeEnum;
+
 import lombok.Data;
 
 @Data
@@ -10,7 +13,7 @@ public class CustomerFullRequestDTO {
     private String customerName;
     private String customerId;
     private String email;
-    private String customerType;
+    private CustomerTypeEnum customerType;
 
     // ADDRESS (multiple)
     private List<CustomerAddressDTO> addresses;

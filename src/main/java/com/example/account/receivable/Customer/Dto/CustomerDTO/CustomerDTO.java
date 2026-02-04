@@ -1,5 +1,7 @@
 package com.example.account.receivable.Customer.Dto.CustomerDTO;
 
+import com.example.account.receivable.Customer.Enum.CustomerTypeEnum;
+
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -8,7 +10,7 @@ public class CustomerDTO {
     
     private String customerName;
     private String email;
-    private String customerType;
+    private CustomerTypeEnum customerType;
 
     @NotNull
     private String phoneNumber;
