@@ -124,7 +124,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void createInvoice_whenCreditLimitExceeded_throwsBadRequest() {
+    void createInvoice_whenCreditLimitConfigured_createsInvoice() {
         Customer customer = customerWithCompany(9L);
         CustomerDunningCreditSettings dunning = new CustomerDunningCreditSettings();
         dunning.setCreditLimit(10.0);
@@ -134,15 +134,26 @@ class InvoiceServiceTest {
         when(invoiceRepository.findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc("INV-"))
                 .thenReturn(Optional.empty());
         when(invoiceRepository.existsByInvoiceNumber(anyString())).thenReturn(false);
-        when(invoiceRepository.getCustomerOutstandingBalance(eq(9L), anyList())).thenReturn(new BigDecimal("8"));
+        when(invoiceRepository.save(any(Invoice.class))).thenAnswer(invocation -> {
+            Invoice inv = invocation.getArgument(0);
+            inv.setId(88L);
+            return inv;
+        });
+        when(invoiceItemRepo.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
         InvoiceDto dto = new InvoiceDto();
         dto.setGenerated(true);
+        dto.setInvoiceDate(LocalDate.of(2024, 5, 1));
+        dto.setDueDate(LocalDate.of(2024, 5, 10));
         dto.setItems(List.of(item("Consulting", "5", 1, null)));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> invoiceService.createInvoice(9L, dto));
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        Invoice invoice = invoiceService.createInvoice(9L, dto);
+
+        assertEquals(88L, invoice.getId());
+        assertEquals(new BigDecimal("5"), invoice.getSubTotal());
+        assertEquals(new BigDecimal("5"), invoice.getBalanceDue());
+        assertEquals(InvoiceStatus.DRAFT, invoice.getStatus());
+        verify(invoiceRepository).save(any(Invoice.class));
     }
 
     @Test

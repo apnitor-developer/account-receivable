@@ -36,7 +36,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.example.account.receivable.Common.Premission.Permission;
 import com.example.account.receivable.Company.Controller.CompanyController;
 import com.example.account.receivable.Company.Controller.PermissionController;
-import com.example.account.receivable.Company.Dto.BankingStepRequest;
 import com.example.account.receivable.Company.Dto.BankAccountRequest;
 import com.example.account.receivable.Company.Dto.CompanyContactAddressRequest;
 import com.example.account.receivable.Company.Dto.CompanyPatchRequest;
@@ -44,12 +43,12 @@ import com.example.account.receivable.Company.Dto.CompanyProfileRequest;
 import com.example.account.receivable.Company.Dto.CompanyUserRequest;
 import com.example.account.receivable.Company.Dto.FinancialSettingsRequest;
 import com.example.account.receivable.Company.Dto.OpeningBalanceFileResponse;
-import com.example.account.receivable.Company.Dto.PaymentSettingsRequest;
 import com.example.account.receivable.Company.Dto.RoleDto;
 import com.example.account.receivable.Company.Dto.RoleResponse;
 import com.example.account.receivable.Company.Dto.SetPasswordDto;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Entity.CompanyAddress;
+import com.example.account.receivable.Company.Entity.CompanyBankAccount;
 import com.example.account.receivable.Company.Service.CompanyService;
 import com.example.account.receivable.User.controller.RoleController;
 import com.example.account.receivable.User.entity.UserStatus;
@@ -267,20 +266,18 @@ class CompanyAndRoleControllersTest {
     }
 
     @Test
-    void saveBanking_updatesSettings() throws Exception {
-        PaymentSettingsRequest paymentSettings = new PaymentSettingsRequest();
-        paymentSettings.setAcceptBankTransfer(true);
-        BankAccountRequest bankAccount = new BankAccountRequest();
-        bankAccount.setBankName("Bank");
+    void saveBanking_createsBankAccount() throws Exception {
+        BankAccountRequest request = new BankAccountRequest();
+        request.setBankName("Bank");
+        request.setAccountNumber("123");
 
-        BankingStepRequest request = new BankingStepRequest();
-        request.setPaymentSettings(paymentSettings);
-        request.setBankAccounts(List.of(bankAccount));
+        CompanyBankAccount account = CompanyBankAccount.builder()
+                .id(10L)
+                .bankName("Bank")
+                .accountNumber("123")
+                .build();
 
-        Company company = sampleCompany();
-
-        doNothing().when(companyService).upsertBankingAndPayment(eq(4L), any(BankingStepRequest.class));
-        when(companyService.getCompanyDetails(4L)).thenReturn(company);
+        when(companyService.createBankAccount(eq(4L), any(BankAccountRequest.class))).thenReturn(account);
 
         mockMvc.perform(
                 post("/api/companies/{id}/banking", 4L)
@@ -288,9 +285,10 @@ class CompanyAndRoleControllersTest {
                         .content(objectMapper.writeValueAsString(request))
         )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.companyCode").value("ACME"));
+                .andExpect(jsonPath("$.data.bankName").value("Bank"))
+                .andExpect(jsonPath("$.data.accountNumber").value("123"));
 
-        verify(companyService).upsertBankingAndPayment(eq(4L), any(BankingStepRequest.class));
+        verify(companyService).createBankAccount(eq(4L), any(BankAccountRequest.class));
     }
 
     @Test

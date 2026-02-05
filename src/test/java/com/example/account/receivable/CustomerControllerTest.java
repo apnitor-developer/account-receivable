@@ -45,6 +45,7 @@ import com.example.account.receivable.Customer.Entity.CustomerDunningCreditSetti
 import com.example.account.receivable.Customer.Entity.CustomerEFT;
 import com.example.account.receivable.Customer.Entity.CustomerStatement;
 import com.example.account.receivable.Customer.Entity.CustomerVAT;
+import com.example.account.receivable.Customer.Enum.CustomerTypeEnum;
 import com.example.account.receivable.Customer.Service.CustomerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -66,7 +67,7 @@ class CustomerControllerTest {
         customer.setId(1L);
         customer.setCustomerName("Acme Customer");
         customer.setEmail("customer@example.com");
-        customer.setCustomerType("BUSINESS");
+        customer.setCustomerType(CustomerTypeEnum.COMPANY);
         return customer;
     }
 
@@ -75,7 +76,7 @@ class CustomerControllerTest {
         CustomerDTO dto = new CustomerDTO();
         dto.setCustomerName("Acme Customer");
         dto.setEmail("customer@example.com");
-        dto.setCustomerType("BUSINESS");
+        dto.setCustomerType(CustomerTypeEnum.COMPANY);
 
         when(customerService.createCustomer(eq(3L), eq(5L), any(CustomerDTO.class))).thenReturn(sampleCustomer());
 

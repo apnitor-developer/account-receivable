@@ -23,8 +23,9 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Dto.CustomerDTO.CustomerDTO;
-import com.example.account.receivable.Customer.Entity.CompanyCustomers;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.Customer.Entity.CompanyCustomers;
+import com.example.account.receivable.Customer.Enum.CustomerTypeEnum;
 import com.example.account.receivable.Customer.Repository.CompanyCustomerRepository;
 import com.example.account.receivable.Customer.Repository.CustomerAddressRepository;
 import com.example.account.receivable.Customer.Repository.CustomerCashApplicationRepository;
@@ -98,7 +99,7 @@ class CustomerServiceTest {
         CustomerDTO dto = new CustomerDTO();
         dto.setCustomerName("Client");
         dto.setEmail("client@example.com");
-        dto.setCustomerType("BUSINESS");
+        dto.setCustomerType(CustomerTypeEnum.COMPANY);
 
         Customer result = customerService.createCustomer(5L, 77L, dto);
 
