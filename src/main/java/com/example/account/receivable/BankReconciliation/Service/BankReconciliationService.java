@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import com.example.account.receivable.BankReconciliation.Utils.BaiCodeUtil;
 import com.example.account.receivable.BankReconciliation.Utils.BaiTransactionInfo;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
+import com.example.account.receivable.Payment.Enum.PaymentSource;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -86,7 +88,7 @@ public class BankReconciliationService {
             .transactionDate(LocalDate.now())
             .status(PaymentStatus.DRAFT)
             .systemNote(systemNote)
-            .baiPayment(true)
+            .source(PaymentSource.BANK)
             .build();
 
         return bankTransactionRepository.save(transaction);
@@ -103,5 +105,39 @@ public class BankReconciliationService {
         );
 
         bankTransactionRepository.save(transaction);
+    }
+
+
+    //Get List of Bank Transaction
+    public List<BankTransaction> getBankTransactions(
+            Long companyId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            Integer months
+    ) {
+        validateDates(fromDate, toDate);
+
+        LocalDate resolvedFrom = fromDate;
+        LocalDate resolvedTo = toDate;
+
+        if (resolvedFrom == null && resolvedTo == null && months != null && months > 0) {
+            resolvedTo = LocalDate.now();
+            resolvedFrom = resolvedTo.minusMonths(months);
+        }
+
+        return bankTransactionRepository.findByCompanyIdFiltered(
+                companyId,
+                resolvedFrom,
+                resolvedTo
+        );
+    }
+
+    private void validateDates(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "fromDate cannot be after toDate"
+            );
+        }
     }
 }

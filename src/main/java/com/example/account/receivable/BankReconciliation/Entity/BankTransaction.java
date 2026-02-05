@@ -9,6 +9,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
 import com.example.account.receivable.Company.Entity.Company;
+import com.example.account.receivable.Payment.Enum.PaymentSource;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,6 +38,7 @@ public class BankTransaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
@@ -57,8 +60,9 @@ public class BankTransaction {
 
     private String systemNote;
 
-    @Column(name = "is_bai_payment", nullable = false)
-    private boolean baiPayment;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false)
+    private PaymentSource source; // always BANK
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

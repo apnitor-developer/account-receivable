@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Sort;
 
+import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
 import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseStatus;
 import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseToPay;
 import com.example.account.receivable.Collections.PromiseToPay.Repository.PromiseToPayRepo;
@@ -41,6 +42,7 @@ import com.example.account.receivable.Payment.Dto.ResponseDTO.PaymentReportDto;
 import com.example.account.receivable.Payment.Entity.Payment;
 import com.example.account.receivable.Payment.Entity.PaymentApplication;
 import com.example.account.receivable.Payment.Enum.PaymentMethod;
+import com.example.account.receivable.Payment.Enum.PaymentSource;
 import com.example.account.receivable.Payment.Repository.PaymentApplicationRepository;
 import com.example.account.receivable.Payment.Repository.PaymentRepository;
 
@@ -74,6 +76,8 @@ public class PaymentService {
                 .paymentAmount(request.getPaymentAmount())
                 .paymentMethod(request.getPaymentMethod())
                 .paymentDate(LocalDate.now())
+                .source(PaymentSource.MANUAL)
+                .status(PaymentStatus.DRAFT)
                 .notes(request.getNotes())
                 .build();
 

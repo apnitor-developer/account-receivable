@@ -8,8 +8,10 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Payment.Enum.PaymentMethod;
+import com.example.account.receivable.Payment.Enum.PaymentSource;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
@@ -50,9 +52,19 @@ public class Payment {
     @Column(name = "payment_amount", nullable = false)
     private BigDecimal paymentAmount;
 
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = true)
+    private PaymentSource source;   // BANK or MANUAL
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = true)
+    private PaymentStatus status; 
 
     private LocalDate paymentDate;
 
