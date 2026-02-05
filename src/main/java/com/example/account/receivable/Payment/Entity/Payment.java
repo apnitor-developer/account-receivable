@@ -54,7 +54,7 @@ public class Payment {
 
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "source", nullable = true)
+    @Column(name = "source", nullable = false)
     private PaymentSource source;   // BANK or MANUAL
 
     @Enumerated(EnumType.STRING)
@@ -63,7 +63,7 @@ public class Payment {
 
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status", nullable = true)
+    @Column(name = "payment_status", nullable = false)
     private PaymentStatus status; 
 
     private LocalDate paymentDate;
