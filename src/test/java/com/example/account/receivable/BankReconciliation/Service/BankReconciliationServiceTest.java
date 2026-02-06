@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,7 +29,13 @@ import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
 import com.example.account.receivable.BankReconciliation.Repository.BankTransactionRepository;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
+import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.Payment.Entity.Payment;
+import com.example.account.receivable.Payment.Enum.PaymentMethod;
 import com.example.account.receivable.Payment.Enum.PaymentSource;
+import com.example.account.receivable.Payment.Repository.PaymentRepository;
+import com.example.account.receivable.Payment.Service.PaymentService;
 
 @ExtendWith(MockitoExtension.class)
 class BankReconciliationServiceTest {
@@ -38,6 +45,15 @@ class BankReconciliationServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private PaymentRepository paymentRepository;
+
+    @Mock
+    private CustomerRepository customerRepository;
+
+    @Mock
+    private PaymentService paymentService;
 
     @InjectMocks
     private BankReconciliationService bankReconciliationService;
@@ -108,7 +124,11 @@ class BankReconciliationServiceTest {
 
     @Test
     void getBankTransactions_withMonthsFallbackUsesRelativeWindow() {
-        when(bankTransactionRepository.findByCompanyIdFiltered(eq(3L), any(LocalDate.class), any(LocalDate.class)))
+        when(bankTransactionRepository.findByCompanyIdFiltered(
+                eq(3L),
+                eq(PaymentStatus.DRAFT),
+                any(LocalDate.class),
+                any(LocalDate.class)))
                 .thenReturn(List.of());
 
         bankReconciliationService.getBankTransactions(3L, null, null, 3);
@@ -116,9 +136,74 @@ class BankReconciliationServiceTest {
         ArgumentCaptor<LocalDate> fromCaptor = ArgumentCaptor.forClass(LocalDate.class);
         ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
 
-        verify(bankTransactionRepository).findByCompanyIdFiltered(eq(3L), fromCaptor.capture(), toCaptor.capture());
+        verify(bankTransactionRepository).findByCompanyIdFiltered(
+                eq(3L),
+                eq(PaymentStatus.DRAFT),
+                fromCaptor.capture(),
+                toCaptor.capture());
 
         assertEquals(toCaptor.getValue().minusMonths(3), fromCaptor.getValue());
         assertEquals(LocalDate.now(), toCaptor.getValue());
+    }
+
+    @Test
+    void approveAndApplyBankTransaction_createsPaymentAndUpdatesStatuses() {
+        BankTransaction bankTransaction = BankTransaction.builder()
+                .id(20L)
+                .amount(new BigDecimal("250.00"))
+                .transactionDate(LocalDate.of(2026, 2, 1))
+                .status(PaymentStatus.DRAFT)
+                .description("Wire payment")
+                .build();
+
+        Customer customer = new Customer();
+        customer.setId(8L);
+        customer.setCustomerName("Acme");
+
+        when(bankTransactionRepository.findById(20L)).thenReturn(Optional.of(bankTransaction));
+        when(customerRepository.findById(5L)).thenReturn(Optional.of(customer));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+            if (payment.getId() == null) {
+                payment.setId(40L);
+            }
+            return payment;
+        });
+
+        List<Long> invoiceIds = List.of(1L, 2L);
+
+        Payment result = bankReconciliationService.approveAndApplyBankTransaction(20L, 5L, invoiceIds);
+
+        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentService).applyInvoices(paymentCaptor.capture(), eq(invoiceIds));
+        Payment appliedPayment = paymentCaptor.getValue();
+
+        assertEquals(new BigDecimal("250.00"), appliedPayment.getPaymentAmount());
+        assertEquals(PaymentMethod.BANK_TRANSFER, appliedPayment.getPaymentMethod());
+        assertEquals(PaymentSource.BANK, appliedPayment.getSource());
+        assertEquals(bankTransaction, appliedPayment.getBankTransaction());
+        assertEquals(customer, appliedPayment.getCustomer());
+
+        assertEquals(PaymentStatus.APPROVED, result.getStatus());
+        assertEquals(PaymentStatus.APPLIED, bankTransaction.getStatus());
+
+        verify(paymentRepository, times(2)).save(any(Payment.class));
+        verify(bankTransactionRepository).save(bankTransaction);
+    }
+
+    @Test
+    void approveAndApplyBankTransaction_whenAlreadyProcessedThrows() {
+        BankTransaction bankTransaction = BankTransaction.builder()
+                .id(11L)
+                .status(PaymentStatus.APPROVED)
+                .build();
+
+        when(bankTransactionRepository.findById(11L)).thenReturn(Optional.of(bankTransaction));
+
+        assertThrows(IllegalStateException.class,
+                () -> bankReconciliationService.approveAndApplyBankTransaction(11L, 3L, List.of()));
+
+        verify(customerRepository, never()).findById(any());
+        verify(paymentRepository, never()).save(any());
     }
 }
