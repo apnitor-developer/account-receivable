@@ -8,6 +8,7 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.example.account.receivable.BankReconciliation.Entity.BankTransaction;
 import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Payment.Enum.PaymentMethod;
@@ -19,6 +20,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -82,6 +84,10 @@ public class Payment {
     @JsonIgnore
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_transaction_id")
+    private BankTransaction bankTransaction;
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
     private List<PaymentApplication> applications;

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
 import com.example.account.receivable.Payment.MonthlyPaymentProjection;
 import com.example.account.receivable.Payment.PaymentMethodReportProjection;
 import com.example.account.receivable.Payment.Entity.Payment;
@@ -56,6 +57,25 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             Pageable pageable
     );
 
+
+    // Get Only the DRAFT Payments 
+    @Query("""
+        SELECT p
+        FROM Payment p
+        JOIN p.customer c
+        JOIN c.companyCompanies cc
+        WHERE cc.company.id = :companyId
+        AND p.status = :status
+        AND c.deleted = false
+    """)
+    Page<Payment> findPaymentsByCompanyAndStatus(
+            @Param("companyId") Long companyId,
+            @Param("status") PaymentStatus status,
+            Pageable pageable
+    );
+
+    
+
     //Get Payments By the CompanyId (query used in the payment reports)
     @Query("""
         SELECT p
@@ -64,11 +84,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         JOIN c.companyCompanies cc
         WHERE cc.company.id = :companyId
         AND c.deleted = false
+        AND p.status = :status
         AND (:fromDate IS NULL OR p.paymentDate >= :fromDate)
         AND (:toDate IS NULL OR p.paymentDate <= :toDate)
     """)
-    Page<Payment> findPaymentsByCompanyIdFiltered(
+    Page<Payment> findPaymentsByCompanyIdFilteredAndStatus(
             @Param("companyId") Long companyId,
+            @Param("status") PaymentStatus status,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             Pageable pageable

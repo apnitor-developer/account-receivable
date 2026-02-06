@@ -18,7 +18,13 @@ import com.example.account.receivable.BankReconciliation.Utils.BaiCodeUtil;
 import com.example.account.receivable.BankReconciliation.Utils.BaiTransactionInfo;
 import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
+import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.Payment.Entity.Payment;
+import com.example.account.receivable.Payment.Enum.PaymentMethod;
 import com.example.account.receivable.Payment.Enum.PaymentSource;
+import com.example.account.receivable.Payment.Repository.PaymentRepository;
+import com.example.account.receivable.Payment.Service.PaymentService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +35,9 @@ public class BankReconciliationService {
 
     private final BankTransactionRepository bankTransactionRepository;
     private final CompanyRepository companyRepository;
+    private final PaymentRepository paymentRepository;
+    private final CustomerRepository customerRepository;
+    private final PaymentService paymentService;
 
     @Transactional
     public void processBaiFile(MultipartFile file , Long companyId) {
@@ -108,6 +117,55 @@ public class BankReconciliationService {
     }
 
 
+
+    // Approve Bank Transaction and Apply on the Invoice 
+    @Transactional
+    public Payment approveAndApplyBankTransaction(
+            Long bankTransactionId,
+            Long customerId,
+            List<Long> invoiceIds
+    ) {
+        BankTransaction bt = bankTransactionRepository.findById(bankTransactionId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Bank transaction not found"));
+
+        if (bt.getStatus() != PaymentStatus.DRAFT) {
+            throw new IllegalStateException("Bank transaction already processed");
+        }
+
+        // Customer is explicitly selected by user
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+
+        // Create Payment
+        Payment payment = Payment.builder()
+                .customer(customer)
+                .bankDeposit(bt.getAmount())
+                .paymentAmount(bt.getAmount())
+                .paymentMethod(PaymentMethod.BANK_TRANSFER)
+                .paymentDate(bt.getTransactionDate())
+                .source(PaymentSource.BANK)
+                .status(PaymentStatus.DRAFT)
+                .notes(bt.getDescription())
+                .bankTransaction(bt)
+                .build();
+
+        payment = paymentRepository.save(payment);
+
+        // Apply invoices
+        paymentService.applyInvoices(payment, invoiceIds);
+
+        // Final statuses
+        payment.setStatus(PaymentStatus.APPROVED);
+        bt.setStatus(PaymentStatus.APPLIED);
+
+        paymentRepository.save(payment);
+        bankTransactionRepository.save(bt);
+
+        return payment;
+    }
+
     //Get List of Bank Transaction
     public List<BankTransaction> getBankTransactions(
             Long companyId,
@@ -127,6 +185,7 @@ public class BankReconciliationService {
 
         return bankTransactionRepository.findByCompanyIdFiltered(
                 companyId,
+                PaymentStatus.DRAFT,
                 resolvedFrom,
                 resolvedTo
         );

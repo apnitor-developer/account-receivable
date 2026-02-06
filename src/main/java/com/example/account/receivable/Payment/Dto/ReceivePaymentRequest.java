@@ -1,7 +1,6 @@
 package com.example.account.receivable.Payment.Dto;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 import com.example.account.receivable.Payment.Enum.PaymentMethod;
 
@@ -21,6 +20,6 @@ public class ReceivePaymentRequest {
     private BigDecimal paymentAmount;
     private PaymentMethod paymentMethod;
     private String notes;
-    private List<Long> invoiceIds; // only IDs, backend will auto apply
+    // private List<Long> invoiceIds; // only IDs, backend will auto apply
 }
 

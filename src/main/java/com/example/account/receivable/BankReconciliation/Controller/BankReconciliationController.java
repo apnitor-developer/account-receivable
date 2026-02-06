@@ -9,16 +9,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.account.receivable.BankReconciliation.Dto.BankApproveApplyRequest;
 import com.example.account.receivable.BankReconciliation.Entity.BankTransaction;
 import com.example.account.receivable.BankReconciliation.Service.BankReconciliationService;
 import com.example.account.receivable.Common.ApiResponse;
+import com.example.account.receivable.Payment.Entity.Payment;
+
 
 import lombok.RequiredArgsConstructor;
+
 
 @RestController
 @RequestMapping("/api/bank-reconciliation")
@@ -46,6 +51,25 @@ public class BankReconciliationController {
     }
 
 
+    // Approve and Apply on Invoice
+    @PostMapping("/transaction/{bankTransactionId}/approve-apply")
+    public ResponseEntity<ApiResponse<Payment>> approveAndApply(
+                    @PathVariable Long bankTransactionId,
+                    @RequestBody BankApproveApplyRequest request) {
+            Payment payment = bankReconciliationService.approveAndApplyBankTransaction(
+                            bankTransactionId,
+                            request.getCustomerId(),
+                            request.getInvoiceIds());
+
+            return ResponseEntity.ok(
+                            ApiResponse.successResponse(
+                                            200,
+                                            "Bank transaction approved and applied",
+                                            payment));
+    }
+
+
+    
     //Get Bank Transaction List
     @GetMapping("/company/{companyId}/transactions")
     public ResponseEntity<ApiResponse<List<BankTransaction>>> getBankTransactions(
@@ -62,4 +86,5 @@ public class BankReconciliationController {
                                             "Bank transactions fetched successfully",
                                             transactions));
     }
+ 
 }

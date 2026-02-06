@@ -37,6 +37,7 @@ import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.Payment.MonthlyPaymentProjection;
 import com.example.account.receivable.Payment.PaymentMethodReportProjection;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
+import com.example.account.receivable.Payment.Dto.ResponseDTO.ManualPaymentResponseDto;
 import com.example.account.receivable.Payment.Dto.ResponseDTO.MonthlyPaymentDto;
 import com.example.account.receivable.Payment.Dto.ResponseDTO.PaymentReportDto;
 import com.example.account.receivable.Payment.Entity.Payment;
@@ -59,16 +60,18 @@ public class PaymentService {
     private final PromiseToPayRepo promiseToPayRepo;
     private final GlTransactionService glTransactionService;
 
-    //Auto Apply Payment
+
+    //Create Payment
     @Transactional
-    public Payment applyPayment(Long customerId, ReceivePaymentRequest request) {
+    public ManualPaymentResponseDto createManualPayment(
+            Long customerId,
+            ReceivePaymentRequest request
+    ) {
 
-        // Validate customer
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Customer not found"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-        // Create payment record
         Payment payment = Payment.builder()
                 .customer(customer)
                 .bankDeposit(request.getBankDeposit())
@@ -83,59 +86,99 @@ public class PaymentService {
 
         payment = paymentRepository.save(payment);
 
+        return mapToManualPaymentResponse(payment);
+    }
 
-        // Resolve company from customer
-        Company company =
-            CompanyResolver.resolveCompanyForCustomer(customer);
 
-        // SAVE TRANSACTION
-        glTransactionService.createTransaction(
-            company.getId(),
-            GlTransactionCreateRequest.builder()
-                .referenceType(GlReferenceType.PAYMENT)
-                .referenceId(payment.getId())
-                .referenceNumber("PAY-" + payment.getId())
-                .amount(payment.getPaymentAmount())
-                .transactionDate(payment.getPaymentDate())
-                .description("Payment received")
-                .build()
-        );
+    // Mapper method for Manual Payment Response
+    private ManualPaymentResponseDto mapToManualPaymentResponse(Payment payment) {
 
-        // Auto-apply logic
-        BigDecimal remainingPayment = request.getPaymentAmount();
+        ManualPaymentResponseDto dto = new ManualPaymentResponseDto();
 
-        // Load all selected invoices
-        List<Invoice> invoices = invoiceRepository.findAllById(request.getInvoiceIds());
+        dto.setPaymentId(payment.getId());
+        dto.setBankDeposit(payment.getBankDeposit());
+        dto.setServiceFee(payment.getServiceFee());
+        dto.setPaymentAmount(payment.getPaymentAmount());
+
+        dto.setPaymentMethod(payment.getPaymentMethod());
+        dto.setSource(payment.getSource());
+        dto.setStatus(payment.getStatus());
+
+        dto.setPaymentDate(payment.getPaymentDate());
+        dto.setNotes(payment.getNotes());
+
+        dto.setCustomerId(payment.getCustomer().getId());
+        dto.setCustomerName(payment.getCustomer().getCustomerName());
+
+        dto.setCreatedAt(payment.getCreatedAt());
+
+        return dto;
+    }
+
+
+    // Approve payment and Apply on the Invoice
+    @Transactional
+    public Payment approveAndApplyPayment(Long paymentId, List<Long> invoiceIds) {
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+
+        if (payment.getStatus() != PaymentStatus.DRAFT) {
+            throw new IllegalStateException("Payment already processed");
+        }
+
+        // Apply invoices
+        applyInvoices(payment, invoiceIds);
+
+        // 2️⃣ Final status
+        payment.setStatus(PaymentStatus.APPROVED);
+
+        return paymentRepository.save(payment);
+        
+    }
+
+
+
+    // Apply Payment on the Invoice Helper Method
+    @Transactional
+    public void applyInvoices(Payment payment, List<Long> invoiceIds) {
+
+        BigDecimal remainingPayment = payment.getPaymentAmount();
+
+        // Load selected invoices
+        List<Invoice> invoices = invoiceRepository.findAllById(invoiceIds);
 
         for (Invoice invoice : invoices) {
 
-            if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) break;
+            if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
+                break;
+            }
 
             BigDecimal invoiceBalance = invoice.getBalanceDue();
             BigDecimal appliedAmount = invoiceBalance.min(remainingPayment);
 
-            // OPEN AMOUNT = invoiceBalance BEFORE applying payment
+            // OPEN AMOUNT = invoice balance BEFORE applying payment
             BigDecimal openAmountBefore = invoiceBalance;
 
-            //new balance
-            BigDecimal balance = invoiceBalance.subtract(appliedAmount);
-            System.out.println("newbalance" + balance);
+            // New balance after applying
+            BigDecimal newBalance = invoiceBalance.subtract(appliedAmount);
 
+            // Create PaymentApplication
             PaymentApplication pa = PaymentApplication.builder()
                     .payment(payment)
                     .invoice(invoice)
                     .appliedAmount(appliedAmount)
-                    .openAmount(openAmountBefore)    // ← storing in DB
-                    .newBalance(invoiceBalance)
+                    .openAmount(openAmountBefore)
+                    .newBalance(newBalance)
                     .build();
 
             paymentApplicationRepository.save(pa);
 
-            // reduce invoice balance
-            invoice.setBalanceDue(invoiceBalance.subtract(appliedAmount));
+            // Update invoice
+            invoice.setBalanceDue(newBalance);
 
-            // update status
-            if (invoice.getBalanceDue().compareTo(BigDecimal.ZERO) == 0) {
+            if (newBalance.compareTo(BigDecimal.ZERO) == 0) {
                 invoice.setStatus(InvoiceStatus.PAID);
             } else {
                 invoice.setStatus(InvoiceStatus.PARTIAL);
@@ -144,53 +187,168 @@ public class PaymentService {
             invoice.setLastPaymentDate(LocalDate.now());
             invoiceRepository.save(invoice);
 
-            // reduce remaining payment
+            // Reduce remaining payment
             remainingPayment = remainingPayment.subtract(appliedAmount);
         }
-
-        // Use the updatePromiseToPayStatus method to update the status of promise-to-pay 
-        updatePromiseToPayStatus(customer, request.getPaymentAmount());
-
-        return payment;
     }
 
 
-    //Helper function use in the applyPayment method()
-    private void updatePromiseToPayStatus(Customer customer, BigDecimal paymentAmount) {
 
-        // Remaining amount from this payment
-        BigDecimal remainingPayment = paymentAmount;
+    // Get only the DRAFT Payments
+    public Page<ManualPaymentResponseDto> getDraftPayments(
+            Long companyId,
+            int page,
+            int size
+    ) {
+        Pageable pageable =
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        // Fetch active promises in ORDER (important!)
-        List<PromiseToPay> activePromises =
-                promiseToPayRepo.findByCustomerId(customer.getId())
-                        .stream()
-                        .filter(p ->
-                                p.getStatus() == PromiseStatus.PENDING ||
-                                p.getStatus() == PromiseStatus.DUE_TODAY
-                        )
-                        // optional: oldest promise first
-                        .sorted(Comparator.comparing(PromiseToPay::getPromiseDate))
-                        .toList();
+        Page<Payment> payments =
+                paymentRepository.findPaymentsByCompanyAndStatus(
+                        companyId,
+                        PaymentStatus.DRAFT,
+                        pageable
+                );
 
-        for (PromiseToPay promise : activePromises) {
-
-            if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
-                break; // no money left
-            }
-
-            BigDecimal promisedAmount = promise.getAmountPromised();
-
-            if (remainingPayment.compareTo(promisedAmount) >= 0) {
-                // fulfill this promise
-                promise.setStatus(PromiseStatus.COMPLETED);
-                promiseToPayRepo.save(promise);
-
-                // deduct used amount
-                remainingPayment = remainingPayment.subtract(promisedAmount);
-            }
-        }
+        // Map to DTO
+        return payments.map(this::mapToManualPaymentResponse);
     }
+
+
+
+
+    // //Auto Apply Payment
+    // @Transactional
+    // public Payment applyPayment(Long customerId, ReceivePaymentRequest request) {
+
+    //     // Validate customer
+    //     Customer customer = customerRepository.findById(customerId)
+    //             .orElseThrow(() -> new ResponseStatusException(
+    //                     HttpStatus.NOT_FOUND, "Customer not found"));
+
+    //     // Create payment record
+    //     Payment payment = Payment.builder()
+    //             .customer(customer)
+    //             .bankDeposit(request.getBankDeposit())
+    //             .serviceFee(request.getServiceFee())
+    //             .paymentAmount(request.getPaymentAmount())
+    //             .paymentMethod(request.getPaymentMethod())
+    //             .paymentDate(LocalDate.now())
+    //             .source(PaymentSource.MANUAL)
+    //             .status(PaymentStatus.DRAFT)
+    //             .notes(request.getNotes())
+    //             .build();
+
+    //     payment = paymentRepository.save(payment);
+
+
+    //     // Resolve company from customer
+    //     Company company =
+    //         CompanyResolver.resolveCompanyForCustomer(customer);
+
+    //     // SAVE TRANSACTION
+    //     glTransactionService.createTransaction(
+    //         company.getId(),
+    //         GlTransactionCreateRequest.builder()
+    //             .referenceType(GlReferenceType.PAYMENT)
+    //             .referenceId(payment.getId())
+    //             .referenceNumber("PAY-" + payment.getId())
+    //             .amount(payment.getPaymentAmount())
+    //             .transactionDate(payment.getPaymentDate())
+    //             .description("Payment received")
+    //             .build()
+    //     );
+
+    //     // Auto-apply logic
+    //     BigDecimal remainingPayment = request.getPaymentAmount();
+
+    //     // Load all selected invoices
+    //     List<Invoice> invoices = invoiceRepository.findAllById(request.getInvoiceIds());
+
+    //     for (Invoice invoice : invoices) {
+
+    //         if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) break;
+
+    //         BigDecimal invoiceBalance = invoice.getBalanceDue();
+    //         BigDecimal appliedAmount = invoiceBalance.min(remainingPayment);
+
+    //         // OPEN AMOUNT = invoiceBalance BEFORE applying payment
+    //         BigDecimal openAmountBefore = invoiceBalance;
+
+    //         //new balance
+    //         BigDecimal balance = invoiceBalance.subtract(appliedAmount);
+    //         System.out.println("newbalance" + balance);
+
+    //         PaymentApplication pa = PaymentApplication.builder()
+    //                 .payment(payment)
+    //                 .invoice(invoice)
+    //                 .appliedAmount(appliedAmount)
+    //                 .openAmount(openAmountBefore)    // ← storing in DB
+    //                 .newBalance(invoiceBalance)
+    //                 .build();
+
+    //         paymentApplicationRepository.save(pa);
+
+    //         // reduce invoice balance
+    //         invoice.setBalanceDue(invoiceBalance.subtract(appliedAmount));
+
+    //         // update status
+    //         if (invoice.getBalanceDue().compareTo(BigDecimal.ZERO) == 0) {
+    //             invoice.setStatus(InvoiceStatus.PAID);
+    //         } else {
+    //             invoice.setStatus(InvoiceStatus.PARTIAL);
+    //         }
+
+    //         invoice.setLastPaymentDate(LocalDate.now());
+    //         invoiceRepository.save(invoice);
+
+    //         // reduce remaining payment
+    //         remainingPayment = remainingPayment.subtract(appliedAmount);
+    //     }
+
+    //     // Use the updatePromiseToPayStatus method to update the status of promise-to-pay 
+    //     updatePromiseToPayStatus(customer, request.getPaymentAmount());
+
+    //     return payment;
+    // }
+
+
+    // //Helper function use in the applyPayment method()
+    // private void updatePromiseToPayStatus(Customer customer, BigDecimal paymentAmount) {
+
+    //     // Remaining amount from this payment
+    //     BigDecimal remainingPayment = paymentAmount;
+
+    //     // Fetch active promises in ORDER (important!)
+    //     List<PromiseToPay> activePromises =
+    //             promiseToPayRepo.findByCustomerId(customer.getId())
+    //                     .stream()
+    //                     .filter(p ->
+    //                             p.getStatus() == PromiseStatus.PENDING ||
+    //                             p.getStatus() == PromiseStatus.DUE_TODAY
+    //                     )
+    //                     // optional: oldest promise first
+    //                     .sorted(Comparator.comparing(PromiseToPay::getPromiseDate))
+    //                     .toList();
+
+    //     for (PromiseToPay promise : activePromises) {
+
+    //         if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
+    //             break; // no money left
+    //         }
+
+    //         BigDecimal promisedAmount = promise.getAmountPromised();
+
+    //         if (remainingPayment.compareTo(promisedAmount) >= 0) {
+    //             // fulfill this promise
+    //             promise.setStatus(PromiseStatus.COMPLETED);
+    //             promiseToPayRepo.save(promise);
+
+    //             // deduct used amount
+    //             remainingPayment = remainingPayment.subtract(promisedAmount);
+    //         }
+    //     }
+    // }
 
 
 
@@ -237,8 +395,9 @@ public class PaymentService {
         Pageable pageable =
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "paymentDate"));
 
-        return paymentRepository.findPaymentsByCompanyIdFiltered(
+        return paymentRepository.findPaymentsByCompanyIdFilteredAndStatus(
                 companyId,
+                PaymentStatus.APPROVED,
                 resolvedFrom,
                 resolvedTo,
                 pageable
