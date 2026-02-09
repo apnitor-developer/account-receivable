@@ -1,7 +1,7 @@
 package com.example.account.receivable.BankReconciliation.Enum;
 
 public enum PaymentStatus {
-    DRAFT,
+    CREATED,
     APPROVED,
     APPLIED,
     REJECTED,

@@ -1,7 +1,7 @@
 package com.example.account.receivable.Invoice.Enum;
 
 public enum InvoiceStatus {
-    DRAFT,
+    CREATED,
     OPEN,
     PAID,
     PARTIAL,

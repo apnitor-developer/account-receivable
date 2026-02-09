@@ -95,7 +95,7 @@ public class BankReconciliationService {
             .customerName(customerName)
             .description(description)
             .transactionDate(LocalDate.now())
-            .status(PaymentStatus.DRAFT)
+            .status(PaymentStatus.CREATED)
             .systemNote(systemNote)
             .source(PaymentSource.BANK)
             .build();
@@ -129,7 +129,7 @@ public class BankReconciliationService {
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Bank transaction not found"));
 
-        if (bt.getStatus() != PaymentStatus.DRAFT) {
+        if (bt.getStatus() != PaymentStatus.CREATED) {
             throw new IllegalStateException("Bank transaction already processed");
         }
 
@@ -146,7 +146,7 @@ public class BankReconciliationService {
                 .paymentMethod(PaymentMethod.BANK_TRANSFER)
                 .paymentDate(bt.getTransactionDate())
                 .source(PaymentSource.BANK)
-                .status(PaymentStatus.DRAFT)
+                .status(PaymentStatus.CREATED)
                 .notes(bt.getDescription())
                 .bankTransaction(bt)
                 .build();
@@ -185,7 +185,7 @@ public class BankReconciliationService {
 
         return bankTransactionRepository.findByCompanyIdFiltered(
                 companyId,
-                PaymentStatus.DRAFT,
+                PaymentStatus.CREATED,
                 resolvedFrom,
                 resolvedTo
         );

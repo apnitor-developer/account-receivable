@@ -58,19 +58,23 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     );
 
 
-    // Get Only the DRAFT Payments 
+    // Get Only the CREATED Payments 
     @Query("""
-        SELECT p
+        SELECT DISTINCT p
         FROM Payment p
         JOIN p.customer c
         JOIN c.companyCompanies cc
         WHERE cc.company.id = :companyId
         AND p.status = :status
         AND c.deleted = false
+        AND (:fromDate IS NULL OR p.createdAt >= :fromDate)
+        AND (:toDate IS NULL OR p.createdAt <= :toDate)
     """)
-    Page<Payment> findPaymentsByCompanyAndStatus(
+    Page<Payment> findPaymentsByCompanyStatusAndDateRange(
             @Param("companyId") Long companyId,
             @Param("status") PaymentStatus status,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
             Pageable pageable
     );
 

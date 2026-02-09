@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,16 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Sort;
 
 import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
-import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseStatus;
-import com.example.account.receivable.Collections.PromiseToPay.Entity.PromiseToPay;
-import com.example.account.receivable.Collections.PromiseToPay.Repository.PromiseToPayRepo;
-import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
-import com.example.account.receivable.GL.Dto.GlTransactionCreateRequest;
-import com.example.account.receivable.GL.Enum.GlReferenceType;
-import com.example.account.receivable.GL.Service.GlTransactionService;
-import com.example.account.receivable.HelperMethods.CompanyResolver;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
@@ -57,8 +48,6 @@ public class PaymentService {
     private final InvoiceRepository invoiceRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentApplicationRepository paymentApplicationRepository;
-    private final PromiseToPayRepo promiseToPayRepo;
-    private final GlTransactionService glTransactionService;
 
 
     //Create Payment
@@ -80,7 +69,7 @@ public class PaymentService {
                 .paymentMethod(request.getPaymentMethod())
                 .paymentDate(LocalDate.now())
                 .source(PaymentSource.MANUAL)
-                .status(PaymentStatus.DRAFT)
+                .status(PaymentStatus.CREATED)
                 .notes(request.getNotes())
                 .build();
 
@@ -124,7 +113,7 @@ public class PaymentService {
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
 
-        if (payment.getStatus() != PaymentStatus.DRAFT) {
+        if (payment.getStatus() != PaymentStatus.CREATED) {
             throw new IllegalStateException("Payment already processed");
         }
 
@@ -195,22 +184,35 @@ public class PaymentService {
 
 
     // Get only the DRAFT Payments
-    public Page<ManualPaymentResponseDto> getDraftPayments(
+    public Page<ManualPaymentResponseDto> getCreatedPayments(
             Long companyId,
             int page,
-            int size
+            int size,
+            LocalDate fromDate,
+            LocalDate toDate,
+            Integer months
     ) {
         Pageable pageable =
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
+        LocalDate resolvedFrom = fromDate;
+        LocalDate resolvedTo = toDate;
+
+        // If explicit dates are NOT provided, but months is provided
+        if (resolvedFrom == null && resolvedTo == null && months != null && months > 0) {
+            resolvedTo = LocalDate.now();
+            resolvedFrom = resolvedTo.minusMonths(months);
+        }
+
         Page<Payment> payments =
-                paymentRepository.findPaymentsByCompanyAndStatus(
+                paymentRepository.findPaymentsByCompanyStatusAndDateRange(
                         companyId,
-                        PaymentStatus.DRAFT,
+                        PaymentStatus.CREATED,
+                        resolvedFrom,
+                        resolvedTo,
                         pageable
                 );
 
-        // Map to DTO
         return payments.map(this::mapToManualPaymentResponse);
     }
 

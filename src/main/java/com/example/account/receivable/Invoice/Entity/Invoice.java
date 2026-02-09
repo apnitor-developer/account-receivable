@@ -58,7 +58,7 @@ public class Invoice {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
-    private InvoiceStatus status = InvoiceStatus.DRAFT;  // Initial status is OPEN
+    private InvoiceStatus status = InvoiceStatus.CREATED;  // Initial status is OPEN
 
     // Optional: Track the date of the last payment
     @Column(name = "last_payment_date")

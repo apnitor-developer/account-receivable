@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import com.example.account.receivable.Payment.Dto.ApplyPaymentRequest;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
@@ -68,18 +69,26 @@ public class PaymentController {
     }
 
 
-    // Get DRAFT Manual Payments
-    @GetMapping("/company/{companyId}/draft")
-    public ResponseEntity<ApiResponse<Page<ManualPaymentResponseDto>>> getDraftPayments(
-                    @PathVariable Long companyId,
-                    @RequestParam(defaultValue = "0") int page,
-                    @RequestParam(defaultValue = "10") int size) {
-            Page<ManualPaymentResponseDto> payments = paymentService.getDraftPayments(companyId, page, size);
+    // Get CREATED Manual Payments
+    @GetMapping("/company/{companyId}/created")
+    public ResponseEntity<ApiResponse<Page<ManualPaymentResponseDto>>> getCreatedPayments(
+                        @PathVariable Long companyId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(required = false)
+                        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                        LocalDate fromDate,
+                        @RequestParam(required = false)
+                        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                        LocalDate toDate,
+                        @RequestParam(required = false) Integer months)
+                {
+            Page<ManualPaymentResponseDto> payments = paymentService.getCreatedPayments(companyId, page, size, fromDate, toDate, months);
 
             return ResponseEntity.ok(
                             ApiResponse.successResponse(
                                             HttpStatus.OK.value(),
-                                            "Draft payments fetched successfully",
+                                            "Created payments fetched successfully",
                                             payments));
     }
 

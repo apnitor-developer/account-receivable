@@ -148,7 +148,7 @@ public class InvoiceService {
         return invoiceRepository.findCompanyInvoicesByStatusAndDateRange(
                 companyId,
                 pageable,
-                List.of( InvoiceStatus.DRAFT, InvoiceStatus.OPEN, InvoiceStatus.PARTIAL),
+                List.of( InvoiceStatus.CREATED, InvoiceStatus.OPEN, InvoiceStatus.PARTIAL),
                 resolvedFrom,
                 resolvedTo
         );
@@ -220,7 +220,7 @@ public class InvoiceService {
                 .invoiceDate(dto.getInvoiceDate())
                 .dueDate(dto.getDueDate())
                 .note(dto.getNote())
-                .status(InvoiceStatus.DRAFT)
+                .status(InvoiceStatus.CREATED)
                 .generated(dto.getGenerated())
                 .customer(customer)
                 .active(true)
@@ -323,10 +323,10 @@ public class InvoiceService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Invoice not found"));
 
-        if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+        if (invoice.getStatus() != InvoiceStatus.CREATED) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Only DRAFT invoices can be approved"
+                    "Only CREATED invoices can be approved"
             );
         }
 
@@ -335,7 +335,7 @@ public class InvoiceService {
     }
 
 
-    //Get Draft Invoices
+    //Get CREATED Invoices
     @Transactional()
     public Page<Invoice> getDraftInvoicesByCompany(
             Long companyId,
@@ -350,7 +350,7 @@ public class InvoiceService {
 
         return invoiceRepository.findCompanyInvoicesByStatus(
                 companyId,
-                InvoiceStatus.DRAFT,
+                InvoiceStatus.CREATED,
                 pageable
         );
     }
@@ -462,6 +462,7 @@ public class InvoiceService {
         return invoiceRepository.findByCustomerIdAndDeletedFalseAndStatusNotIn(
             customerId,
             List.of(
+                InvoiceStatus.CREATED,
                 InvoiceStatus.WRITTEN_OFF,
                 InvoiceStatus.PAID
             )
