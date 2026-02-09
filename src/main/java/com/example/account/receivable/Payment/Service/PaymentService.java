@@ -1,8 +1,10 @@
 package com.example.account.receivable.Payment.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.ZoneId;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -198,18 +200,27 @@ public class PaymentService {
         LocalDate resolvedFrom = fromDate;
         LocalDate resolvedTo = toDate;
 
-        // If explicit dates are NOT provided, but months is provided
         if (resolvedFrom == null && resolvedTo == null && months != null && months > 0) {
             resolvedTo = LocalDate.now();
             resolvedFrom = resolvedTo.minusMonths(months);
         }
 
+        ZoneId zone = ZoneId.systemDefault();
+
+        Instant fromInstant = resolvedFrom != null
+                ? resolvedFrom.atStartOfDay(zone).toInstant()
+                : null;
+
+        Instant toInstant = resolvedTo != null
+                ? resolvedTo.plusDays(1).atStartOfDay(zone).toInstant()
+                : null;
+
         Page<Payment> payments =
                 paymentRepository.findPaymentsByCompanyStatusAndDateRange(
                         companyId,
                         PaymentStatus.CREATED,
-                        resolvedFrom,
-                        resolvedTo,
+                        fromInstant,
+                        toInstant,
                         pageable
                 );
 

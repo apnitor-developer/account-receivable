@@ -1,6 +1,7 @@
 package com.example.account.receivable.Payment.Repository;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -73,8 +74,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Page<Payment> findPaymentsByCompanyStatusAndDateRange(
             @Param("companyId") Long companyId,
             @Param("status") PaymentStatus status,
-            @Param("fromDate") LocalDate fromDate,
-            @Param("toDate") LocalDate toDate,
+            @Param("fromDate") Instant fromDate,
+            @Param("toDate") Instant toDate,
             Pageable pageable
     );
 
