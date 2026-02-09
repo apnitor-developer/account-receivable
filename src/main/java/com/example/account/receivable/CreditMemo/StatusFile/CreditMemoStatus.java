@@ -1,6 +1,6 @@
 package com.example.account.receivable.CreditMemo.StatusFile;
 
 public enum CreditMemoStatus {
-    DRAFT,
+    CREATED,
     APPROVED
 }

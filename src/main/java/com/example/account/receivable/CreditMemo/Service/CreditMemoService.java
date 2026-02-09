@@ -83,7 +83,7 @@ public class CreditMemoService {
                 .creditReason(req.getCreditReason())
                 .amount(req.getAmount())
                 .currency(req.getCurrency())
-                .status(CreditMemoStatus.DRAFT)                // ✅ DRAFT
+                .status(CreditMemoStatus.CREATED)                // ✅ DRAFT
                 .targetInvoiceId(req.getInvoiceId()) // optional
                 .arCode(arCode)
                 .build();
@@ -116,7 +116,7 @@ public class CreditMemoService {
         CreditMemo cm = creditMemoRepository.findById(creditMemoId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Credit memo not found"));
 
-        if (cm.getStatus() != CreditMemoStatus.DRAFT) {
+        if (cm.getStatus() != CreditMemoStatus.CREATED) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Only DRAFT credit memos can be approved");
