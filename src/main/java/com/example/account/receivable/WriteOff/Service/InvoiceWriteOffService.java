@@ -77,7 +77,7 @@ public class InvoiceWriteOffService {
                             .company(company)
                             .reason(req.getReason())
                             .arCode(arCode)
-                            .status(WriteOffStatus.DRAFT)
+                            .status(WriteOffStatus.CREATED)
                             .writeOffDate(LocalDate.now())
                             .build();
 

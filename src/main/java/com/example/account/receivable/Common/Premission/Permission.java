@@ -24,6 +24,7 @@ public enum Permission {
     // PAYMENTS
     VIEW_PAYMENTS,
     APPLY_PAYMENT,
+    APPROVE_PAYMENT,
 
 
     // AGING & REPORTS
