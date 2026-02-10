@@ -104,7 +104,7 @@ class InvoiceServiceTest {
         assertEquals(new BigDecimal("120"), result.getSubTotal());
         assertEquals(new BigDecimal("130"), result.getTotalAmount());
         assertEquals(new BigDecimal("130"), result.getBalanceDue());
-        assertEquals(InvoiceStatus.DRAFT, result.getStatus());
+        assertEquals(InvoiceStatus.CREATED, result.getStatus());
     }
 
     @Test
@@ -152,7 +152,7 @@ class InvoiceServiceTest {
         assertEquals(88L, invoice.getId());
         assertEquals(new BigDecimal("5"), invoice.getSubTotal());
         assertEquals(new BigDecimal("5"), invoice.getBalanceDue());
-        assertEquals(InvoiceStatus.DRAFT, invoice.getStatus());
+        assertEquals(InvoiceStatus.CREATED, invoice.getStatus());
         verify(invoiceRepository).save(any(Invoice.class));
     }
 
@@ -218,7 +218,7 @@ class InvoiceServiceTest {
         verify(invoiceRepository).findCompanyInvoicesByStatusAndDateRange(
                 eq(5L),
                 any(Pageable.class),
-                eq(List.of(InvoiceStatus.DRAFT, InvoiceStatus.OPEN, InvoiceStatus.PARTIAL)),
+                eq(List.of(InvoiceStatus.CREATED, InvoiceStatus.OPEN, InvoiceStatus.PARTIAL)),
                 fromCaptor.capture(),
                 toCaptor.capture()
         );

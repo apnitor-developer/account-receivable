@@ -87,7 +87,7 @@ class BankReconciliationServiceTest {
         assertEquals(new BigDecimal("150.50"), initial.getAmount());
         assertEquals("ACH Credit Receipt", initial.getTransactionType());
         assertEquals("CREDIT", initial.getDebitCredit());
-        assertEquals(PaymentStatus.DRAFT, initial.getStatus());
+        assertEquals(PaymentStatus.CREATED, initial.getStatus());
         assertEquals(PaymentSource.BANK, initial.getSource());
         assertEquals(initial, updated);
         assertEquals("Desc More Details", updated.getDescription());
@@ -126,7 +126,7 @@ class BankReconciliationServiceTest {
     void getBankTransactions_withMonthsFallbackUsesRelativeWindow() {
         when(bankTransactionRepository.findByCompanyIdFiltered(
                 eq(3L),
-                eq(PaymentStatus.DRAFT),
+                eq(PaymentStatus.CREATED),
                 any(LocalDate.class),
                 any(LocalDate.class)))
                 .thenReturn(List.of());
@@ -138,7 +138,7 @@ class BankReconciliationServiceTest {
 
         verify(bankTransactionRepository).findByCompanyIdFiltered(
                 eq(3L),
-                eq(PaymentStatus.DRAFT),
+                eq(PaymentStatus.CREATED),
                 fromCaptor.capture(),
                 toCaptor.capture());
 
@@ -152,7 +152,7 @@ class BankReconciliationServiceTest {
                 .id(20L)
                 .amount(new BigDecimal("250.00"))
                 .transactionDate(LocalDate.of(2026, 2, 1))
-                .status(PaymentStatus.DRAFT)
+                .status(PaymentStatus.CREATED)
                 .description("Wire payment")
                 .build();
 
