@@ -209,6 +209,7 @@ public class CustomerService {
         CustomerAddress address = new CustomerAddress();
         address.setCustomer(customer);
         address.setAddressLine1(customerAddressDTO.getAddressLine1());
+        address.setAddressLine2(customerAddressDTO.getAddressLine2());
         address.setCity(customerAddressDTO.getCity());
         address.setPostalCode(customerAddressDTO.getPostalCode());
         address.setCountry(customerAddressDTO.getCountry());
@@ -467,6 +468,7 @@ public class CustomerService {
             //     customer.setCustomerType(dto.getCustomerType());
 
             updateIfNotNull(addrDto.getAddressLine1(), address::setAddressLine1);
+            updateIfNotNull(addrDto.getAddressLine2(), address::setAddressLine2);
             updateIfNotNull(addrDto.getCity(),         address::setCity);
             updateIfNotNull(addrDto.getPostalCode(),   address::setPostalCode);
             updateIfNotNull(addrDto.getCountry(),      address::setCountry);

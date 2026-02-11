@@ -24,6 +24,7 @@ public class CustomerAddress {
     private Customer customer;
 
     private String addressLine1;
+    private String addressLine2;
     private String city;
     private String postalCode;
     private String country;
