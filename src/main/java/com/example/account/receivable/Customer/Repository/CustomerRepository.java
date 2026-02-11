@@ -42,4 +42,16 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     """)
     List<Object[]> findCustomersWithPendingAmountByCompanyId( @Param("companyId") Long companyId );
 
+
+    @Query("""
+        SELECT c FROM Customer c
+        JOIN c.companyCompanies cc
+        WHERE cc.company.id = :companyId
+        AND LOWER(c.customerName) = LOWER(:name)
+    """)
+    Optional<Customer> findByCustomerNameAndCompany(
+            @Param("name") String name,
+            @Param("companyId") Long companyId
+    );
+
 }

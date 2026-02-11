@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,8 @@ import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import com.example.account.receivable.Payment.Entity.Payment;
 import com.example.account.receivable.Payment.Enum.PaymentMethod;
 import com.example.account.receivable.Payment.Enum.PaymentSource;
@@ -38,6 +41,7 @@ public class BankReconciliationService {
     private final PaymentRepository paymentRepository;
     private final CustomerRepository customerRepository;
     private final PaymentService paymentService;
+    private final InvoiceRepository invoiceRepository;
 
     @Transactional
     public void processBaiFile(MultipartFile file , Long companyId) {
@@ -82,25 +86,30 @@ public class BankReconciliationService {
                 ? data[6].replace("/", "")
                 : null;
 
-    BaiTransactionInfo info = BaiCodeUtil.getInfo(baiCode);
-    String systemNote = "Payment created via BAI file";
+        BaiTransactionInfo info = BaiCodeUtil.getInfo(baiCode);
+        String systemNote = "Payment created via BAI file";
 
-    BankTransaction transaction = BankTransaction.builder()
-            .company(company) 
-            .baiCode(baiCode)
-            .transactionType(info.getTransactionType())
-            .debitCredit(info.getDebitCredit())
-            .amount(amount)
-            .reference(reference)
-            .customerName(customerName)
-            .description(description)
-            .transactionDate(LocalDate.now())
-            .status(PaymentStatus.CREATED)
-            .systemNote(systemNote)
-            .source(PaymentSource.BANK)
-            .build();
+        BankTransaction transaction = BankTransaction.builder()
+                .company(company) 
+                .baiCode(baiCode)
+                .transactionType(info.getTransactionType())
+                .debitCredit(info.getDebitCredit())
+                .amount(amount)
+                .reference(reference)
+                .customerName(customerName)
+                .description(description)
+                .transactionDate(LocalDate.now())
+                .status(PaymentStatus.CREATED)
+                .systemNote(systemNote)
+                .source(PaymentSource.BANK)
+                .build();
 
-        return bankTransactionRepository.save(transaction);
+        transaction = bankTransactionRepository.save(transaction);
+
+        // attempt auto apply
+        tryAutoApply(transaction, companyId);
+
+        return transaction;
     }
 
     private void appendContinuation(BankTransaction transaction, String line) {
@@ -199,4 +208,70 @@ public class BankReconciliationService {
             );
         }
     }
+
+
+
+    // Match Customer with the BAI file Customer Name
+    private Optional<Customer> matchCustomer(
+        BankTransaction bt,
+        Long companyId
+    ) {
+        if (bt.getCustomerName() == null) {
+            return Optional.empty();
+        }
+
+        return customerRepository.findByCustomerNameAndCompany(
+                bt.getCustomerName(),
+                companyId
+        );
+    }
+
+
+    //Auto Apply on the Invoice when Upload the BAI File
+    @Transactional
+    public void tryAutoApply(BankTransaction bt, Long companyId) {
+
+        Optional<Customer> customerOpt = matchCustomer(bt, companyId);
+
+        if (customerOpt.isEmpty()) {
+            return;
+        }
+
+        Customer customer = customerOpt.get();
+
+        List<Invoice> openInvoices =
+                invoiceRepository.findOpenInvoicesByCustomer(customer.getId());
+
+        if (openInvoices.isEmpty()) {
+            return;
+        }
+
+        Payment payment = Payment.builder()
+                .customer(customer)
+                .bankDeposit(bt.getAmount())
+                .paymentAmount(bt.getAmount())
+                .paymentMethod(PaymentMethod.BANK_TRANSFER)
+                .paymentDate(bt.getTransactionDate())
+                .source(PaymentSource.BANK)
+                .status(PaymentStatus.CREATED)
+                .notes("Auto-applied from BAI upload")
+                .bankTransaction(bt)
+                .build();
+
+        payment = paymentRepository.save(payment);
+
+        // apply invoices (oldest first)
+        List<Long> invoiceIds = openInvoices.stream()
+                .map(Invoice::getId)
+                .toList();
+
+        paymentService.applyInvoices(payment, invoiceIds);
+
+        payment.setStatus(PaymentStatus.APPROVED);
+        bt.setStatus(PaymentStatus.APPLIED);
+
+        paymentRepository.save(payment);
+        bankTransactionRepository.save(bt);
+    }
+
 }

@@ -363,6 +363,16 @@ public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
     );
 
 
+    //Used in the BankReconciliationService
+    @Query("""
+        SELECT i FROM Invoice i
+        WHERE i.customer.id = :customerId
+        AND i.status IN ('OPEN', 'PARTIAL')
+        ORDER BY i.invoiceDate ASC
+    """)
+    List<Invoice> findOpenInvoicesByCustomer(@Param("customerId") Long customerId);
+
+
 
 
 
