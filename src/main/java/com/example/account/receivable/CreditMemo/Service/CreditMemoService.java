@@ -18,6 +18,7 @@ import com.example.account.receivable.CreditMemo.Dto.AppliedCreditMemoOnInvoiceR
 import com.example.account.receivable.CreditMemo.Dto.ApplyCreditMemoRequest;
 import com.example.account.receivable.CreditMemo.Dto.CreateCreditMemoRequest;
 import com.example.account.receivable.CreditMemo.Dto.CustomerCreditBalanceResponse;
+import com.example.account.receivable.CreditMemo.Dto.UpdateCreditMemoRequest;
 import com.example.account.receivable.CreditMemo.Entity.CreditMemo;
 import com.example.account.receivable.CreditMemo.Entity.CreditMemoApplication;
 import com.example.account.receivable.CreditMemo.Repository.CreditMemoApplicationRepository;
@@ -169,6 +170,75 @@ public class CreditMemoService {
                     .description("Credit memo approved: " + cm.getCreditMemoNo())
                     .build()
             );
+
+        return creditMemoRepository.save(cm);
+    }
+
+
+
+    //Update Credit Memo
+    @Transactional
+    public CreditMemo updateCreditMemo(Long creditMemoId, UpdateCreditMemoRequest req) {
+
+        CreditMemo cm = creditMemoRepository.findById(creditMemoId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Credit memo not found")
+                );
+
+        // Only DRAFT can be edited
+        if (cm.getStatus() != CreditMemoStatus.CREATED) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Only DRAFT credit memos can be updated"
+            );
+        }
+
+        // Validate amount
+        if (req.getAmount() != null) {
+            if (req.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Amount must be > 0"
+                );
+            }
+            cm.setAmount(req.getAmount());
+        }
+
+        // Update simple fields
+        if (req.getCreditReason() != null) {
+            cm.setCreditReason(req.getCreditReason());
+        }
+
+        if (req.getCurrency() != null) {
+            cm.setCurrency(req.getCurrency());
+        }
+
+        // Update AR Code
+        if (req.getArCodeId() != null) {
+            ArCode arCode = arCodeRepository.findById(req.getArCodeId())
+                    .orElseThrow(() ->
+                            new ResponseStatusException(HttpStatus.NOT_FOUND, "AR code not found")
+                    );
+            cm.setArCode(arCode);
+        }
+
+        // Update target invoice
+        if (req.getInvoiceId() != null) {
+
+            Invoice invoice = invoiceRepository.findById(req.getInvoiceId())
+                    .orElseThrow(() ->
+                            new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found")
+                    );
+
+            if (!invoice.getCustomer().getId().equals(cm.getCustomer().getId())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Invoice does not belong to this customer"
+                );
+            }
+
+            cm.setTargetInvoiceId(req.getInvoiceId());
+        }
 
         return creditMemoRepository.save(cm);
     }

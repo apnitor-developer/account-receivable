@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,6 +15,7 @@ import com.example.account.receivable.Common.ApiResponse;
 import com.example.account.receivable.CreditMemo.Dto.AppliedCreditMemoOnInvoiceResponse;
 import com.example.account.receivable.CreditMemo.Dto.CreateCreditMemoRequest;
 import com.example.account.receivable.CreditMemo.Dto.CustomerCreditBalanceResponse;
+import com.example.account.receivable.CreditMemo.Dto.UpdateCreditMemoRequest;
 import com.example.account.receivable.CreditMemo.Entity.CreditMemo;
 import com.example.account.receivable.CreditMemo.Service.CreditMemoService;
 import com.example.account.receivable.CreditMemo.StatusFile.CreditMemoStatus;
@@ -48,6 +50,20 @@ public class CreditMemoController {
         return ResponseEntity.ok(
                 ApiResponse.successResponse(200, "Credit memo allowed", cm)
         );
+    }
+
+    // Update Credit Memo (only if DRAFT)
+    @PutMapping("/{creditMemoId}")
+    public ResponseEntity<ApiResponse<CreditMemo>> updateCreditMemo(
+                    @PathVariable Long creditMemoId,
+                    @RequestBody UpdateCreditMemoRequest req) {
+            CreditMemo updated = creditMemoService.updateCreditMemo(creditMemoId, req);
+
+            return ResponseEntity.ok(
+                            ApiResponse.successResponse(
+                                            200,
+                                            "Credit memo updated successfully",
+                                            updated));
     }
 
 
