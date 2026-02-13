@@ -305,7 +305,7 @@ public class CompanyService {
         }
 
         // Change status to INVITED
-        user.setStatus(UserStatus.ACTIVE);
+        user.setStatus(UserStatus.INVITED);
         usersRepository.save(user);
 
 
@@ -355,7 +355,7 @@ public class CompanyService {
         Users user = usersRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid invite"));
 
-        if (user.getStatus() != UserStatus.PENDING_APPROVAL) {
+        if (user.getStatus() != UserStatus.INVITED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invite already used or invalid");
         }
 
