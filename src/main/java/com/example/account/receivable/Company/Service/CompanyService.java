@@ -355,7 +355,7 @@ public class CompanyService {
         Users user = usersRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid invite"));
 
-        if (user.getStatus() != UserStatus.INVITED) {
+        if (user.getStatus() != UserStatus.PENDING_APPROVAL) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invite already used or invalid");
         }
 
