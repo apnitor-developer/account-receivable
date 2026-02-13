@@ -233,7 +233,7 @@ public class CompanyService {
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
                 .email(dto.getEmail())
-                .status(UserStatus.INVITED)  // Set status to INVITED initially
+                .status(UserStatus.PENDING_APPROVAL)  // Set status to INVITED initially
                 .build();
 
 
@@ -264,29 +264,71 @@ public class CompanyService {
         }
 
 
-        System.out.println("before generate link");
+        // System.out.println("before generate link");
+
+        // // Generate invite link
+        // String inviteLink = "http://54.225.63.207:8080/api/companies/company/users/accept?email="  //backend url
+        //         + savedUser.getEmail();
+
+
+        // // Build the invitation email content
+        // String emailHtml = emailTemplateService.buildInviteEmail(
+        //         savedUser.getFirstName(),
+        //         company.getLegalName(),
+        //         inviteLink
+        // );
+
+        // // Send the invite email
+        // emailService.sendWithAttachment(
+        //         savedUser.getEmail(),
+        //         "You're invited to join " + company.getLegalName(),
+        //         emailHtml,
+        //         null
+        // );
+
+        return savedUser;
+    }
+
+
+
+    @Transactional
+    public void approveUser(Long userId , Long companyId) {
+
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getStatus() != UserStatus.PENDING_APPROVAL) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "User is not pending approval");
+        }
+
+        // Change status to INVITED
+        user.setStatus(UserStatus.ACTIVE);
+        usersRepository.save(user);
+
+
+        Company company = getCompanyDetails(companyId);
 
         // Generate invite link
-        String inviteLink = "http://54.225.63.207:8080/api/companies/company/users/accept?email="  //backend url
-                + savedUser.getEmail();
+        String inviteLink = "http://54.225.63.207:8080/api/companies/company/users/accept?email="
+                + user.getEmail();
 
-
-        // Build the invitation email content
+        // Build email
         String emailHtml = emailTemplateService.buildInviteEmail(
-                savedUser.getFirstName(),
+                user.getFirstName(),
                 company.getLegalName(),
                 inviteLink
         );
 
-        // Send the invite email
+        // Send email
         emailService.sendWithAttachment(
-                savedUser.getEmail(),
-                "You're invited to join " + company.getLegalName(),
+                user.getEmail(),
+                "You're invited to join",
                 emailHtml,
                 null
         );
-
-        return savedUser;
     }
 
 

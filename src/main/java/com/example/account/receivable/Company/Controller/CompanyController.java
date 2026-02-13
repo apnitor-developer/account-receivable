@@ -68,6 +68,23 @@ public class CompanyController {
         }
 
 
+        @PostMapping("/{companyId}/users/{userId}/approve")
+        public ResponseEntity<ApiResponse<Void>> approveUser(
+                @PathVariable Long userId,
+                @PathVariable Long companyId
+        ) {
+        companyService.approveUser(userId , companyId);
+
+        return ResponseEntity.ok(
+                ApiResponse.successResponse(
+                        HttpStatus.OK.value(),
+                        "User approved and invite sent",
+                        null
+                )
+        );
+        }
+
+
 
         @GetMapping("/company/users/accept")
         public ResponseEntity<Void> acceptInvite(
