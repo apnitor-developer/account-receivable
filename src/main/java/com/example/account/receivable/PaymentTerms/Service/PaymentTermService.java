@@ -103,7 +103,7 @@ public class PaymentTermService {
             String newName = request.getName().trim();
 
             if (!newName.equalsIgnoreCase(existing.getName())
-                    && repository.existsByNameIgnoreCaseAndCompanyId(newName, companyId)) {
+                    && repository.existsByNameIgnoreCaseAndCompanyIdAndActiveTrue(newName, companyId)) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "Payment term with this name already exists");
