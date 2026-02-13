@@ -36,7 +36,7 @@ public class PaymentTermService {
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
 
-        if (repository.existsByNameIgnoreCaseAndCompanyId(
+        if (repository.existsByNameIgnoreCaseAndCompanyIdAndActiveTrue(
                 request.getName().trim(), companyId)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,

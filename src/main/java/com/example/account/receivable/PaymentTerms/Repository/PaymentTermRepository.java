@@ -9,7 +9,7 @@ import com.example.account.receivable.PaymentTerms.Entity.PaymentTerm;
 
 public interface PaymentTermRepository extends JpaRepository<PaymentTerm, Long> {
 
-    boolean existsByNameIgnoreCaseAndCompanyId(String name, Long companyId);
+    boolean existsByNameIgnoreCaseAndCompanyIdAndActiveTrue(String name, Long companyId);
 
     List<PaymentTerm> findByCompanyIdAndActiveTrue(Long companyId);
 
