@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.example.account.receivable.Customer.Entity.CompanyCustomers;
+import com.example.account.receivable.PaymentTerms.Entity.PaymentTerm;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.Instant;
@@ -78,6 +79,10 @@ public class Company {
 
     @OneToMany(mappedBy = "company" , cascade = CascadeType.ALL)
     private List<CompanyCustomers> companyCustomers = new ArrayList<>();
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<PaymentTerm> paymentTerms = new ArrayList<>();
 }
 
 
