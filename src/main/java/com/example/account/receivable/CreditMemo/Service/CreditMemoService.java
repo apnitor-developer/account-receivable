@@ -2,6 +2,8 @@ package com.example.account.receivable.CreditMemo.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +23,9 @@ import com.example.account.receivable.CreditMemo.Dto.CustomerCreditBalanceRespon
 import com.example.account.receivable.CreditMemo.Dto.UpdateCreditMemoRequest;
 import com.example.account.receivable.CreditMemo.Entity.CreditMemo;
 import com.example.account.receivable.CreditMemo.Entity.CreditMemoApplication;
+import com.example.account.receivable.CreditMemo.Entity.CreditMemoReference;
 import com.example.account.receivable.CreditMemo.Repository.CreditMemoApplicationRepository;
+import com.example.account.receivable.CreditMemo.Repository.CreditMemoReferenceRepository;
 import com.example.account.receivable.CreditMemo.Repository.CreditMemoRepository;
 import com.example.account.receivable.CreditMemo.StatusFile.CreditMemoStatus;
 import com.example.account.receivable.Customer.Entity.Customer;
@@ -33,6 +37,8 @@ import com.example.account.receivable.HelperMethods.CompanyResolver;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
+import com.example.account.receivable.User.entity.Users;
+import com.example.account.receivable.User.repository.UsersRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,6 +53,8 @@ public class CreditMemoService {
     private final InvoiceRepository invoiceRepository;
     private final CompanyRepository companyRepository;
     private final GlTransactionService glTransactionService;
+    private final CreditMemoReferenceRepository creditMemoReferenceRepository;
+    private final UsersRepository usersRepository;
 
     private static final String CM_PREFIX = "CM-";
     private static final int CM_NUMBER_WIDTH = 4;
@@ -54,13 +62,16 @@ public class CreditMemoService {
 
     // Create Credit Memo
     @Transactional
-    public CreditMemo createCreditMemo(Long customerId, CreateCreditMemoRequest req) {
+    public CreditMemo createCreditMemo(Long customerId, Long userId , CreateCreditMemoRequest req) {
 
         if (req.getAmount() == null || req.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount must be > 0");
         }
 
         Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+
+        Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
         if (req.getInvoiceId() != null) {
@@ -79,17 +90,50 @@ public class CreditMemoService {
         }
 
         CreditMemo cm = CreditMemo.builder()
+                .createdBy(user)
                 .customer(customer)
                 .creditMemoNo(generateUniqueCreditMemoNo())
                 .creditReason(req.getCreditReason())
+                .creditMemoDate(req.getCreditMemoDate())
                 .amount(req.getAmount())
                 .currency(req.getCurrency())
-                .status(CreditMemoStatus.CREATED)                // ✅ DRAFT
+                .status(CreditMemoStatus.CREATED)   // ✅ DRAFT
                 .targetInvoiceId(req.getInvoiceId()) // optional
                 .arCode(arCode)
                 .build();
 
-        return creditMemoRepository.save(cm);
+        CreditMemo savedCm = creditMemoRepository.save(cm);
+
+        // Add Reference Invoice
+        if (req.getReferenceInvoiceIds() != null && !req.getReferenceInvoiceIds().isEmpty()) {
+
+            List<CreditMemoReference> references = new ArrayList<>();
+
+            for (Long invoiceId : req.getReferenceInvoiceIds()) {
+
+                Invoice referenceInvoice = invoiceRepository.findById(invoiceId)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                        "Reference invoice not found: " + invoiceId));
+
+                if (!referenceInvoice.getCustomer().getId().equals(customerId)) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Reference invoice does not belong to customer: " + invoiceId);
+                }
+
+                CreditMemoReference ref = CreditMemoReference.builder()
+                        .creditMemo(savedCm)
+                        .invoice(referenceInvoice)
+                        .build();
+
+                references.add(ref);
+            }
+
+            creditMemoReferenceRepository.saveAll(references);
+        }
+
+        return savedCm;
     }
 
     //Helper fn to generate CreditMemo Number

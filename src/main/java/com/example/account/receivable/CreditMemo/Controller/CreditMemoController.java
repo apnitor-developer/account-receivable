@@ -30,12 +30,13 @@ public class CreditMemoController {
     private final CreditMemoService creditMemoService;
 
     // Create CreditMemo
-    @PostMapping("/customer/{customerId}")
+    @PostMapping("/customer/{customerId}/{userId}")
     public ResponseEntity<ApiResponse<CreditMemo>> create(
             @PathVariable Long customerId,
+            @PathVariable Long userId,
             @RequestBody CreateCreditMemoRequest req
     ) {
-        CreditMemo cm = creditMemoService.createCreditMemo(customerId, req);
+        CreditMemo cm = creditMemoService.createCreditMemo(customerId, userId , req);
         return ResponseEntity.status(201)
                 .body(ApiResponse.successResponse(201, "Credit memo created", cm));
     }

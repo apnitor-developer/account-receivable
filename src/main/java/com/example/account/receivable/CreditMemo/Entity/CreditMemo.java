@@ -3,13 +3,17 @@ package com.example.account.receivable.CreditMemo.Entity;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.example.account.receivable.ArCodes.Entity.ArCode;
 import com.example.account.receivable.CreditMemo.StatusFile.CreditMemoStatus;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.User.entity.Users;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,6 +24,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -58,17 +63,27 @@ public class CreditMemo {
     @Column(nullable = false)
     private CreditMemoStatus status; // keep it for schema compatibility ("Posted")
 
+    @Column(name = "credit_memo_date", nullable = true)
+    private LocalDate creditMemoDate;
+
     @Column(name = "posting_date")
     private LocalDate postingDate;
 
-    // 👇 NEW (optional invoice selection at draft time)
+    // (optional invoice selection at draft time)
     @Column(name = "target_invoice_id")
     private Long targetInvoiceId;
+
+    @OneToMany(mappedBy = "creditMemo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CreditMemoReference> referenceInvoices = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     // @JsonIgnore
     @JoinColumn(name = "ar_code_id")
     private ArCode arCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", nullable = true)
+    private Users createdBy;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
