@@ -100,6 +100,7 @@ public class CompanyService {
             address.setStateProvince(dto.getStateProvince());
             address.setPostalCode(dto.getPostalCode());
             address.setAddressCountry(dto.getAddressCountry());
+            address.setCounty(dto.getCounty());
 
             address.setPrimaryContactName(dto.getPrimaryContactName());
             address.setPrimaryContactEmail(dto.getPrimaryContactEmail());
@@ -659,6 +660,9 @@ public class CompanyService {
 
         if (request.getAddressCountry() != null)
             address.setAddressCountry(request.getAddressCountry());
+
+        if (request.getCounty() != null)
+            address.setCounty(request.getCounty());
 
         if(request.getPosition() != null)
             address.setPosition(request.getPosition());

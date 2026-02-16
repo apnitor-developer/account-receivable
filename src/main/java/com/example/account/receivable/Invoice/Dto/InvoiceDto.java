@@ -15,6 +15,7 @@ public class InvoiceDto {
     private String invoiceNumber;     
     private LocalDate invoiceDate;    
     private LocalDate dueDate; 
+    private String county;
     private String note;
 
     private List<InvoiceItemDto> items;

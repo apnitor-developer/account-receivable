@@ -64,6 +64,9 @@ public class Invoice {
     @Column(name = "last_payment_date")
     private LocalDate lastPaymentDate;
 
+    @Column(nullable = true)
+    private String county;
+
     private String note;
 
     @Column(name = "is_generated")     

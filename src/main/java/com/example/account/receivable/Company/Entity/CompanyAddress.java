@@ -44,6 +44,9 @@ public class CompanyAddress {
     @Column(name = "address_country")
     private String addressCountry;
 
+    @Column(name = "county")
+    private String county;
+
     // Primary contact
     @Column(name = "primary_contact_name" , nullable = false)
     private String primaryContactName;

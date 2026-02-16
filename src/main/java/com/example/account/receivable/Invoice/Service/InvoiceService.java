@@ -219,6 +219,7 @@ public class InvoiceService {
                 .invoiceNumber(invoiceNumber)
                 .invoiceDate(dto.getInvoiceDate())
                 .dueDate(dto.getDueDate())
+                .county(dto.getCounty())
                 .note(dto.getNote())
                 .status(InvoiceStatus.CREATED)
                 .generated(dto.getGenerated())

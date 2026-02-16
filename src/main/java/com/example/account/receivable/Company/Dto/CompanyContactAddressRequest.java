@@ -11,6 +11,7 @@ public class CompanyContactAddressRequest {
     private String stateProvince;
     private String postalCode;
     private String addressCountry;
+    private String county;
 
     private String primaryContactName;
     private String primaryContactEmail;
