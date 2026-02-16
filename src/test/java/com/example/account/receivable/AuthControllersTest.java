@@ -17,12 +17,17 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.account.receivable.Auth.controller.LoginController;
 import com.example.account.receivable.Auth.dto.LoginDto;
 import com.example.account.receivable.Auth.dto.LoginResponseDto;
+import com.example.account.receivable.Auth.dto.MfaCodeDto;
+import com.example.account.receivable.Auth.dto.MfaLoginDto;
 import com.example.account.receivable.Auth.service.LoginService;
+import com.example.account.receivable.Auth.service.MfaService;
 import com.example.account.receivable.User.controller.SignupController;
 import com.example.account.receivable.User.controller.UserController;
 import com.example.account.receivable.User.dto.SignupVerifyDto;
@@ -52,6 +57,9 @@ class AuthControllersTest {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private MfaService mfaService;
+
     @Test
     void login_returnsTokenAndUser() throws Exception {
         Users user = Users.builder()
@@ -77,6 +85,30 @@ class AuthControllersTest {
                 .andExpect(jsonPath("$.data.user.email").value("jane@example.com"));
 
         verify(loginService).login(any(LoginDto.class));
+    }
+
+    @Test
+    void loginWithMfa_returnsToken() throws Exception {
+        Users user = Users.builder()
+                .id(1L)
+                .email("jane@example.com")
+                .status(UserStatus.ACTIVE)
+                .build();
+        MfaLoginDto dto = new MfaLoginDto();
+        dto.setMfaToken("pending");
+        dto.setCode("123456");
+
+        when(loginService.loginWithMfa(any(MfaLoginDto.class))).thenReturn(new LoginResponseDto("token-456", user));
+
+        mockMvc.perform(
+                post("/auth/login/mfa")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto))
+        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.token").value("token-456"));
+
+        verify(loginService).loginWithMfa(any(MfaLoginDto.class));
     }
 
     @Test
@@ -157,11 +189,56 @@ class AuthControllersTest {
         verify(userService).register(any(UserCreateDto.class));
     }
 
+    @Test
+    void sendMfaEmailOtp_callsService() throws Exception {
+        var authentication = new UsernamePasswordAuthenticationToken(
+                "jane@example.com",
+                "N/A"
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        try {
+            mockMvc.perform(post("/auth/mfa/email/send"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Email OTP sent successfully"));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+        verify(mfaService).sendEmailOtp("jane@example.com");
+    }
+
+    @Test
+    void verifyMfaEmailOtp_callsService() throws Exception {
+        var authentication = new UsernamePasswordAuthenticationToken(
+                "jane@example.com",
+                "N/A"
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        MfaCodeDto dto = new MfaCodeDto();
+        dto.setCode("123456");
+        try {
+            mockMvc.perform(
+                            post("/auth/mfa/email/verify")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(dto))
+                    )
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Email OTP verified successfully"));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+        verify(mfaService).verifyEmailOtp("jane@example.com", "123456");
+    }
+
     @TestConfiguration
     static class TestConfig {
         @Bean
         LoginService loginService() {
             return Mockito.mock(LoginService.class);
+        }
+
+        @Bean
+        MfaService mfaService() {
+            return Mockito.mock(MfaService.class);
         }
 
         @Bean

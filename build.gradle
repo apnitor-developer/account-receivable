@@ -50,6 +50,10 @@ dependencies {
     // Jakarta Mail (for MimeMessage)
     implementation 'jakarta.mail:jakarta.mail-api:2.1.2'
 
+    // QR code generation for MFA
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
+
     // Databases
     runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc'
     runtimeOnly 'com.oracle.database.jdbc:ojdbc11'

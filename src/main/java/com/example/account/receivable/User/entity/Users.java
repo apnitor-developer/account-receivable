@@ -60,6 +60,30 @@ public class Users {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Default
+    @Column(name = "mfa_enabled", nullable = true)
+    private boolean mfaEnabled = false;
+
+    @Column(name = "mfa_secret", length = 512)
+    @JsonIgnore
+    private String mfaSecret;
+
+    @Column(name = "mfa_secret_temp", length = 512)
+    @JsonIgnore
+    private String mfaSecretTemp;
+
+    @Column(name = "mfa_email_otp", length = 10)
+    @JsonIgnore
+    private String mfaEmailOtp;
+
+    @Column(name = "mfa_email_otp_expires_at")
+    @JsonIgnore
+    private Instant mfaEmailOtpExpiresAt;
+
+    @Default
+    @Column(name = "mfa_email_verified", nullable = true)
+    private boolean mfaEmailVerified = false;
+
 }
 
 
