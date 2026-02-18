@@ -6,8 +6,7 @@ import com.example.account.receivable.Common.EmailTemplateService;
 import com.example.account.receivable.Company.Dto.*;
 import com.example.account.receivable.Company.Entity.*;
 import com.example.account.receivable.Company.Repository.*;
-// import com.example.account.receivable.Customer.Repository.CompanyCustomerRepository;
-import com.example.account.receivable.User.entity.UserStatus;
+import com.example.account.receivable.User.Enum.UserStatus;
 import com.example.account.receivable.User.entity.Role;
 import com.example.account.receivable.User.entity.UserRole;
 import com.example.account.receivable.User.entity.Users;
@@ -17,11 +16,17 @@ import com.example.account.receivable.User.repository.UsersRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.OffsetDateTime;
 
 
@@ -808,9 +814,73 @@ public class CompanyService {
 
 
 
+    //Import User
+    @Transactional
+    public void importUsers(MultipartFile file, Long companyId) {
 
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Company not found"));
 
+        try (
+                InputStreamReader reader = new InputStreamReader(file.getInputStream());
+                CSVParser csvParser = new CSVParser(
+                        reader,
+                        CSVFormat.DEFAULT
+                                .withFirstRecordAsHeader()
+                                .withIgnoreHeaderCase()
+                                .withTrim()
+                )
+        ) {
 
+            List<Users> usersToSave = new ArrayList<>();
+
+            for (CSVRecord record : csvParser) {
+
+                String firstName = record.get("firstName");
+                String lastName = record.get("lastName");
+                String email = record.get("email");
+
+                // Skip if user already exists
+                if (usersRepository.existsByEmail(email)) {
+                    continue;
+                }
+
+                // Create User
+                Users user = Users.builder()
+                        .firstName(firstName)
+                        .lastName(lastName)
+                        .email(email)
+                        .status(UserStatus.PENDING_APPROVAL) // ✅ Force status
+                        .deleted(false)
+                        .forcePasswordChange(false)
+                        .mfaEnabled(false)
+                        .build();
+
+                // Link User to Company
+                UserCompany userCompany = UserCompany.builder()
+                        .user(user)
+                        .company(company)
+                        .build();
+
+                user.setUserCompanies(List.of(userCompany));
+
+                // No roles assigned (keep empty)
+                user.setUserRoles(new ArrayList<>());
+
+                usersToSave.add(user);
+            }
+
+            usersRepository.saveAll(usersToSave);
+
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Error processing CSV file",
+                    e
+            );
+        }
+    }
 }
 
 

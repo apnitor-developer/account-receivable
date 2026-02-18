@@ -1,4 +1,4 @@
-package com.example.account.receivable.User.entity;
+package com.example.account.receivable.User.Enum;
 
 public enum UserStatus {
     PENDING_APPROVAL,

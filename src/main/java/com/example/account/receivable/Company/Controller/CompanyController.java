@@ -68,6 +68,7 @@ public class CompanyController {
         }
 
 
+        // Approve User
         @PostMapping("/{companyId}/users/{userId}/approve")
         public ResponseEntity<ApiResponse<Void>> approveUser(
                 @PathVariable Long userId,
@@ -85,7 +86,7 @@ public class CompanyController {
         }
 
 
-
+        //Accept Invitaion
         @GetMapping("/company/users/accept")
         public ResponseEntity<Void> acceptInvite(
                 @RequestParam String email 
@@ -112,6 +113,24 @@ public class CompanyController {
                 );
 
                 return ResponseEntity.ok(body);
+        }
+
+
+        //Import Users
+        @PostMapping(value = "/{companyId}/users/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        public ResponseEntity<ApiResponse<Void>> importUsers(
+                @RequestParam("file") MultipartFile file,
+                @PathVariable Long companyId) {
+
+        companyService.importUsers(file, companyId);
+
+        ApiResponse<Void> body = ApiResponse.successResponse(
+                HttpStatus.OK.value(),
+                "Users imported successfully",
+                null
+        );
+
+        return ResponseEntity.ok(body);
         }
 
 

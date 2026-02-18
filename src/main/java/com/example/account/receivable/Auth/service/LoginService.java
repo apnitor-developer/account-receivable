@@ -4,7 +4,7 @@ import com.example.account.receivable.Auth.dto.ChangePasswordDto;
 import com.example.account.receivable.Auth.dto.LoginDto;
 import com.example.account.receivable.Auth.dto.LoginResponseDto;
 import com.example.account.receivable.Auth.dto.MfaLoginDto;
-import com.example.account.receivable.User.entity.UserStatus;
+import com.example.account.receivable.User.Enum.UserStatus;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.User.repository.UsersRepository;
 import com.example.account.receivable.User.service.SystemSettingService;

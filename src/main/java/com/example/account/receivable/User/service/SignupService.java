@@ -10,12 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.account.receivable.Common.EmailService;
+import com.example.account.receivable.User.Enum.UserStatus;
 import com.example.account.receivable.User.dto.SignupVerifyDto;
 import com.example.account.receivable.User.dto.UserCreateDto;
 import com.example.account.receivable.User.entity.PendingUserSignup;
 import com.example.account.receivable.User.entity.Role;
 import com.example.account.receivable.User.entity.UserRole;
-import com.example.account.receivable.User.entity.UserStatus;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.User.repository.PendingUserSignupRepository;
 import com.example.account.receivable.User.repository.RoleRepository;

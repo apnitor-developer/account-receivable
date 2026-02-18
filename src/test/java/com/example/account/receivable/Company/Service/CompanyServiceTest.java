@@ -36,9 +36,9 @@ import com.example.account.receivable.Company.Repository.CompanyOpeningBalanceFi
 import com.example.account.receivable.Company.Repository.CompanyPaymentSettingsRepository;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Company.Repository.UserCompanyRepository;
+import com.example.account.receivable.User.Enum.UserStatus;
 import com.example.account.receivable.User.entity.Role;
 import com.example.account.receivable.User.entity.UserRole;
-import com.example.account.receivable.User.entity.UserStatus;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.User.repository.RoleRepository;
 import com.example.account.receivable.User.repository.UserRoleRepository;
