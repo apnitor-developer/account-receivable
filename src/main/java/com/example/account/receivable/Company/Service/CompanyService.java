@@ -883,6 +883,37 @@ public class CompanyService {
             );
         }
     }
+
+
+    //Assign Role to User
+    @Transactional
+    public void assignRoleToUser(Long userId, Long roleId) {
+
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "User not found"));
+
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Role not found"));
+
+        // Optional: Prevent duplicate role assignment
+        boolean alreadyAssigned = userRoleRepository
+                .existsByUserAndRole(user, role);
+
+        if (alreadyAssigned) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Role already assigned to this user");
+        }
+
+        UserRole userRole = UserRole.builder()
+                .user(user)
+                .role(role)
+                .build();
+
+        userRoleRepository.save(userRole);
+    }
 }
 
 

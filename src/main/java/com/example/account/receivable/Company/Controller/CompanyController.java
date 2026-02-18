@@ -118,15 +118,35 @@ public class CompanyController {
 
         //Import Users
         @PostMapping(value = "/{companyId}/users/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        public ResponseEntity<ApiResponse<Void>> importUsers(
-                @RequestParam("file") MultipartFile file,
-                @PathVariable Long companyId) {
+                public ResponseEntity<ApiResponse<Void>> importUsers(
+                        @RequestParam("file") MultipartFile file,
+                        @PathVariable Long companyId) {
 
-        companyService.importUsers(file, companyId);
+                companyService.importUsers(file, companyId);
+
+                ApiResponse<Void> body = ApiResponse.successResponse(
+                        HttpStatus.OK.value(),
+                        "Users imported successfully",
+                        null
+                );
+
+                return ResponseEntity.ok(body);
+        }
+
+
+        //Assign role to user
+        @PostMapping("/user/assign-role")
+        public ResponseEntity<ApiResponse<Void>> assignRole(
+                @RequestBody AssignRoleRequest request) {
+
+        companyService.assignRoleToUser(
+                request.getUserId(),
+                request.getRoleId()
+        );
 
         ApiResponse<Void> body = ApiResponse.successResponse(
                 HttpStatus.OK.value(),
-                "Users imported successfully",
+                "Role assigned successfully",
                 null
         );
 
