@@ -142,6 +142,7 @@ public class SignupService {
         user.setLastName(pending.getLastName());
         user.setEmail(pending.getEmail());
         user.setPassword(pending.getPasswordHash());
+        user.setPasswordChangedAt(Instant.now());
         user.setStatus(UserStatus.ACTIVE);
 
         Users savedUser = usersRepository.save(user);

@@ -1,12 +1,19 @@
 package com.example.account.receivable.Auth.service;
 
+import com.example.account.receivable.Auth.dto.ChangePasswordDto;
 import com.example.account.receivable.Auth.dto.LoginDto;
 import com.example.account.receivable.Auth.dto.LoginResponseDto;
 import com.example.account.receivable.Auth.dto.MfaLoginDto;
 import com.example.account.receivable.User.entity.UserStatus;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.User.repository.UsersRepository;
+import com.example.account.receivable.User.service.SystemSettingService;
+
 import io.jsonwebtoken.Claims;
+import jakarta.transaction.Transactional;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +32,7 @@ public class LoginService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final MfaService mfaService;
+    private final SystemSettingService systemSettingService;
 
     @Value("${app.mfa.token-expiration-ms:300000}")
     private long mfaTokenExpirationMs;
@@ -50,6 +58,10 @@ public class LoginService {
                     HttpStatus.UNAUTHORIZED, "Invalid password"
             );
         }
+
+        //Check Password Exp
+        long daysRemaining = checkPasswordExpiry(user);
+
         if (user.isMfaEnabled()) {
 
             // 1️⃣ Generate restricted JWT
@@ -78,11 +90,12 @@ public class LoginService {
                     tempJwt,   // JWT token
                     user,
                     true,      // mfa required
-                    mfaToken   // mfa token
+                    mfaToken,   // mfa token
+                    daysRemaining
             );
         }
 
-        return buildAuthenticatedResponse(user);
+        return buildAuthenticatedResponse(user, daysRemaining);
     }
 
     public LoginResponseDto loginWithMfa(MfaLoginDto dto) {
@@ -105,15 +118,19 @@ public class LoginService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "MFA is not enabled");
         }
 
+        //Check Password Exp
+        long daysRemaining = checkPasswordExpiry(user);
+
         mfaService.checkLoginRateLimit(user.getId());
         if (!mfaService.verifyActiveCode(user, dto.getCode())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid MFA code");
         }
 
-        return buildAuthenticatedResponse(user);
+        return buildAuthenticatedResponse(user, daysRemaining);
     }
 
-    private LoginResponseDto buildAuthenticatedResponse(Users user) {
+    private LoginResponseDto buildAuthenticatedResponse(Users user, long daysRemaining) {
+
         List<String> roles = user.getUserRoles()
                 .stream()
                 .map(ur -> ur.getRole().getName())
@@ -128,7 +145,7 @@ public class LoginService {
                 )
         );
 
-        return new LoginResponseDto(token, user, false, null);
+        return new LoginResponseDto(token, user, daysRemaining);
     }
 
     private Claims parseMfaClaims(String token) {
@@ -157,5 +174,78 @@ public class LoginService {
             return number.longValue();
         }
         return null;
+    }
+
+
+
+    //Change Password Method
+    @Transactional
+    public void changePassword(String email, ChangePasswordDto dto) {
+
+        Users user = usersRepository
+                .findByEmailAndDeletedFalse(email)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "User not found"
+                ));
+
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Old password is incorrect"
+            );
+        }
+
+        if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "New password cannot be same as old password"
+            );
+        }
+
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        user.setPasswordChangedAt(Instant.now());
+        user.setForcePasswordChange(false);
+
+        usersRepository.save(user);
+    }
+
+
+
+    //Check Password Exp
+    private long checkPasswordExpiry(Users user) {
+
+        if (user.isForcePasswordChange()) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Password reset required."
+            );
+        }
+
+        if (user.getPasswordChangedAt() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Password expired. Please reset your password."
+            );
+        }
+
+        int expiryDays = systemSettingService.getInt("PASSWORD_EXPIRY_DAYS", 90);
+
+        Instant expiryDate = user.getPasswordChangedAt()
+                .plus(expiryDays, ChronoUnit.DAYS);
+
+        long daysRemaining = ChronoUnit.DAYS.between(
+                Instant.now(),
+                expiryDate
+        );
+
+        if (daysRemaining <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Password expired. Please reset your password."
+            );
+        }
+
+        return daysRemaining;
     }
 }

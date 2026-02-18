@@ -1,75 +1,75 @@
-package com.example.account.receivable.User.service;
+// package com.example.account.receivable.User.service;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+// import org.springframework.http.HttpStatus;
+// import org.springframework.stereotype.Service;
+// import org.springframework.web.server.ResponseStatusException;
 
-import com.example.account.receivable.User.dto.UserCreateDto;
-import com.example.account.receivable.User.entity.Role;
-import com.example.account.receivable.User.entity.UserRole;
-import com.example.account.receivable.User.entity.UserStatus;
-import com.example.account.receivable.User.entity.Users;
-import com.example.account.receivable.User.repository.RoleRepository;
-import com.example.account.receivable.User.repository.UserRoleRepository;
-import com.example.account.receivable.User.repository.UsersRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+// import com.example.account.receivable.User.dto.UserCreateDto;
+// import com.example.account.receivable.User.entity.Role;
+// import com.example.account.receivable.User.entity.UserRole;
+// import com.example.account.receivable.User.entity.UserStatus;
+// import com.example.account.receivable.User.entity.Users;
+// import com.example.account.receivable.User.repository.RoleRepository;
+// import com.example.account.receivable.User.repository.UserRoleRepository;
+// import com.example.account.receivable.User.repository.UsersRepository;
+// import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import lombok.RequiredArgsConstructor;
-import java.util.Optional;
+// import lombok.RequiredArgsConstructor;
+// import java.util.Optional;
 
-@Service
-@RequiredArgsConstructor
-public class UserService {
-    private final UsersRepository usersRepository;
-    private final RoleRepository roleRepository;
-    private final UserRoleRepository userRoleRepository;
-
-
-    //create user
-        public Users register(UserCreateDto dto) {
-            // Destructure the DTO (Java-style)
-            String firstName = dto.getFirstName();
-            String lastName = dto.getLastName();
-            String password = dto.getPassword();
-            String email = dto.getEmail();
-
-            // Check if the user already exists
-            Optional<Users> existingUser = usersRepository.findByEmailAndDeletedFalse(email);
-            if (existingUser.isPresent()) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists with this email");
-            }
-
-            // Assign Admin role to the new user
-            Role ownerRole = roleRepository.findByName("Admin")
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Admin role not found"));
-
-            // Create the user object and assign the role
-            Users newUser = new Users();
-            newUser.setFirstName(firstName);
-            newUser.setLastName(lastName);
-            newUser.setEmail(email);
-            newUser.setStatus(UserStatus.ACTIVE);
-            newUser.setPassword(password);
+// @Service
+// @RequiredArgsConstructor
+// public class UserService {
+//     private final UsersRepository usersRepository;
+//     private final RoleRepository roleRepository;
+//     private final UserRoleRepository userRoleRepository;
 
 
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-            newUser.setPassword(encoder.encode(password));
+//     //create user
+//         public Users register(UserCreateDto dto) {
+//             // Destructure the DTO (Java-style)
+//             String firstName = dto.getFirstName();
+//             String lastName = dto.getLastName();
+//             String password = dto.getPassword();
+//             String email = dto.getEmail();
+
+//             // Check if the user already exists
+//             Optional<Users> existingUser = usersRepository.findByEmailAndDeletedFalse(email);
+//             if (existingUser.isPresent()) {
+//                 throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists with this email");
+//             }
+
+//             // Assign Admin role to the new user
+//             Role ownerRole = roleRepository.findByName("Admin")
+//                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Admin role not found"));
+
+//             // Create the user object and assign the role
+//             Users newUser = new Users();
+//             newUser.setFirstName(firstName);
+//             newUser.setLastName(lastName);
+//             newUser.setEmail(email);
+//             newUser.setStatus(UserStatus.ACTIVE);
+//             newUser.setPassword(password);
+
+
+//             BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+//             newUser.setPassword(encoder.encode(password));
             
 
-            // Save the user
-            Users savedUser = usersRepository.save(newUser);  // This should now correctly insert into the user_roles join table
+//             // Save the user
+//             Users savedUser = usersRepository.save(newUser);  // This should now correctly insert into the user_roles join table
 
 
-            // Create the UserRole object to link the user with the role
-            UserRole userRole = UserRole.builder()
-                    .user(savedUser)
-                    .role(ownerRole)
-                    .build();
+//             // Create the UserRole object to link the user with the role
+//             UserRole userRole = UserRole.builder()
+//                     .user(savedUser)
+//                     .role(ownerRole)
+//                     .build();
 
-            // Save the UserRole to establish the relationship between the user and the role
-            userRoleRepository.save(userRole);
+//             // Save the UserRole to establish the relationship between the user and the role
+//             userRoleRepository.save(userRole);
 
-            return savedUser;
-        }
+//             return savedUser;
+//         }
 
-}
+// }

@@ -45,6 +45,13 @@ public class Users {
     @Column(nullable = false)
     private UserStatus status;
 
+    @Column(name = "password_changed_at", nullable = true)
+    private Instant passwordChangedAt;
+
+    @Default
+    @Column(name = "force_password_change", nullable = true)
+    private boolean forcePasswordChange = false;
+
     @Default
     @Column(nullable = true)
     private boolean deleted = false;

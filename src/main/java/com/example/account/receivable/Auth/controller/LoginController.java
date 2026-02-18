@@ -1,5 +1,6 @@
 package com.example.account.receivable.Auth.controller;
 
+import com.example.account.receivable.Auth.dto.ChangePasswordDto;
 import com.example.account.receivable.Auth.dto.LoginDto;
 import com.example.account.receivable.Auth.dto.LoginResponseDto;
 import com.example.account.receivable.Auth.dto.MfaCodeDto;
@@ -7,9 +8,11 @@ import com.example.account.receivable.Auth.dto.MfaLoginDto;
 import com.example.account.receivable.Auth.service.LoginService;
 import com.example.account.receivable.Auth.service.MfaService;
 import com.example.account.receivable.Common.ApiResponse;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +38,23 @@ public class LoginController {
                 user
         );
         return ResponseEntity.ok(body);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordDto dto
+    ) {
+        String email = currentUserEmail();
+
+        loginService.changePassword(email, dto);
+
+        return ResponseEntity.ok(
+                ApiResponse.successResponse(
+                        200,
+                        "Password changed successfully",
+                        null
+                )
+        );
     }
 
     @PostMapping("/login/mfa")
