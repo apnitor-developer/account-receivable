@@ -35,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 
 
@@ -369,6 +370,7 @@ public class CompanyService {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         user.setPassword(encoder.encode(password));
         user.setStatus(UserStatus.ACTIVE);
+        user.setPasswordChangedAt(Instant.now());
 
         usersRepository.save(user);
     }
@@ -851,7 +853,7 @@ public class CompanyService {
                         .firstName(firstName)
                         .lastName(lastName)
                         .email(email)
-                        .status(UserStatus.PENDING_APPROVAL) // ✅ Force status
+                        .status(UserStatus.PENDING_APPROVAL)
                         .deleted(false)
                         .forcePasswordChange(false)
                         .mfaEnabled(false)
