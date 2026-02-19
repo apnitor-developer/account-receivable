@@ -1,7 +1,6 @@
 package com.example.account.receivable.Auth.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -17,7 +16,10 @@ import com.example.account.receivable.User.entity.Role;
 import com.example.account.receivable.User.entity.UserRole;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.User.repository.UsersRepository;
+import com.example.account.receivable.User.service.SystemSettingService;
 import io.jsonwebtoken.impl.DefaultClaims;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,12 +49,16 @@ class LoginServiceTest {
     @Mock
     private MfaService mfaService;
 
+    @Mock(lenient = true)
+    private SystemSettingService systemSettingService;
+
     @InjectMocks
     private LoginService loginService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(loginService, "mfaTokenExpirationMs", 60_000L);
+        when(systemSettingService.getInt("PASSWORD_EXPIRY_DAYS", 90)).thenReturn(90);
     }
 
     @Test
@@ -111,13 +117,16 @@ class LoginServiceTest {
         user.setMfaEnabled(true);
         when(usersRepository.findByEmailAndDeletedFalse("user@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(dto.getPassword(), user.getPassword())).thenReturn(true);
+        when(jwtService.generateToken(eq(user.getEmail()), anyMap())).thenReturn("temp-jwt");
         when(jwtService.generateToken(eq(user.getEmail()), anyMap(), eq(60_000L))).thenReturn("mfa-token");
 
         LoginResponseDto response = loginService.login(dto);
 
-        assertNull(response.getToken());
+        assertEquals("temp-jwt", response.getToken());
         assertEquals(Boolean.TRUE, response.getMfaRequired());
         assertEquals("mfa-token", response.getMfaToken());
+        verify(jwtService).generateToken(eq(user.getEmail()), anyMap());
+        verify(jwtService).generateToken(eq(user.getEmail()), anyMap(), eq(60_000L));
     }
 
     @Test
@@ -129,7 +138,7 @@ class LoginServiceTest {
         dto.setMfaToken("mfa-jwt");
         dto.setCode("123456");
 
-        DefaultClaims claims = new DefaultClaims(Map.of());
+        DefaultClaims claims = new DefaultClaims(Map.of("type", "mfa_pending"));
         claims.setSubject(user.getEmail());
         claims.put("userId", user.getId());
 
@@ -159,6 +168,9 @@ class LoginServiceTest {
                 .user(user)
                 .build();
         user.setUserRoles(List.of(userRole));
+        user.setPasswordChangedAt(Instant.now().minus(10, ChronoUnit.DAYS));
+        user.setForcePasswordChange(false);
+        user.setMfaEnabled(false);
         return user;
     }
 }

@@ -30,15 +30,13 @@ import com.example.account.receivable.Auth.service.LoginService;
 import com.example.account.receivable.Auth.service.MfaService;
 import com.example.account.receivable.User.Enum.UserStatus;
 import com.example.account.receivable.User.controller.SignupController;
-import com.example.account.receivable.User.controller.UserController;
 import com.example.account.receivable.User.dto.SignupVerifyDto;
 import com.example.account.receivable.User.dto.UserCreateDto;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.User.service.SignupService;
-import com.example.account.receivable.User.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@WebMvcTest({LoginController.class, SignupController.class, UserController.class})
+@WebMvcTest({LoginController.class, SignupController.class})
 @AutoConfigureMockMvc(addFilters = false)
 @Import({AuthControllersTest.TestConfig.class, ControllerTestSecurityConfig.class})
 class AuthControllersTest {
@@ -53,9 +51,6 @@ class AuthControllersTest {
 
     @Autowired
     private SignupService signupService;
-
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private MfaService mfaService;
@@ -73,7 +68,7 @@ class AuthControllersTest {
         request.setEmail("jane@example.com");
         request.setPassword("secret");
 
-        when(loginService.login(any(LoginDto.class))).thenReturn(new LoginResponseDto("token-123", user));
+        when(loginService.login(any(LoginDto.class))).thenReturn(new LoginResponseDto("token-123", user, 30L));
 
         mockMvc.perform(
                 post("/auth")
@@ -98,7 +93,7 @@ class AuthControllersTest {
         dto.setMfaToken("pending");
         dto.setCode("123456");
 
-        when(loginService.loginWithMfa(any(MfaLoginDto.class))).thenReturn(new LoginResponseDto("token-456", user));
+        when(loginService.loginWithMfa(any(MfaLoginDto.class))).thenReturn(new LoginResponseDto("token-456", user, 25L));
 
         mockMvc.perform(
                 post("/auth/login/mfa")
@@ -117,7 +112,7 @@ class AuthControllersTest {
         dto.setFirstName("John");
         dto.setLastName("Smith");
         dto.setEmail("john@yopmail.com");
-        dto.setPassword("password123");
+        dto.setPassword("StrongPass!23");
 
         doNothing().when(signupService).startSignup(any(UserCreateDto.class));
 
@@ -160,36 +155,6 @@ class AuthControllersTest {
     }
 
     @Test
-    void createUser_registersSuccessfully() throws Exception {
-        UserCreateDto dto = new UserCreateDto();
-        dto.setFirstName("Allison");
-        dto.setLastName("Lee");
-        dto.setEmail("ally@example.com");
-        dto.setPassword("password");
-
-        Users user = Users.builder()
-                .id(2L)
-                .firstName("Allison")
-                .lastName("Lee")
-                .email("ally@example.com")
-                .status(UserStatus.INACTIVE)
-                .build();
-
-        when(userService.register(any(UserCreateDto.class))).thenReturn(user);
-
-        mockMvc.perform(
-                post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto))
-        )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.statusCode").value(201))
-                .andExpect(jsonPath("$.data.email").value("ally@example.com"));
-
-        verify(userService).register(any(UserCreateDto.class));
-    }
-
-    @Test
     void sendMfaEmailOtp_callsService() throws Exception {
         var authentication = new UsernamePasswordAuthenticationToken(
                 "jane@example.com",
@@ -197,7 +162,7 @@ class AuthControllersTest {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
         try {
-            mockMvc.perform(post("/auth/mfa/email/send"))
+            mockMvc.perform(post("/auth/email/send"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Email OTP sent successfully"));
         } finally {
@@ -246,9 +211,5 @@ class AuthControllersTest {
             return Mockito.mock(SignupService.class);
         }
 
-        @Bean
-        UserService userService() {
-            return Mockito.mock(UserService.class);
-        }
     }
 }

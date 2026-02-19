@@ -39,7 +39,9 @@ import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Service.InvoiceService;
 import com.example.account.receivable.Payment.Controller.PaymentController;
+import com.example.account.receivable.Payment.Dto.ApplyPaymentRequest;
 import com.example.account.receivable.Payment.Dto.ReceivePaymentRequest;
+import com.example.account.receivable.Payment.Dto.ResponseDTO.ManualPaymentResponseDto;
 import com.example.account.receivable.Payment.Dto.ResponseDTO.MonthlyPaymentDto;
 import com.example.account.receivable.Payment.Dto.ResponseDTO.PaymentReportDto;
 import com.example.account.receivable.Payment.Entity.Payment;
@@ -273,28 +275,76 @@ class FinanceControllersTest {
     }
 
     @Test
-    void applyPayment_createsPayment() throws Exception {
+    void createManualPayment_createsDraftPayment() throws Exception {
         ReceivePaymentRequest request = new ReceivePaymentRequest();
         request.setPaymentAmount(BigDecimal.valueOf(200));
+        request.setBankDeposit(BigDecimal.valueOf(200));
         request.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
 
-        Payment payment = Payment.builder()
-                .id(1L)
-                .paymentAmount(BigDecimal.valueOf(200))
-                .paymentMethod(PaymentMethod.BANK_TRANSFER)
-                .build();
+        ManualPaymentResponseDto responseDto = new ManualPaymentResponseDto();
+        responseDto.setPaymentId(10L);
+        responseDto.setPaymentAmount(BigDecimal.valueOf(200));
+        responseDto.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
+        responseDto.setCustomerId(4L);
 
-        when(paymentService.applyPayment(eq(4L), any(ReceivePaymentRequest.class))).thenReturn(payment);
+        when(paymentService.createManualPayment(eq(4L), any(ReceivePaymentRequest.class))).thenReturn(responseDto);
 
         mockMvc.perform(
-                post("/payment/apply/{customerId}", 4L)
+                post("/payment/manual/create/{customerId}", 4L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
         )
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.paymentId").value(10))
                 .andExpect(jsonPath("$.data.paymentAmount").value(200));
 
-        verify(paymentService).applyPayment(eq(4L), any(ReceivePaymentRequest.class));
+        verify(paymentService).createManualPayment(eq(4L), any(ReceivePaymentRequest.class));
+    }
+
+    @Test
+    void approveAndApplyPayment_returnsUpdatedPayment() throws Exception {
+        ApplyPaymentRequest request = new ApplyPaymentRequest();
+        request.setInvoiceIds(List.of(1L, 2L));
+
+        Payment payment = Payment.builder()
+                .id(5L)
+                .paymentAmount(BigDecimal.valueOf(300))
+                .paymentMethod(PaymentMethod.CREDIT_CARD)
+                .build();
+
+        when(paymentService.approveAndApplyPayment(eq(5L), eq(request.getInvoiceIds()))).thenReturn(payment);
+
+        mockMvc.perform(
+                post("/payment/{paymentId}/approve-apply", 5L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(5));
+
+        verify(paymentService).approveAndApplyPayment(eq(5L), eq(request.getInvoiceIds()));
+    }
+
+    @Test
+    void getCreatedPayments_returnsManualDrafts() throws Exception {
+        ManualPaymentResponseDto dto = new ManualPaymentResponseDto();
+        dto.setPaymentId(11L);
+        dto.setPaymentAmount(BigDecimal.TEN);
+        dto.setCustomerId(9L);
+        Page<ManualPaymentResponseDto> page = new PageImpl<>(List.of(dto));
+
+        when(paymentService.getCreatedPayments(eq(9L), eq(0), eq(10), any(LocalDate.class), any(LocalDate.class), isNull()))
+                .thenReturn(page);
+
+        mockMvc.perform(
+                get("/payment/company/{companyId}/created", 9L)
+                        .param("fromDate", "2026-01-01")
+                        .param("toDate", "2026-01-31")
+        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].paymentId").value(11));
+
+        verify(paymentService).getCreatedPayments(eq(9L), eq(0), eq(10), any(LocalDate.class), any(LocalDate.class), isNull());
     }
 
     @Test
