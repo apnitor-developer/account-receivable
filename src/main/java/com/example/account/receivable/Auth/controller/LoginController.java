@@ -12,7 +12,6 @@ import com.example.account.receivable.Common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,7 +30,7 @@ public class LoginController {
 
         String message = Boolean.TRUE.equals(user.getMfaRequired())
                 ? "OTP sent to email"
-                : "Login Successfully";
+                : "OTP sent to email";
         ApiResponse<LoginResponseDto> body = ApiResponse.successResponse(
                 201,
                 message,
@@ -88,7 +87,7 @@ public class LoginController {
         mfaService.verifyEmailOtp(email, dto.getCode());
         ApiResponse<Void> body = ApiResponse.successResponse(
                 200,
-                "Email OTP verified successfully",
+                "Login successfully",
                 null
         );
         return ResponseEntity.ok(body);
