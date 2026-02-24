@@ -18,6 +18,8 @@ import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 
 public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
+    Optional<Invoice> findByInvoiceNumber(String invoiceNumber);
+
     Page<Invoice> findByDeletedFalse(Pageable pageable);
 
     List<Invoice> findByCustomerIdAndDeletedFalseAndStatusNotIn(Long customerId , List<InvoiceStatus> statuses);

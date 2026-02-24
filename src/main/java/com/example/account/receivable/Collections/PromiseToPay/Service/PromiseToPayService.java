@@ -27,8 +27,6 @@ public class PromiseToPayService {
 
         public PromiseToPayResponse createPromise(PromiseToPayRequest request) {
 
-                System.out.println("Promise to pay Request" + request);
-
                 Customer customer = customerRepository.findById(request.getCustomerId())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 

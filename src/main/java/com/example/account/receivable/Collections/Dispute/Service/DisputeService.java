@@ -37,9 +37,6 @@ public class DisputeService {
 
     public Dispute createDispute(DisputeDTORequest dto) {
 
-        System.out.println(dto);
-
-
         // Fetch Customer
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found"));

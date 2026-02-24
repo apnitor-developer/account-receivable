@@ -288,9 +288,6 @@ public class InvoiceService {
         Company company =
             CompanyResolver.resolveCompanyForCustomer(invoice.getCustomer());
 
-            // System.out.println("Company : " + company);
-            // System.out.println("Invoice : " + invoice);
-
         glTransactionService.createTransaction(
             company.getId(),
             GlTransactionCreateRequest.builder()

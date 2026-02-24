@@ -290,7 +290,6 @@ public class PaymentService {
 
     //         //new balance
     //         BigDecimal balance = invoiceBalance.subtract(appliedAmount);
-    //         System.out.println("newbalance" + balance);
 
     //         PaymentApplication pa = PaymentApplication.builder()
     //                 .payment(payment)
@@ -467,6 +466,52 @@ public class PaymentService {
         }
 
         return result;
+    }
+
+
+
+    @Transactional
+    public void applyExactAmount(
+            Payment payment,
+            Invoice invoice,
+            BigDecimal amount
+    ) {
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        BigDecimal invoiceBalance = invoice.getBalanceDue();
+
+        if (invoiceBalance.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        // Do not over-apply
+        BigDecimal appliedAmount = amount.min(invoiceBalance);
+
+        // Create PaymentApplication record
+        PaymentApplication paymentApplication = PaymentApplication.builder()
+                .payment(payment)
+                .invoice(invoice)
+                .appliedAmount(appliedAmount)
+                .openAmount(invoiceBalance)
+                .newBalance(invoiceBalance.subtract(appliedAmount))
+                .build();
+
+        paymentApplicationRepository.save(paymentApplication);
+
+        // Update invoice balance
+        BigDecimal newBalance = invoiceBalance.subtract(appliedAmount);
+        invoice.setBalanceDue(newBalance);
+
+        if (newBalance.compareTo(BigDecimal.ZERO) == 0) {
+            invoice.setStatus(InvoiceStatus.PAID);
+        } else {
+            invoice.setStatus(InvoiceStatus.PARTIAL);
+        }
+
+        invoice.setLastPaymentDate(LocalDate.now());
     }
 
 

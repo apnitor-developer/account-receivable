@@ -11,6 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import com.example.account.receivable.BankReconciliation.Entity.BankTransaction;
 import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
 import com.example.account.receivable.Customer.Entity.Customer;
+import com.example.account.receivable.Payment.Enum.PayerType;
 import com.example.account.receivable.Payment.Enum.PaymentMethod;
 import com.example.account.receivable.Payment.Enum.PaymentSource;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -88,6 +89,11 @@ public class Payment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bank_transaction_id")
     private BankTransaction bankTransaction;
+
+    @Enumerated(EnumType.STRING)
+    private PayerType payerType;    // INSURANCE
+
+    private String payerName;       // DEMO INSURANCE COMPANY
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
     private List<PaymentApplication> applications;

@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,9 +23,22 @@ import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Company.Repository.CompanyRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.ERA.Entity.EraBatch;
+import com.example.account.receivable.ERA.Entity.EraClaim;
+import com.example.account.receivable.ERA.Entity.EraClaimApplication;
+import com.example.account.receivable.ERA.Enum.EraStatus;
+import com.example.account.receivable.ERA.Repository.EraBatchRepository;
+import com.example.account.receivable.ERA.Repository.EraClaimApplicationRepository;
+import com.example.account.receivable.ERA.Repository.EraClaimRepository;
 import com.example.account.receivable.Invoice.Entity.Invoice;
+import com.example.account.receivable.Invoice.Entity.InvoiceItem;
+import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
+import com.example.account.receivable.Invoice.Enum.InvoiceType;
+import com.example.account.receivable.Invoice.Repository.InvoiceItemRepo;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
+import com.example.account.receivable.Invoice.Service.InvoiceService;
 import com.example.account.receivable.Payment.Entity.Payment;
+import com.example.account.receivable.Payment.Enum.PayerType;
 import com.example.account.receivable.Payment.Enum.PaymentMethod;
 import com.example.account.receivable.Payment.Enum.PaymentSource;
 import com.example.account.receivable.Payment.Repository.PaymentRepository;
@@ -42,6 +57,11 @@ public class BankReconciliationService {
     private final CustomerRepository customerRepository;
     private final PaymentService paymentService;
     private final InvoiceRepository invoiceRepository;
+    private final EraBatchRepository eraBatchRepository;
+    private final EraClaimRepository eraClaimRepository;
+    private final EraClaimApplicationRepository eraClaimApplicationRepository;
+    private final InvoiceService invoiceService;
+    private final InvoiceItemRepo invoiceItemRepository;
 
     @Transactional
     public void processBaiFile(MultipartFile file , Long companyId) {
@@ -175,38 +195,275 @@ public class BankReconciliationService {
         return payment;
     }
 
-    //Get List of Bank Transaction
-    public List<BankTransaction> getBankTransactions(
-            Long companyId,
-            LocalDate fromDate,
-            LocalDate toDate,
-            Integer months
-    ) {
-        validateDates(fromDate, toDate);
 
-        LocalDate resolvedFrom = fromDate;
-        LocalDate resolvedTo = toDate;
+//     //Approve ERA Payment
+//     @Transactional
+//     public void approveWithEra(Long bankTransactionId, Long companyId) {
 
-        if (resolvedFrom == null && resolvedTo == null && months != null && months > 0) {
-            resolvedTo = LocalDate.now();
-            resolvedFrom = resolvedTo.minusMonths(months);
+//             BankTransaction bt = bankTransactionRepository.findById(bankTransactionId)
+//                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+//                                             "Bank transaction not found"));
+
+//             if (bt.getStatus() != PaymentStatus.CREATED) {
+//                     throw new IllegalStateException("Bank transaction already processed");
+//             }
+
+//             EraBatch batch = eraBatchRepository
+//                             .findByPayerNameAndTotalPayment(
+//                                             bt.getCustomerName(),
+//                                             bt.getAmount())
+//                             .orElseThrow(() -> new RuntimeException("No matching ERA found"));
+
+//             if (batch.getStatus() == EraStatus.FUNDED) {
+//                     throw new RuntimeException("ERA already funded");
+//             }
+
+//             List<EraClaim> claims = eraClaimRepository.findByBatch_Id(batch.getId());
+
+//             BigDecimal totalApplied = BigDecimal.ZERO;
+
+//             for (EraClaim claim : claims) {
+
+//                     Invoice invoice = invoiceRepository
+//                                     .findByInvoiceNumber(claim.getInvoiceNumber())
+//                                     .orElseThrow(() -> new RuntimeException("Invoice not found"));
+
+//                     Customer customer = invoice.getCustomer();
+
+//                     BigDecimal paidAmount = claim.getPaidAmount();
+
+//                     System.err.println("Paid Amount" + paidAmount);
+
+//                     if (paidAmount == null || paidAmount.compareTo(BigDecimal.ZERO) <= 0) {
+//                             continue;
+//                     }
+
+//                     totalApplied = totalApplied.add(paidAmount);
+
+//                     // Create one Payment per invoice
+//                     Payment payment = Payment.builder()
+//                                     .customer(customer)
+//                                     .bankDeposit(paidAmount)
+//                                     .paymentAmount(paidAmount)
+//                                     .paymentMethod(PaymentMethod.BANK_TRANSFER)
+//                                     .paymentDate(bt.getTransactionDate())
+//                                     .source(PaymentSource.BANK)
+//                                     .payerType(PayerType.INSURANCE)
+//                                     .payerName(batch.getPayerName())
+//                                     .status(PaymentStatus.CREATED)
+//                                     .bankTransaction(bt)
+//                                     .build();
+
+//                     payment = paymentRepository.save(payment);
+
+//                     // Apply contractual adjustment
+//                     invoice.setBalanceDue(
+//                                     invoice.getBalanceDue()
+//                                                     .subtract(claim.getContractualAmount()));
+
+//                     paymentService.applyExactAmount(
+//                                     payment,
+//                                     invoice,
+//                                     paidAmount);
+
+//                     invoiceRepository.save(invoice);
+
+//                     payment.setStatus(PaymentStatus.APPROVED);
+//                     paymentRepository.save(payment);
+
+//                     // Save ERA mapping
+//                     EraClaimApplication app = new EraClaimApplication();
+//                     app.setEraClaim(claim);
+//                     app.setInvoice(invoice);
+//                     eraClaimApplicationRepository.save(app);
+//             }
+
+//             if (totalApplied.compareTo(bt.getAmount()) != 0) {
+//                     throw new RuntimeException("ERA total does not match bank amount");
+//             }
+
+//             bt.setStatus(PaymentStatus.APPLIED);
+//             batch.setStatus(EraStatus.FUNDED);
+
+//             bankTransactionRepository.save(bt);
+//             eraBatchRepository.save(batch);
+//     }
+
+
+
+
+        @Transactional
+        public void approveWithEraAndCreatePatientInvoice(Long bankTransactionId, Long companyId) {
+
+                BankTransaction bt = bankTransactionRepository.findById(bankTransactionId)
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "Bank transaction not found"));
+
+                if (bt.getStatus() != PaymentStatus.CREATED) {
+                        throw new IllegalStateException("Bank transaction already processed");
+                }
+
+                EraBatch batch = eraBatchRepository
+                                .findByPayerNameAndTotalPayment(bt.getCustomerName(), bt.getAmount())
+                                .orElseThrow(() -> new RuntimeException("No matching ERA found"));
+
+                if (batch.getStatus() == EraStatus.FUNDED) {
+                        throw new RuntimeException("ERA already funded");
+                }
+
+                List<EraClaim> claims = eraClaimRepository.findByBatch_Id(batch.getId());
+
+                BigDecimal totalApplied = BigDecimal.ZERO;
+
+                // Prevent duplicate patient invoices
+                Set<Long> processedInvoices = new HashSet<>();
+
+                for (EraClaim claim : claims) {
+
+                        Invoice invoice = invoiceRepository
+                                        .findByInvoiceNumber(claim.getInvoiceNumber())
+                                        .orElseThrow(() -> new RuntimeException("Invoice not found"));
+
+                        Customer customer = invoice.getCustomer();
+
+                        BigDecimal paidAmount = claim.getPaidAmount() != null
+                                        ? claim.getPaidAmount()
+                                        : BigDecimal.ZERO;
+
+                        BigDecimal contractual = claim.getContractualAmount() != null
+                                        ? claim.getContractualAmount()
+                                        : BigDecimal.ZERO;
+
+                        // 1️⃣ Apply contractual
+                        invoice.setBalanceDue(invoice.getBalanceDue().subtract(contractual));
+
+                        // 2️⃣ Create insurance payment
+                        Payment payment = Payment.builder()
+                                        .customer(customer)
+                                        .bankDeposit(paidAmount)
+                                        .paymentAmount(paidAmount)
+                                        .paymentMethod(PaymentMethod.BANK_TRANSFER)
+                                        .paymentDate(bt.getTransactionDate())
+                                        .source(PaymentSource.BANK)
+                                        .payerType(PayerType.INSURANCE)
+                                        .payerName(batch.getPayerName())
+                                        .status(PaymentStatus.CREATED)
+                                        .bankTransaction(bt)
+                                        .build();
+
+                        payment = paymentRepository.save(payment);
+
+                        // 3️⃣ Apply insurance payment
+                        if (paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+                                paymentService.applyExactAmount(payment, invoice, paidAmount);
+                                totalApplied = totalApplied.add(paidAmount);
+                        }
+
+                        payment.setStatus(PaymentStatus.APPROVED);
+                        paymentRepository.save(payment);
+
+                        invoiceRepository.save(invoice);
+
+                        // 4️⃣ Create patient invoice ONLY ONCE per original invoice
+                        if (!processedInvoices.contains(invoice.getId())
+                                        && invoice.getBalanceDue().compareTo(BigDecimal.ZERO) > 0) {
+
+                                processedInvoices.add(invoice.getId());
+
+                                BigDecimal patientBalance = invoice.getBalanceDue();
+
+                                // Close original invoice
+                                invoice.setStatus(InvoiceStatus.WRITTEN_OFF);
+                                // invoice.setBalanceDue(BigDecimal.ZERO);
+                                invoiceRepository.save(invoice);
+
+                                // Create patient invoice
+                                Invoice patientInvoice = Invoice.builder()
+                                                .invoiceNumber(invoice.getInvoiceNumber() + "-P")
+                                                .invoiceDate(LocalDate.now())
+                                                .dueDate(LocalDate.now().plusDays(30))
+                                                .customer(customer)
+                                                .subTotal(patientBalance)
+                                                .totalAmount(patientBalance)
+                                                .balanceDue(patientBalance)
+                                                .status(InvoiceStatus.OPEN)
+                                                .invoiceType(InvoiceType.PATIENT)
+                                                .parentInvoice(invoice)
+                                                .generated(true)
+                                                .active(true)
+                                                .deleted(false)
+                                                .build();
+
+                                patientInvoice = invoiceRepository.save(patientInvoice);
+
+                                // Create invoice item (VERY IMPORTANT for email amount display)
+                                InvoiceItem item = InvoiceItem.builder()
+                                                .itemName("Patient Responsibility")
+                                                .description("Remaining balance after insurance payment")
+                                                .quantity(1)
+                                                .rate(patientBalance)
+                                                .amount(patientBalance)
+                                                .taxAmount(BigDecimal.ZERO)
+                                                .total(patientBalance)
+                                                .invoice(patientInvoice)
+                                                .build();
+
+                                invoiceItemRepository.save(item);
+
+                                // Send email
+                                invoiceService.sendInvoiceEmail(patientInvoice.getId(), companyId);
+                        }
+
+                        // Save ERA mapping
+                        EraClaimApplication app = new EraClaimApplication();
+                        app.setEraClaim(claim);
+                        app.setInvoice(invoice);
+                        eraClaimApplicationRepository.save(app);
+                }
+
+                if (totalApplied.compareTo(bt.getAmount()) != 0) {
+                        throw new RuntimeException("ERA total does not match bank amount");
+                }
+
+                bt.setStatus(PaymentStatus.APPLIED);
+                batch.setStatus(EraStatus.FUNDED);
+
+                bankTransactionRepository.save(bt);
+                eraBatchRepository.save(batch);
         }
 
-        return bankTransactionRepository.findByCompanyIdFiltered(
-                companyId,
-                PaymentStatus.CREATED,
-                resolvedFrom,
-                resolvedTo
-        );
+
+
+
+    // Get List of Bank Transaction
+    public List<BankTransaction> getBankTransactions(
+                    Long companyId,
+                    LocalDate fromDate,
+                    LocalDate toDate,
+                    Integer months) {
+            validateDates(fromDate, toDate);
+
+            LocalDate resolvedFrom = fromDate;
+            LocalDate resolvedTo = toDate;
+
+            if (resolvedFrom == null && resolvedTo == null && months != null && months > 0) {
+                    resolvedTo = LocalDate.now();
+                    resolvedFrom = resolvedTo.minusMonths(months);
+            }
+
+            return bankTransactionRepository.findByCompanyIdFiltered(
+                            companyId,
+                            PaymentStatus.CREATED,
+                            resolvedFrom,
+                            resolvedTo);
     }
 
     private void validateDates(LocalDate fromDate, LocalDate toDate) {
-        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "fromDate cannot be after toDate"
-            );
-        }
+            if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+                    throw new ResponseStatusException(
+                                    HttpStatus.BAD_REQUEST,
+                                    "fromDate cannot be after toDate");
+            }
     }
 
 

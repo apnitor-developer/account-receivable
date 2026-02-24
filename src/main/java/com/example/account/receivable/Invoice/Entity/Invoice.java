@@ -2,6 +2,7 @@ package com.example.account.receivable.Invoice.Entity;
 
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
+import com.example.account.receivable.Invoice.Enum.InvoiceType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -92,5 +93,13 @@ public class Invoice {
 
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
     private List<InvoiceItem> items;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private InvoiceType invoiceType = InvoiceType.ORIGINAL;
+
+    @ManyToOne
+    @JoinColumn(name = "parent_invoice_id")
+    private Invoice parentInvoice;
 }
 

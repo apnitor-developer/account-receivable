@@ -216,7 +216,6 @@ public class CompanyService {
 
     //create Users users
     public Users createCompanyUser(Long companyId, CompanyUserRequest dto) {
-        System.out.println("Before company");
 
         Company company = getCompanyDetails(companyId);
 
@@ -271,11 +270,8 @@ public class CompanyService {
             userRoleRepository.save(userRole);
         }
 
-
-        // System.out.println("before generate link");
-
         // // Generate invite link
-        // String inviteLink = "http://3.94.209.54:8080/api/companies/company/users/accept?email="  //backend url
+        // String inviteLink = "http://3.84.76.210:8080/api/companies/company/users/accept?email="  //backend url
         //         + savedUser.getEmail();
 
 
@@ -320,7 +316,7 @@ public class CompanyService {
         Company company = getCompanyDetails(companyId);
 
         // Generate invite link
-        String inviteLink = "http://3.94.209.54:8080/api/companies/company/users/accept?email="
+        String inviteLink = "http://3.84.76.210:8080/api/companies/company/users/accept?email="
                 + user.getEmail();
 
         // Build email

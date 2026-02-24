@@ -96,7 +96,7 @@ public class CompanyController {
 
                 return ResponseEntity
                         .status(HttpStatus.FOUND) // 302 redirect
-                        .location(URI.create("http://3.94.209.54:4200/set-password?email=" + email)) // frontend url
+                        .location(URI.create("http://3.84.76.210:4200/set-password?email=" + email)) // frontend url
                         .build();
         }
 

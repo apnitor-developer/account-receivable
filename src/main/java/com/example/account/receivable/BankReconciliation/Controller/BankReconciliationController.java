@@ -69,6 +69,21 @@ public class BankReconciliationController {
     }
 
 
+    @PostMapping("/company/{companyId}/transaction/{bankTransactionId}/approve-with-era")
+    public ResponseEntity<ApiResponse<String>> approveWithEra(
+                    @PathVariable Long bankTransactionId,
+                    @PathVariable Long companyId) {
+
+            bankReconciliationService.approveWithEraAndCreatePatientInvoice(bankTransactionId, companyId);
+
+            return ResponseEntity.ok(
+                            ApiResponse.successResponse(
+                                            200,
+                                            "Bank transaction approved using ERA",
+                                            "SUCCESS"));
+    }
+
+
     
     //Get Bank Transaction List
     @GetMapping("/company/{companyId}/transactions")
