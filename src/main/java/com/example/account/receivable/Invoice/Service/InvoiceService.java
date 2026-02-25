@@ -357,51 +357,40 @@ public class InvoiceService {
 
     //Generate invoice number
     private String generateUniqueInvoiceNumber() {
-        String prefix = INVOICE_PREFIX;
 
-        // Get the last invoice number starting with "INV-"
-        var lastOpt = invoiceRepository
-                .findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc(prefix);
+        String prefix = INVOICE_PREFIX; // "INV-"
+        int totalLength = prefix.length() + INVOICE_NUMBER_WIDTH; // 8
 
-        int nextNumber = 1; // default if none exist
+        List<String> results = invoiceRepository
+                .findAllValidInvoiceNumbers(prefix, totalLength, PageRequest.of(0, 1));
 
-        if (lastOpt.isPresent()) {
-            String lastNumber = lastOpt.get().getInvoiceNumber(); // e.g. "INV-0042"
-            String[] parts = lastNumber.split("-");
-            if (parts.length == 2) {
-                try {
-                    int current = Integer.parseInt(parts[1]);
-                    if (current >= 9999) {
-                        throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST,
-                                "Maximum invoice number (INV-9999) reached"
-                        );
-                    }
-                    nextNumber = current + 1;
-                } catch (NumberFormatException ignore) {
-                    // If previous value is malformed, just fall back to 1
-                    nextNumber = 1;
-                }
+        int nextNumber = 1;
+
+        if (!results.isEmpty()) {
+            String lastNumber = results.get(0);
+
+            // Safe numeric extraction
+            String numericPart = lastNumber.substring(prefix.length());
+
+            if (numericPart.matches("\\d{4}")) {
+                nextNumber = Integer.parseInt(numericPart) + 1;
             }
         }
 
-        // Format as 4-digit number with leading zeros
-        String formatted = String.format("%0" + INVOICE_NUMBER_WIDTH + "d", nextNumber);
-        String candidate = prefix + formatted; // e.g. "INV-0007"
+        if (nextNumber > 9999) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Maximum invoice number (INV-9999) reached"
+            );
+        }
 
-        // Double-check uniqueness in case of manual numbers or race conditions
-        int safetyCounter = 0;
-        while (invoiceRepository.existsByInvoiceNumber(candidate)) {
-            safetyCounter++;
-            if (safetyCounter > 20) {
-                // Avoid infinite loop if something weird is happening
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "Unable to generate unique invoice number"
-                );
-            }
+        String candidate;
 
+        do {
+            String formatted = String.format("%04d", nextNumber);
+            candidate = prefix + formatted;
             nextNumber++;
+
             if (nextNumber > 9999) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
@@ -409,9 +398,7 @@ public class InvoiceService {
                 );
             }
 
-            formatted = String.format("%0" + INVOICE_NUMBER_WIDTH + "d", nextNumber);
-            candidate = prefix + formatted;
-        }
+        } while (invoiceRepository.existsByInvoiceNumber(candidate));
 
         return candidate;
     }

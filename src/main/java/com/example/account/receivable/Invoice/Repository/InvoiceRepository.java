@@ -18,6 +18,20 @@ import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 
 public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
+
+    @Query("""
+        SELECT i.invoiceNumber
+        FROM Invoice i
+        WHERE i.invoiceNumber LIKE CONCAT(:prefix, '%')
+        AND LENGTH(i.invoiceNumber) = :length
+        ORDER BY i.invoiceNumber DESC
+    """)
+    List<String> findAllValidInvoiceNumbers(
+            @Param("prefix") String prefix,
+            @Param("length") int length,
+            Pageable pageable
+    );
+
     Optional<Invoice> findByInvoiceNumber(String invoiceNumber);
 
     Page<Invoice> findByDeletedFalse(Pageable pageable);
