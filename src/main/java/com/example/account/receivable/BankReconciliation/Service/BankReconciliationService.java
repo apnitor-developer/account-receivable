@@ -4,8 +4,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -292,145 +295,222 @@ public class BankReconciliationService {
 
 
 
-        @Transactional
-        public void approveWithEraAndCreatePatientInvoice(Long bankTransactionId, Long companyId) {
+@Transactional
+public void approveWithEraAndCreatePatientInvoice(
+        Long bankTransactionId,
+        Long companyId
+) {
 
-                BankTransaction bt = bankTransactionRepository.findById(bankTransactionId)
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                                "Bank transaction not found"));
+    // 1️⃣ Get Bank Transaction
+    BankTransaction bt = bankTransactionRepository.findById(bankTransactionId)
+            .orElseThrow(() ->
+                    new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Bank transaction not found"));
 
-                if (bt.getStatus() != PaymentStatus.CREATED) {
-                        throw new IllegalStateException("Bank transaction already processed");
-                }
+    if (bt.getStatus() != PaymentStatus.CREATED) {
+        throw new IllegalStateException("Bank transaction already processed");
+    }
 
-                EraBatch batch = eraBatchRepository
-                                .findByPayerNameAndTotalPayment(bt.getCustomerName(), bt.getAmount())
-                                .orElseThrow(() -> new RuntimeException("No matching ERA found"));
+    // 2️⃣ Find matching ERA batch
+    EraBatch batch = eraBatchRepository
+            .findByPayerNameAndTotalPayment(
+                    bt.getCustomerName(),
+                    bt.getAmount()
+            )
+            .orElseThrow(() ->
+                    new RuntimeException("No matching ERA found"));
 
-                if (batch.getStatus() == EraStatus.FUNDED) {
-                        throw new RuntimeException("ERA already funded");
-                }
+    if (batch.getStatus() == EraStatus.FUNDED) {
+        throw new RuntimeException("ERA already funded");
+    }
 
-                List<EraClaim> claims = eraClaimRepository.findByBatch_Id(batch.getId());
+    List<EraClaim> claims =
+            eraClaimRepository.findByBatch_Id(batch.getId());
 
-                BigDecimal totalApplied = BigDecimal.ZERO;
+    if (claims.isEmpty()) {
+        throw new RuntimeException("No ERA claims found");
+    }
 
-                // Prevent duplicate patient invoices
-                Set<Long> processedInvoices = new HashSet<>();
+    // 3️⃣ Group ERA claims by CUSTOMER ID (SAFE VERSION)
+    Map<Long, List<EraClaim>> claimsByCustomer = new HashMap<>();
 
-                for (EraClaim claim : claims) {
+    for (EraClaim claim : claims) {
 
-                        Invoice invoice = invoiceRepository
-                                        .findByInvoiceNumber(claim.getInvoiceNumber())
-                                        .orElseThrow(() -> new RuntimeException("Invoice not found"));
+        Invoice invoice = invoiceRepository
+                .findByInvoiceNumber(claim.getInvoiceNumber())
+                .orElseThrow(() ->
+                        new RuntimeException("Invoice not found: "
+                                + claim.getInvoiceNumber()));
 
-                        Customer customer = invoice.getCustomer();
+        Long customerId = invoice.getCustomer().getId();
 
-                        BigDecimal paidAmount = claim.getPaidAmount() != null
-                                        ? claim.getPaidAmount()
-                                        : BigDecimal.ZERO;
+        claimsByCustomer
+                .computeIfAbsent(customerId, k -> new ArrayList<>())
+                .add(claim);
+    }
 
-                        BigDecimal contractual = claim.getContractualAmount() != null
-                                        ? claim.getContractualAmount()
-                                        : BigDecimal.ZERO;
+    BigDecimal grandTotalApplied = BigDecimal.ZERO;
 
-                        // 1️⃣ Apply contractual
-                        invoice.setBalanceDue(invoice.getBalanceDue().subtract(contractual));
+    // 4️⃣ Process each customer separately
+    for (Map.Entry<Long, List<EraClaim>> entry : claimsByCustomer.entrySet()) {
 
-                        // 2️⃣ Create insurance payment
-                        Payment payment = Payment.builder()
-                                        .customer(customer)
-                                        .bankDeposit(paidAmount)
-                                        .paymentAmount(paidAmount)
-                                        .paymentMethod(PaymentMethod.BANK_TRANSFER)
-                                        .paymentDate(bt.getTransactionDate())
-                                        .source(PaymentSource.BANK)
-                                        .payerType(PayerType.INSURANCE)
-                                        .payerName(batch.getPayerName())
-                                        .status(PaymentStatus.CREATED)
-                                        .bankTransaction(bt)
-                                        .build();
+        Long customerId = entry.getKey();
 
-                        payment = paymentRepository.save(payment);
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() ->
+                        new RuntimeException("Customer not found"));
 
-                        // 3️⃣ Apply insurance payment
-                        if (paidAmount.compareTo(BigDecimal.ZERO) > 0) {
-                                paymentService.applyExactAmount(payment, invoice, paidAmount);
-                                totalApplied = totalApplied.add(paidAmount);
-                        }
+        List<EraClaim> customerClaims = entry.getValue();
 
-                        payment.setStatus(PaymentStatus.APPROVED);
-                        paymentRepository.save(payment);
+        BigDecimal customerTotal = BigDecimal.ZERO;
 
-                        invoiceRepository.save(invoice);
+        // Calculate total paid for this customer
+        for (EraClaim claim : customerClaims) {
 
-                        // 4️⃣ Create patient invoice ONLY ONCE per original invoice
-                        if (!processedInvoices.contains(invoice.getId())
-                                        && invoice.getBalanceDue().compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal paid =
+                    claim.getPaidAmount() != null
+                            ? claim.getPaidAmount()
+                            : BigDecimal.ZERO;
 
-                                processedInvoices.add(invoice.getId());
-
-                                BigDecimal patientBalance = invoice.getBalanceDue();
-
-                                // Close original invoice
-                                invoice.setStatus(InvoiceStatus.WRITTEN_OFF);
-                                // invoice.setBalanceDue(BigDecimal.ZERO);
-                                invoiceRepository.save(invoice);
-
-                                // Create patient invoice
-                                Invoice patientInvoice = Invoice.builder()
-                                                .invoiceNumber(invoice.getInvoiceNumber() + "-P")
-                                                .invoiceDate(LocalDate.now())
-                                                .dueDate(LocalDate.now().plusDays(30))
-                                                .customer(customer)
-                                                .subTotal(patientBalance)
-                                                .totalAmount(patientBalance)
-                                                .balanceDue(patientBalance)
-                                                .status(InvoiceStatus.OPEN)
-                                                .invoiceType(InvoiceType.PATIENT)
-                                                .parentInvoice(invoice)
-                                                .generated(true)
-                                                .active(true)
-                                                .deleted(false)
-                                                .build();
-
-                                patientInvoice = invoiceRepository.save(patientInvoice);
-
-                                // Create invoice item (VERY IMPORTANT for email amount display)
-                                InvoiceItem item = InvoiceItem.builder()
-                                                .itemName("Patient Responsibility")
-                                                .description("Remaining balance after insurance payment")
-                                                .quantity(1)
-                                                .rate(patientBalance)
-                                                .amount(patientBalance)
-                                                .taxAmount(BigDecimal.ZERO)
-                                                .total(patientBalance)
-                                                .invoice(patientInvoice)
-                                                .build();
-
-                                invoiceItemRepository.save(item);
-
-                                // Send email
-                                invoiceService.sendInvoiceEmail(patientInvoice.getId(), companyId);
-                        }
-
-                        // Save ERA mapping
-                        EraClaimApplication app = new EraClaimApplication();
-                        app.setEraClaim(claim);
-                        app.setInvoice(invoice);
-                        eraClaimApplicationRepository.save(app);
-                }
-
-                if (totalApplied.compareTo(bt.getAmount()) != 0) {
-                        throw new RuntimeException("ERA total does not match bank amount");
-                }
-
-                bt.setStatus(PaymentStatus.APPLIED);
-                batch.setStatus(EraStatus.FUNDED);
-
-                bankTransactionRepository.save(bt);
-                eraBatchRepository.save(batch);
+            customerTotal = customerTotal.add(paid);
         }
+
+        if (customerTotal.compareTo(BigDecimal.ZERO) <= 0) {
+            continue;
+        }
+
+        // 5️⃣ Create Payment for this customer
+        Payment payment = Payment.builder()
+                .customer(customer)
+                .bankDeposit(customerTotal)
+                .paymentAmount(customerTotal)
+                .paymentMethod(PaymentMethod.BANK_TRANSFER)
+                .paymentDate(bt.getTransactionDate())
+                .source(PaymentSource.BANK)
+                .payerType(PayerType.INSURANCE)
+                .payerName(batch.getPayerName())
+                .status(PaymentStatus.CREATED)
+                .bankTransaction(bt)
+                .build();
+
+        payment = paymentRepository.save(payment);
+
+        Set<Long> processedInvoices = new HashSet<>();
+
+        // 6️⃣ Apply each claim for this customer
+        for (EraClaim claim : customerClaims) {
+
+            Invoice invoice = invoiceRepository
+                    .findByInvoiceNumber(claim.getInvoiceNumber())
+                    .orElseThrow(() ->
+                            new RuntimeException("Invoice not found: "
+                                    + claim.getInvoiceNumber()));
+
+            BigDecimal paidAmount =
+                    claim.getPaidAmount() != null
+                            ? claim.getPaidAmount()
+                            : BigDecimal.ZERO;
+
+            BigDecimal contractual =
+                    claim.getContractualAmount() != null
+                            ? claim.getContractualAmount()
+                            : BigDecimal.ZERO;
+
+            // Apply contractual adjustment
+            if (contractual.compareTo(BigDecimal.ZERO) > 0) {
+                invoice.setBalanceDue(
+                        invoice.getBalanceDue().subtract(contractual)
+                );
+            }
+
+            // Apply insurance payment
+            if (paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+
+                paymentService.applyExactAmount(
+                        payment,
+                        invoice,
+                        paidAmount
+                );
+
+                grandTotalApplied = grandTotalApplied.add(paidAmount);
+            }
+
+            invoiceRepository.save(invoice);
+
+            // 7️⃣ Create patient invoice if balance remains
+            if (!processedInvoices.contains(invoice.getId())
+                    && invoice.getBalanceDue().compareTo(BigDecimal.ZERO) > 0) {
+
+                processedInvoices.add(invoice.getId());
+
+                BigDecimal patientBalance = invoice.getBalanceDue();
+
+                invoice.setStatus(InvoiceStatus.WRITTEN_OFF);
+                invoiceRepository.save(invoice);
+
+                Invoice patientInvoice = Invoice.builder()
+                        .invoiceNumber(invoice.getInvoiceNumber() + "-P")
+                        .invoiceDate(LocalDate.now())
+                        .dueDate(LocalDate.now().plusDays(30))
+                        .customer(invoice.getCustomer())
+                        .subTotal(patientBalance)
+                        .totalAmount(patientBalance)
+                        .balanceDue(patientBalance)
+                        .status(InvoiceStatus.OPEN)
+                        .invoiceType(InvoiceType.PATIENT)
+                        .parentInvoice(invoice)
+                        .generated(true)
+                        .active(true)
+                        .deleted(false)
+                        .build();
+
+                patientInvoice = invoiceRepository.save(patientInvoice);
+
+                InvoiceItem item = InvoiceItem.builder()
+                        .itemName("Patient Responsibility")
+                        .description("Remaining balance after insurance payment")
+                        .quantity(1)
+                        .rate(patientBalance)
+                        .amount(patientBalance)
+                        .taxAmount(BigDecimal.ZERO)
+                        .total(patientBalance)
+                        .invoice(patientInvoice)
+                        .build();
+
+                invoiceItemRepository.save(item);
+
+                invoiceService.sendInvoiceEmail(
+                        patientInvoice.getId(),
+                        companyId
+                );
+            }
+
+            // Save ERA mapping
+            EraClaimApplication app = new EraClaimApplication();
+            app.setEraClaim(claim);
+            app.setInvoice(invoice);
+            eraClaimApplicationRepository.save(app);
+        }
+
+        // Approve this customer's payment
+        payment.setStatus(PaymentStatus.APPROVED);
+        paymentRepository.save(payment);
+    }
+
+    // 8️⃣ Validate totals
+    if (grandTotalApplied.compareTo(bt.getAmount()) != 0) {
+        throw new RuntimeException(
+                "ERA total does not match bank amount"
+        );
+    }
+
+    // 9️⃣ Final status updates
+    bt.setStatus(PaymentStatus.APPLIED);
+    batch.setStatus(EraStatus.FUNDED);
+
+    bankTransactionRepository.save(bt);
+    eraBatchRepository.save(batch);
+}
 
 
 
