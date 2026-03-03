@@ -79,8 +79,8 @@ class InvoiceServiceTest {
         Customer customer = customerWithCompany(3L);
 
         when(customerRepository.findById(3L)).thenReturn(Optional.of(customer));
-        when(invoiceRepository.findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc("INV-"))
-                .thenReturn(Optional.of(Invoice.builder().invoiceNumber("INV-0007").build()));
+        when(invoiceRepository.findAllValidInvoiceNumbers(eq("INV-"), eq(8), any(Pageable.class)))
+                .thenReturn(List.of("INV-0007"));
         when(invoiceRepository.existsByInvoiceNumber(anyString())).thenReturn(false);
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(invocation -> {
             Invoice inv = invocation.getArgument(0);
@@ -131,8 +131,8 @@ class InvoiceServiceTest {
         customer.setDunning(dunning);
 
         when(customerRepository.findById(9L)).thenReturn(Optional.of(customer));
-        when(invoiceRepository.findTopByInvoiceNumberStartingWithOrderByInvoiceNumberDesc("INV-"))
-                .thenReturn(Optional.empty());
+        when(invoiceRepository.findAllValidInvoiceNumbers(eq("INV-"), eq(8), any(Pageable.class)))
+                .thenReturn(List.of());
         when(invoiceRepository.existsByInvoiceNumber(anyString())).thenReturn(false);
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(invocation -> {
             Invoice inv = invocation.getArgument(0);

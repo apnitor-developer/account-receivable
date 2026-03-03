@@ -187,7 +187,7 @@ class AuthControllersTest {
                                     .content(objectMapper.writeValueAsString(dto))
                     )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.message").value("Email OTP verified successfully"));
+                    .andExpect(jsonPath("$.message").value("Login successfully"));
         } finally {
             SecurityContextHolder.clearContext();
         }
