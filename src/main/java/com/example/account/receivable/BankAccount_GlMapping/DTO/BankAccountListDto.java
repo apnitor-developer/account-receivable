@@ -13,6 +13,8 @@ public class BankAccountListDto {
     private Long bankAccountId;
     private String bankName;
     private String accountNumber;
+    private String address;
+    private String branch;
     private CurrencyEnum currency;
     private Boolean isDefault;
 

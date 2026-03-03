@@ -35,6 +35,12 @@ public class CompanyBankAccount {
     @Column(name = "account_number")
     private String accountNumber;
 
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "branch")
+    private String branch; 
+
     @Column(name = "ifsc_swift")
     private String ifscSwift;
 

@@ -44,6 +44,8 @@ public class CompanyBankAccountService {
                 .bankAccountId(acc.getId())
                 .bankName(acc.getBankName())
                 .accountNumber(acc.getAccountNumber())
+                .address(acc.getAddress())
+                .branch(acc.getBranch())
                 .currency(acc.getCurrency())
                 .isDefault(acc.getIsDefault())
                 .mappingStatus(
