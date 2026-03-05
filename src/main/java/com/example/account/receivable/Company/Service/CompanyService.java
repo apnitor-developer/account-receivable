@@ -271,7 +271,7 @@ public class CompanyService {
         }
 
         // // Generate invite link
-        // String inviteLink = "http://3.84.76.210:8080/api/companies/company/users/accept?email="  //backend url
+        // String inviteLink = "http://3.82.49.182:8080/api/companies/company/users/accept?email="  //backend url
         //         + savedUser.getEmail();
 
 
@@ -316,7 +316,7 @@ public class CompanyService {
         Company company = getCompanyDetails(companyId);
 
         // Generate invite link
-        String inviteLink = "http://3.84.76.210:8080/api/companies/company/users/accept?email="
+        String inviteLink = "http://3.82.49.182:8080/api/companies/company/users/accept?email="
                 + user.getEmail();
 
         // Build email
