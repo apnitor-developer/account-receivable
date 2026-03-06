@@ -64,6 +64,10 @@ public class GlCodeService {
             .findByIdAndCompanyId(glCodeId, companyId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "GL code not found for this company"));
 
+        if (dto.getGlCode() != null) {
+            glCode.setGlCode(dto.getGlCode());
+        }
+
 
         // Only update accountType if it's not null in the DTO
         if (dto.getDescription() != null) {
