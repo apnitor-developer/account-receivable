@@ -52,9 +52,13 @@ import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceAgingDto;
 import com.example.account.receivable.Invoice.Dto.ResponseDTO.InvoiceStatusBreakdownResponseDto;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Entity.InvoiceItem;
+import com.example.account.receivable.Invoice.Entity.RecurringInvoiceItem;
+import com.example.account.receivable.Invoice.Entity.RecurringInvoiceTemplate;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
+import com.example.account.receivable.Invoice.Enum.InvoiceType;
 import com.example.account.receivable.Invoice.Repository.InvoiceItemRepo;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
+import com.example.account.receivable.Invoice.Repository.RecurringInvoiceTemplateRepository;
 import com.example.account.receivable.Invoice.utils.CsvImportRow;
 import com.example.account.receivable.Invoice.utils.ImportRow;
 import com.example.account.receivable.Invoice.utils.InvoiceHeaderMapper;
@@ -71,6 +75,7 @@ public class InvoiceService {
     private final CompanyRepository companyRepository;
     private final GlTransactionService glTransactionService;
     private final CompanyCustomerRepository companyCustomerRepository;
+    private final RecurringInvoiceTemplateRepository templateRepo;
 
     private static final String INVOICE_PREFIX = "INV-";
     private static final int INVOICE_NUMBER_WIDTH = 4;  // 0001 – 9999
@@ -237,15 +242,16 @@ public class InvoiceService {
             BigDecimal qty = BigDecimal.valueOf(itemDto.getQuantity());
             BigDecimal amount = itemDto.getRate().multiply(qty);
 
+            // // Convert tax
+            // BigDecimal taxPercent = BigDecimal.ZERO;
+
             // Convert tax
-            BigDecimal taxPercent = BigDecimal.ZERO;
+            BigDecimal taxPercent = itemDto.getTax() == null
+                    ? BigDecimal.ZERO
+                    : itemDto.getTax();
 
-            if (itemDto.getTax() != null && !itemDto.getTax().equalsIgnoreCase("none")) {
-                String clean = itemDto.getTax().replace("%", ""); // "10%" -> "10"
-                taxPercent = new BigDecimal(clean);
-            }
-
-            BigDecimal taxAmount = amount.multiply(taxPercent).divide(BigDecimal.valueOf(100));
+            BigDecimal taxAmount = amount.multiply(taxPercent)
+                        .divide(BigDecimal.valueOf(100));
             BigDecimal total = amount.add(taxAmount);
 
             subTotal = subTotal.add(amount);
@@ -904,13 +910,126 @@ public class InvoiceService {
             item.setItemName(headers.get(row, "itemName"));
             item.setQuantity(Integer.parseInt(headers.get(row, "quantity")));
             item.setRate(new BigDecimal(headers.get(row, "rate")));
-            item.setTax(headers.get(row, "tax"));
+            String taxStr = headers.get(row, "tax");
+
+            if (taxStr == null || taxStr.isBlank() || taxStr.equalsIgnoreCase("none")) {
+                item.setTax(BigDecimal.ZERO);
+            } else {
+                item.setTax(new BigDecimal(taxStr.replace("%", "")));
+            }
             items.add(item);
         }
 
         dto.setItems(items);
 
         createInvoice(customer.getId(), dto);
+    }
+
+
+    @Transactional
+    public Invoice generateFromTemplate(RecurringInvoiceTemplate template) {
+
+        String invoiceNumber = generateUniqueInvoiceNumber();
+
+        Invoice invoice = Invoice.builder()
+                .invoiceNumber(invoiceNumber)
+                .invoiceDate(LocalDate.now())
+                .customer(template.getCustomer())
+                .status(InvoiceStatus.OPEN)
+                .generated(true)
+                .invoiceType(InvoiceType.RECURRING)
+                .build();
+
+        invoice = invoiceRepository.save(invoice);
+
+        BigDecimal subTotal = BigDecimal.ZERO;
+        BigDecimal taxTotal = BigDecimal.ZERO;
+
+        List<InvoiceItem> items = new ArrayList<>();
+
+        for (RecurringInvoiceItem templateItem : template.getItems()) {
+
+            BigDecimal qty = BigDecimal.valueOf(templateItem.getQuantity());
+            BigDecimal amount = templateItem.getRate().multiply(qty);
+
+            BigDecimal taxPercent = templateItem.getTax() == null
+                    ? BigDecimal.ZERO
+                    : templateItem.getTax();
+
+            BigDecimal taxAmount = amount.multiply(taxPercent)
+                    .divide(BigDecimal.valueOf(100));
+
+            BigDecimal total = amount.add(taxAmount);
+
+            subTotal = subTotal.add(amount);
+            taxTotal = taxTotal.add(taxAmount);
+
+            InvoiceItem item = InvoiceItem.builder()
+                    .itemName(templateItem.getItemName())
+                    .description(templateItem.getDescription())
+                    .quantity(templateItem.getQuantity())
+                    .rate(templateItem.getRate())
+                    .amount(amount)
+                    .taxAmount(taxAmount)
+                    .total(total)
+                    .invoice(invoice)
+                    .build();
+
+            items.add(item);
+        }
+
+        invoiceItemRepo.saveAll(items);
+
+        BigDecimal totalAmount = subTotal.add(taxTotal);
+
+        invoice.setSubTotal(subTotal);
+        invoice.setTotalAmount(totalAmount);
+        invoice.setBalanceDue(totalAmount);
+
+        invoice = invoiceRepository.save(invoice);
+
+        // update next generation date
+        updateNextGenerationDate(template);
+
+        // resolve company
+        Company company =
+                CompanyResolver.resolveCompanyForCustomer(invoice.getCustomer());
+
+        // send email
+        sendInvoiceEmail(invoice.getId(), company.getId());
+
+        return invoice;
+    }
+
+
+
+    private void updateNextGenerationDate(RecurringInvoiceTemplate template) {
+
+        LocalDate nextDate = template.getNextGenerationDate();
+
+        switch (template.getFrequency()) {
+
+            case DAILY:
+                nextDate = nextDate.plusDays(1);
+                break;
+
+            case WEEKLY:
+                nextDate = nextDate.plusWeeks(1);
+                break;
+
+            case MONTHLY:
+                nextDate = nextDate.plusMonths(1);
+                break;
+
+            case YEARLY:
+                nextDate = nextDate.plusYears(1);
+                break;
+        }
+
+        template.setNextGenerationDate(nextDate);
+        template.setGeneratedCount(template.getGeneratedCount() + 1);
+
+        templateRepo.save(template);
     }
 
 }

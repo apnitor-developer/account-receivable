@@ -3,6 +3,7 @@ package com.example.account.receivable.Invoice.Entity;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Enum.InvoiceType;
+import com.example.account.receivable.Invoice.Enum.RecurringFrequency;
 
 import java.math.BigDecimal;
 import java.time.Instant;

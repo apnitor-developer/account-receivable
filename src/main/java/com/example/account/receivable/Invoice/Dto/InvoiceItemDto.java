@@ -10,5 +10,5 @@ public class InvoiceItemDto {
     private BigDecimal rate;
     private String description;
     private Integer quantity;     
-    private String tax;             // "10%" or "None"
+    private BigDecimal tax;             // "10%" or "None"
 }
