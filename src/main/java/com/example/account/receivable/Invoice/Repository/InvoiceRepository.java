@@ -19,6 +19,11 @@ import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 
 public interface InvoiceRepository extends JpaRepository<Invoice , Long> {
 
+    List<Invoice> findByDueDateBeforeAndStatusIn(
+            LocalDate dueDate,
+            List<InvoiceStatus> statuses
+    );
+
     List<Invoice> findByStatusIn(List<InvoiceStatus> statuses);
 
     @Query("""

@@ -1,0 +1,37 @@
+<h2>Late Fee Invoice</h2>
+
+<p>Dear [[${customer.customerName}]],</p>
+
+<p>
+Your invoice <b>[[${invoice.parentInvoice.invoiceNumber}]]</b>
+was not paid by the due date
+<b>[[${invoice.parentInvoice.dueDate}]]</b>.
+</p>
+
+<p>A late payment fee has been applied.</p>
+
+<table border="1" cellpadding="6">
+
+<tr>
+<td>Original Amount</td>
+<td>[[${originalAmount}]]</td>
+</tr>
+
+<tr>
+<td>Late Fee</td>
+<td>[[${lateFee}]]</td>
+</tr>
+
+<tr>
+<td><b>Total Amount Due</b></td>
+<td><b>[[${invoice.totalAmount}]]</b></td>
+</tr>
+
+</table>
+
+<p>Please make payment by <b>[[${invoice.dueDate}]]</b>.</p>
+
+<p>
+Regards,<br/>
+[[${company.legalName}]]
+</p>

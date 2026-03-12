@@ -363,7 +363,7 @@ public class InvoiceService {
 
 
     //Generate invoice number
-    private String generateUniqueInvoiceNumber() {
+    public String generateUniqueInvoiceNumber() {
 
         String prefix = INVOICE_PREFIX; // "INV-"
         int totalLength = prefix.length() + INVOICE_NUMBER_WIDTH; // 8

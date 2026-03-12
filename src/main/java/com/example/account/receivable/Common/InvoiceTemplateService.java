@@ -1,6 +1,9 @@
 package com.example.account.receivable.Common;
 
 import lombok.RequiredArgsConstructor;
+
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -44,5 +47,43 @@ public class InvoiceTemplateService {
         ctx.setVariable("level", level);
 
         return templateEngine.process("invoice-reminder-template", ctx);
+    }
+
+
+    //Late fee template
+    public String generateLateFeeEmailHtml(
+            Invoice invoice,
+            Company company,
+            BigDecimal originalAmount,
+            BigDecimal lateFee
+    ) {
+
+        Context ctx = new Context();
+
+        ctx.setVariable("invoice", invoice);
+        ctx.setVariable("company", company);
+        ctx.setVariable("customer", invoice.getCustomer());
+        ctx.setVariable("originalAmount", originalAmount);
+        ctx.setVariable("lateFee", lateFee);
+
+        return templateEngine.process("late-fee-email-template", ctx);
+    }
+
+    public String generateLateFeePdfHtml(
+            Invoice invoice,
+            Company company,
+            BigDecimal originalAmount,
+            BigDecimal lateFee
+    ) {
+
+        Context ctx = new Context();
+
+        ctx.setVariable("invoice", invoice);
+        ctx.setVariable("company", company);
+        ctx.setVariable("customer", invoice.getCustomer());
+        ctx.setVariable("originalAmount", originalAmount);
+        ctx.setVariable("lateFee", lateFee);
+
+        return templateEngine.process("late-fee-pdf-template", ctx);
     }
 }

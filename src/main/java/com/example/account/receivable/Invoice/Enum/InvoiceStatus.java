@@ -5,5 +5,6 @@ public enum InvoiceStatus {
     OPEN,
     PAID,
     PARTIAL,
-    WRITTEN_OFF
+    WRITTEN_OFF,
+    DISCONTINUED
 }

@@ -26,6 +26,13 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Query("select c.id from Company c where c.deleted = false")
     List<Long> findActiveCompanyIds();
+
+    @Query("""
+        SELECT cc.company
+        FROM CompanyCustomers cc
+        WHERE cc.customer.id = :customerId
+    """)
+    Optional<Company> findCompanyByCustomerId(@Param("customerId") Long customerId);
 }
 
 
