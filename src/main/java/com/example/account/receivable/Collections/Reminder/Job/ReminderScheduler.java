@@ -20,7 +20,7 @@ public class ReminderScheduler {
     private final InvoiceRepository invoiceRepository;
     private final ReminderService reminderService;
 
-    @Scheduled(cron = "0 21 11 * * ?") // every day 10:35 AM
+    @Scheduled(cron = "0 20 12 * * ?") // every day 12:20 AM
     public void runAutomaticReminders() {
 
         List<Invoice> invoices =
