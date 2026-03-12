@@ -66,6 +66,8 @@ public class Invoice {
     @Column(name = "last_payment_date")
     private LocalDate lastPaymentDate;
 
+    private Integer lastDunningLevelSent = 0;
+
     @Column(nullable = true)
     private String county;
 

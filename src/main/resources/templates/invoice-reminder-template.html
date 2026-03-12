@@ -1,131 +1,188 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:th="http://www.thymeleaf.org">
+
 <head>
-    <meta charset="UTF-8" />
-    <title>Invoice Payment Reminder</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<title>Invoice Reminder</title>
 
-    <style type="text/css">
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f4f6f8;
-            font-family: Arial, Helvetica, sans-serif;
-            color: #333333;
-        }
+<style>
+body{
+    margin:0;
+    padding:0;
+    background:#f4f6f8;
+    font-family:Arial, Helvetica, sans-serif;
+}
 
-        .email-wrapper {
-            width: 100%;
-            padding: 30px 0;
-        }
+.wrapper{
+    width:100%;
+    padding:30px 0;
+}
 
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-        }
+.container{
+    max-width:620px;
+    margin:auto;
+    background:#ffffff;
+    border-radius:8px;
+    overflow:hidden;
+}
 
-        .email-header {
-            background-color: #1f6feb;
-            color: #ffffff;
-            padding: 20px 30px;
-            font-size: 20px;
-            font-weight: bold;
-        }
+.header{
+    padding:22px 30px;
+    color:white;
+    font-size:20px;
+    font-weight:bold;
+}
 
-        .email-body {
-            padding: 30px;
-            font-size: 15px;
-            line-height: 1.6;
-        }
+.body{
+    padding:30px;
+    font-size:15px;
+    color:#333;
+    line-height:1.6;
+}
 
-        .invoice-box {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 20px 0;
-        }
+.invoice-box{
+    margin-top:20px;
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:6px;
+    padding:18px;
+}
 
-        .row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
+.row{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:10px;
+}
 
-        .amount {
-            color: #dc2626;
-            font-weight: bold;
-        }
+.amount{
+    color:#dc2626;
+    font-weight:bold;
+}
 
-        .footer {
-            background-color: #f4f6f8;
-            padding: 20px;
-            font-size: 12px;
-            color: #6b7280;
-            text-align: center;
-        }
-    </style>
+.button{
+    display:inline-block;
+    padding:12px 20px;
+    background:#1f6feb;
+    color:white;
+    text-decoration:none;
+    border-radius:4px;
+    margin-top:18px;
+}
+
+.footer{
+    background:#f4f6f8;
+    padding:20px;
+    font-size:12px;
+    text-align:center;
+    color:#6b7280;
+}
+
+.level-badge{
+    display:inline-block;
+    padding:6px 12px;
+    font-size:12px;
+    border-radius:4px;
+    color:white;
+}
+</style>
+
 </head>
 
 <body>
-<div class="email-wrapper">
-    <div class="email-container">
 
-        <div class="email-header">
-            Invoice Payment Reminder
-        </div>
+<div class="wrapper">
+<div class="container">
 
-        <div class="email-body">
-            <p>
-                Dear <span th:text="${customer.customerName}">Customer</span>,
-            </p>
+<!-- HEADER COLOR CHANGES BY LEVEL -->
+<div class="header"
+     th:style="${level == 4} ? 'background:#dc2626' :
+               (${level == 3} ? 'background:#f97316' :
+               (${level == 2} ? 'background:#eab308' :
+               'background:#1f6feb'))">
 
-            <p>
-                This is a friendly reminder that the following invoice is
-                <strong>overdue</strong>. Please arrange payment at the earliest.
-            </p>
+Invoice Payment Reminder
 
-            <div class="invoice-box">
-                <div class="row">
-                    <span>Invoice Number:</span>
-                    <strong th:text="${invoice.invoiceNumber}">INV-0001</strong>
-                </div>
-                <div class="row">
-                    <span>Due Date:</span>
-                    <strong th:text="${invoice.dueDate}">2025-01-01</strong>
-                </div>
-                <div class="row">
-                    <span>Outstanding Amount:</span>
-                    <strong class="amount"
-                            th:text="${invoice.balanceDue}">0</strong>
-                </div>
-            </div>
-
-            <p>
-                If you have already made the payment, please ignore this message.
-                Otherwise, feel free to contact our accounts team for assistance.
-            </p>
-
-            <p>
-                Regards,<br />
-                <strong>Accounts Receivable Team</strong>
-            </p>
-        </div>
-
-        <div class="footer">
-            <p>
-                This is an automated reminder. Please do not reply to this email.
-            </p>
-            <p>
-                © <span th:text="${#dates.year(#dates.createNow())}">2025</span>
-            </p>
-        </div>
-
-    </div>
 </div>
+
+<div class="body">
+
+<p>
+Dear <strong th:text="${customer.customerName}">Customer</strong>,
+</p>
+
+<!-- LEVEL 1 -->
+<p th:if="${level == 1}">
+This is a friendly reminder that the following invoice is now overdue.
+Please arrange payment at your convenience.
+</p>
+
+<!-- LEVEL 2 -->
+<p th:if="${level == 2}">
+Our records indicate the following invoice remains unpaid.
+We kindly request that payment be arranged as soon as possible.
+</p>
+
+<!-- LEVEL 3 -->
+<p th:if="${level == 3}">
+This invoice is significantly overdue. Please arrange immediate payment
+to avoid escalation.
+</p>
+
+<!-- LEVEL 4 -->
+<p th:if="${level == 4}">
+<strong>Final Notice:</strong> This invoice is seriously overdue.
+Immediate payment is required to avoid further action.
+</p>
+
+
+<!-- INVOICE SUMMARY -->
+<div class="invoice-box">
+
+<div class="row">
+<span>Invoice Number</span>
+<strong th:text="${invoice.invoiceNumber}">INV-001</strong>
+</div>
+
+<div class="row">
+<span>Invoice Date</span>
+<strong th:text="${invoice.invoiceDate}"></strong>
+</div>
+
+<div class="row">
+<span>Due Date</span>
+<strong th:text="${invoice.dueDate}"></strong>
+</div>
+
+<div class="row">
+<span>Outstanding Amount</span>
+<strong class="amount"
+        th:text="${invoice.balanceDue}">$0.00</strong>
+</div>
+
+</div>
+
+<p>
+If you have already made this payment, please disregard this message.
+Otherwise, please contact our accounts team if you require assistance.
+</p>
+
+<p>
+Regards,<br/>
+<strong th:text="${company.legalName}">Company</strong><br/>
+Accounts Receivable
+</p>
+
+</div>
+
+<div class="footer">
+This is an automated reminder. Please do not reply to this email.
+<br/><br/>
+© <span th:text="${#dates.year(#dates.createNow())}"></span>
+</div>
+
+</div>
+</div>
+
 </body>
 </html>

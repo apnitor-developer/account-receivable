@@ -3,6 +3,7 @@ package com.example.account.receivable.Collections.Reminder.Controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,9 +21,9 @@ public class ReminderController {
 
     @PostMapping("/invoice/{companyId}/{invoiceId}")
     public ResponseEntity<ApiResponse<String>>
-    sendInvoiceReminder(@PathVariable Long invoiceId , @PathVariable Long companyId) {
+    sendInvoiceReminder(@PathVariable Long invoiceId , @PathVariable Long companyId , @RequestBody int level) {
 
-        reminderService.sendInvoiceReminder(invoiceId , companyId);
+        reminderService.sendInvoiceReminder(invoiceId , companyId , level);
 
         return ResponseEntity.ok(
             ApiResponse.successResponse(

@@ -227,6 +227,7 @@ public class InvoiceService {
                 .county(dto.getCounty())
                 .note(dto.getNote())
                 .status(InvoiceStatus.CREATED)
+                .lastDunningLevelSent(0)
                 .generated(dto.getGenerated())
                 .customer(customer)
                 .active(true)

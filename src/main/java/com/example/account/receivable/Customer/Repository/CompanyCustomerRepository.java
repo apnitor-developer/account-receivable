@@ -1,5 +1,6 @@
 package com.example.account.receivable.Customer.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -19,6 +20,8 @@ public interface CompanyCustomerRepository extends JpaRepository<CompanyCustomer
     //       AND cc.customer.deleted = false
     // """)
     // List<Customer> findCustomersByCompanyId(Long companyId);
+
+    Optional<CompanyCustomers> findFirstByCustomer_Id(Long customerId);
 
 
     //Get the non-deleted customers by the companyId

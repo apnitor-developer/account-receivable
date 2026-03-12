@@ -35,12 +35,13 @@ public class InvoiceTemplateService {
         return templateEngine.process("invoice-email-template", ctx);
     }
 
-    public String generateHtmlReminder(Invoice invoice , Company company) {
+    public String generateHtmlReminder(Invoice invoice , Company company , int level) {
         Context ctx = new Context();
 
         ctx.setVariable("invoice", invoice);
         ctx.setVariable("customer", invoice.getCustomer());
         ctx.setVariable("company", company);
+        ctx.setVariable("level", level);
 
         return templateEngine.process("invoice-reminder-template", ctx);
     }
