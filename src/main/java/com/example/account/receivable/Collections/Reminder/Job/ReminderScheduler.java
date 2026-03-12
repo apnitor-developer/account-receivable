@@ -22,7 +22,7 @@ public class ReminderScheduler {
     private final InvoiceRepository invoiceRepository;
     private final ReminderService reminderService;
 
-    @Scheduled(cron = "0 01 8 * * ?", zone = "Asia/Kolkata")
+    @Scheduled(cron = "0 15 8 * * ?")
     public void runAutomaticReminders() {
 
         List<Invoice> invoices =
