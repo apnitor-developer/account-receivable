@@ -29,6 +29,8 @@ public class LateFeeRule {
     @Column(name = "mandatory_charge", nullable = false)
     private BigDecimal mandatoryCharge;
 
+    private Boolean delated = false;
+
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "company_id")

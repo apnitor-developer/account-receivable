@@ -87,6 +87,7 @@ public class LateFeeRuleController {
     }
 
 
+    //Delate Late Fee Rule
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<String>> deleteRule(@PathVariable Long id) {
 

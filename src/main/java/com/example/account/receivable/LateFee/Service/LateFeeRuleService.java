@@ -26,14 +26,22 @@ public class LateFeeRuleService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND,"Company not found"));
 
+        // Prevent multiple rules
+        if (lateFeeRuleRepository.existsByCompanyIdAndDelatedFalse(companyId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Late fee rule already exists for this company"
+            );
+        }
+
         rule.setCompany(company);
+        rule.setDelated(false);
 
         return lateFeeRuleRepository.save(rule);
     }
 
     public LateFeeRule getRule(Long companyId) {
-
-        return lateFeeRuleRepository.findByCompanyId(companyId)
+        return lateFeeRuleRepository.findByCompanyIdAndDelatedFalse(companyId)
                 .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND,"Late fee rule not found"));
     }
 
@@ -63,7 +71,14 @@ public class LateFeeRuleService {
         return lateFeeRuleRepository.save(existing);
     }
 
-    public void deleteRule(Long id) {
-        lateFeeRuleRepository.deleteById(id);
+    public LateFeeRule deleteRule(Long id) {
+
+        LateFeeRule existing = lateFeeRuleRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Rule not found"));
+
+        existing.setDelated(true);
+        
+        return lateFeeRuleRepository.save(existing);
     }
 }

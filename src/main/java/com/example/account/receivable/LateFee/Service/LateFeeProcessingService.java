@@ -54,7 +54,7 @@ public class LateFeeProcessingService {
                 new ResponseStatusException(HttpStatus.NOT_FOUND , "Company not found for customer"));
 
         LateFeeRule rule =
-                lateFeeRuleRepository.findByCompanyId(company.getId())
+                lateFeeRuleRepository.findByCompanyIdAndDelatedFalse(company.getId())
                 .orElse(null);
 
         if (rule == null) return;

@@ -8,5 +8,7 @@ import com.example.account.receivable.LateFee.Entity.LateFeeRule;
 
 public interface LateFeeRuleRepository extends JpaRepository<LateFeeRule, Long> {
 
-    Optional<LateFeeRule> findByCompanyId(Long companyId);
+    Optional<LateFeeRule> findByCompanyIdAndDelatedFalse(Long companyId);
+
+    boolean existsByCompanyIdAndDelatedFalse(Long companyId);
 }
