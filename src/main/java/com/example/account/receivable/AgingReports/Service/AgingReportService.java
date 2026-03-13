@@ -1,13 +1,20 @@
 package com.example.account.receivable.AgingReports.Service;
 
+import com.example.account.receivable.AgingReports.DTO.AgingCodeResponse;
 import com.example.account.receivable.AgingReports.DTO.AgingReportResponse;
+import com.example.account.receivable.AgingReports.DTO.CreateAgingCodeRequest;
 import com.example.account.receivable.AgingReports.DTO.CustomerAgingDto;
+import com.example.account.receivable.AgingReports.Entity.AgingBucket;
+import com.example.account.receivable.AgingReports.Repository.AgingBucketRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,21 +26,32 @@ import java.util.*;
 public class AgingReportService {
 
     private final InvoiceRepository invoiceRepository;
+    private final AgingBucketRepository agingBucketRepository;
 
-    public AgingReportResponse getAgingReport(Long companyId , LocalDate asOfDate, Long customerId, String status) {
+    
+    //Get Invoice Aging
+    public AgingReportResponse getAgingReport(Long companyId, LocalDate asOfDate, Long customerId, String status) {
 
         if (asOfDate == null) {
             asOfDate = LocalDate.now();
         }
 
-        // Get all invoices with outstanding balance
+        // Load company aging buckets
+        List<AgingBucket> buckets =
+                agingBucketRepository.findByCompanyIdAndActiveTrueOrderByDisplayOrderAsc(companyId);
+
+        if (buckets.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No aging buckets configured for company");
+        }
+
+        // Get invoices
         List<Invoice> allOpenInvoices = invoiceRepository.findOpenInvoicesByCompany(companyId);
 
-        // Apply optional filters in Java
         List<Invoice> filtered = new ArrayList<>();
+
         for (Invoice inv : allOpenInvoices) {
 
-            // filter by customer
             if (customerId != null) {
                 Customer c = inv.getCustomer();
                 if (c == null || !Objects.equals(c.getId(), customerId)) {
@@ -41,12 +59,12 @@ public class AgingReportService {
                 }
             }
 
-            // filter by status (OPEN, PARTIAL, etc.) – case insensitive
             if (status != null && !status.isBlank()) {
+
                 InvoiceStatus invStatus = inv.getStatus();
 
                 if (invStatus == null ||
-                    !invStatus.name().equalsIgnoreCase(status)) {
+                        !invStatus.name().equalsIgnoreCase(status)) {
                     continue;
                 }
             }
@@ -54,62 +72,203 @@ public class AgingReportService {
             filtered.add(inv);
         }
 
-        // 3. Group by customer and calculate buckets
         Map<Long, CustomerAgingDto> byCustomer = new LinkedHashMap<>();
 
         for (Invoice invoice : filtered) {
+
             Customer customer = invoice.getCustomer();
             if (customer == null) continue;
 
             Long cid = customer.getId();
             String cname = customer.getCustomerName();
 
-            // Get or create row for this customer
             CustomerAgingDto row = byCustomer.computeIfAbsent(cid, id -> {
+
                 CustomerAgingDto dto = new CustomerAgingDto();
+
                 dto.setCustomerId(cid);
                 dto.setCustomerName(cname);
                 dto.setTotalDue(BigDecimal.ZERO);
-                dto.setCurrent(BigDecimal.ZERO);
-                dto.setBucket1To30(BigDecimal.ZERO);
-                dto.setBucket31To60(BigDecimal.ZERO);
-                dto.setBucket61To90(BigDecimal.ZERO);
-                dto.setBucketGt90(BigDecimal.ZERO);
+
+                // Initialize all buckets
+                Map<String, BigDecimal> bucketMap = new LinkedHashMap<>();
+
+                for (AgingBucket bucket : buckets) {
+                    bucketMap.put(bucket.getBucketName(), BigDecimal.ZERO);
+                }
+
+                dto.setBuckets(bucketMap);
+
                 return dto;
             });
 
             BigDecimal balance = invoice.getBalanceDue();
+
             if (balance == null || balance.compareTo(BigDecimal.ZERO) <= 0) {
                 continue;
             }
 
-            // Add to total due
             row.setTotalDue(row.getTotalDue().add(balance));
 
-            // Days overdue
             LocalDate dueDate = invoice.getDueDate();
+
             long daysOverdue = 0;
+
             if (dueDate != null) {
                 daysOverdue = ChronoUnit.DAYS.between(dueDate, asOfDate);
             }
 
-            // 4. Put into exact bucket
-            if (daysOverdue <= 0) {
-                // Not overdue yet
-                row.setCurrent(row.getCurrent().add(balance));
-            } else if (daysOverdue >= 1 && daysOverdue <= 30) {
-                row.setBucket1To30(row.getBucket1To30().add(balance));
-            } else if (daysOverdue >= 31 && daysOverdue <= 60) {
-                row.setBucket31To60(row.getBucket31To60().add(balance));
-            } else if (daysOverdue >= 61 && daysOverdue <= 90) {
-                row.setBucket61To90(row.getBucket61To90().add(balance));
-            } else { // > 90
-                row.setBucketGt90(row.getBucketGt90().add(balance));
+            AgingBucket matchedBucket = null;
+
+            for (AgingBucket bucket : buckets) {
+
+                boolean matchStart = daysOverdue >= bucket.getStartDay();
+
+                boolean matchEnd = bucket.getEndDay() == null
+                        || daysOverdue <= bucket.getEndDay();
+
+                if (matchStart && matchEnd) {
+                    matchedBucket = bucket;
+                    break;
+                }
             }
+
+            if (matchedBucket == null) {
+                continue;
+            }
+
+            String bucketName = matchedBucket.getBucketName();
+
+            BigDecimal currentValue = row.getBuckets().get(bucketName);
+
+            row.getBuckets().put(
+                    bucketName,
+                    currentValue.add(balance)
+            );
         }
 
         List<CustomerAgingDto> rows = new ArrayList<>(byCustomer.values());
 
         return new AgingReportResponse(asOfDate, rows);
+    }
+
+    //Create Aging Codes
+    public AgingCodeResponse createAgingCode(Long companyId, CreateAgingCodeRequest request) {
+        
+        validateBucketRange(companyId,
+            request.getStartDay(),
+            request.getEndDay(),
+            null);
+
+        AgingBucket code = new AgingBucket();
+
+        code.setCompanyId(companyId);
+        code.setBucketName(request.getBucketName());
+        code.setStartDay(request.getStartDay());
+        code.setEndDay(request.getEndDay());
+        code.setDisplayOrder(request.getDisplayOrder());
+        code.setActive(true);
+        code.setDelated(false);
+
+        AgingBucket saved = agingBucketRepository.save(code);
+
+        return map(saved);
+    }
+
+    //Validate Aging Code Bucket
+    private void validateBucketRange(Long companyId, Integer startDay, Integer endDay, Long excludeId) {
+
+        List<AgingBucket> existingBuckets =
+                agingBucketRepository.findByCompanyIdAndActiveTrueOrderByDisplayOrderAsc(companyId);
+
+        for (AgingBucket bucket : existingBuckets) {
+
+            if (excludeId != null && bucket.getId().equals(excludeId)) {
+                continue;
+            }
+
+            Integer existingStart = bucket.getStartDay();
+            Integer existingEnd = bucket.getEndDay();
+
+            if (existingEnd == null) {
+                existingEnd = Integer.MAX_VALUE;
+            }
+
+            if (endDay == null) {
+                endDay = Integer.MAX_VALUE;
+            }
+
+            boolean overlap =
+                    startDay <= existingEnd && endDay >= existingStart;
+
+            if (overlap) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Aging bucket overlaps with existing bucket: " + bucket.getBucketName()
+                );
+            }
+        }
+    }
+
+
+    //Get Company Aging Code
+    public List<AgingCodeResponse> getAgingCodes(Long companyId) {
+
+        List<AgingBucket> list =
+                agingBucketRepository.findByCompanyIdAndActiveTrueOrderByDisplayOrderAsc(companyId);
+
+        return list.stream().map(this::map).toList();
+    }
+
+
+    //Update Aging Code
+    public AgingCodeResponse updateAgingCode(Long id, CreateAgingCodeRequest request) {
+
+        AgingBucket code = agingBucketRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND , "Aging code not found"));
+
+        if (request.getBucketName() != null) {
+            code.setBucketName(request.getBucketName());
+        }
+
+        if (request.getStartDay() != null) {
+            code.setStartDay(request.getStartDay());
+        }
+
+        if (request.getEndDay() != null) {
+            code.setEndDay(request.getEndDay());
+        }
+
+        if (request.getDisplayOrder() != null) {
+            code.setDisplayOrder(request.getDisplayOrder());
+        }
+
+        AgingBucket updated = agingBucketRepository.save(code);
+
+        return map(updated);
+    }
+
+
+    //Delete Aging Code
+    public void deleteAgingCode(Long id) {
+
+        AgingBucket code = agingBucketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Aging code not found"));
+
+        code.setDelated(true);
+        code.setActive(false);
+
+        agingBucketRepository.save(code);
+    }
+
+
+    private AgingCodeResponse map(AgingBucket code) {
+        return new AgingCodeResponse(
+                code.getId(),
+                code.getBucketName(),
+                code.getStartDay(),
+                code.getEndDay(),
+                code.getDisplayOrder()
+        );
     }
 }

@@ -1,6 +1,9 @@
 package com.example.account.receivable.AgingReports.DTO;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,8 +18,5 @@ public class CustomerAgingDto {
 
     private BigDecimal totalDue;
     private BigDecimal current;
-    private BigDecimal bucket1To30;
-    private BigDecimal bucket31To60;
-    private BigDecimal bucket61To90;
-    private BigDecimal bucketGt90;
+    private Map<String, BigDecimal> buckets = new LinkedHashMap<>();
 }
