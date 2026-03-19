@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,7 +49,7 @@ public class ArCalculationController {
     }
 
     //Get Monthend for one Year
-    @GetMapping("/company/year-full")
+    @PostMapping("/company/year-full")
     public ResponseEntity<ApiResponse<List<CompanyMonthEndBalanceFullDto>>> getFullYearData(
             @RequestBody MonthEndRequest request
 
