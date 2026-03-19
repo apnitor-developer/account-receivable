@@ -17,7 +17,7 @@ public class MonthEndBalanceScheduler {
     private final CompanyRepository companyRepository;
 
     // Runs on 1st day of every month at 00:10 (India time)
-    @Scheduled(cron = "0 5 7 * * *")
+    @Scheduled(cron = "0 2 8 * * *")
     public void runMonthlySnapshot() {
 
         YearMonth targetMonth = YearMonth.now().minusMonths(1);
