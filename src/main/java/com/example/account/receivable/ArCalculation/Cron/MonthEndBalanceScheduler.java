@@ -17,15 +17,20 @@ public class MonthEndBalanceScheduler {
     private final CompanyRepository companyRepository;
 
     // Runs on 1st day of every month at 00:10 (India time)
-    @Scheduled(cron = "0 10 0 1 * *", zone = "Asia/Kolkata")
+    @Scheduled(cron = "0 5 7 * * *")
     public void runMonthlySnapshot() {
 
-        YearMonth previousMonth = YearMonth.now().minusMonths(1);
+        YearMonth targetMonth = YearMonth.now().minusMonths(1);
 
-        List<Long> companyIds = companyRepository.findActiveCompanyIds(); // create this method
+        List<Long> companyIds = companyRepository.findActiveCompanyIds();
 
         for (Long companyId : companyIds) {
-            snapshotService.calculateAndSave(companyId, previousMonth);
+
+            boolean exists = snapshotService.exists(companyId, targetMonth);
+
+            if (!exists) {
+                snapshotService.calculateAndSave(companyId, targetMonth);
+            }
         }
     }
 }

@@ -46,4 +46,12 @@ public class CompanyMonthEndSnapshotService {
 
         return snapshotRepo.save(entity);
     }
+
+
+    public boolean exists(Long companyId, YearMonth month) {
+    return snapshotRepo.findByCompanyIdAndYearMonth(
+            companyId,
+            month.toString()
+    ).isPresent();
+}
 }
