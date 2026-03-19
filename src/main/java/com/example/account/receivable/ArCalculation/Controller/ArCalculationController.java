@@ -1,17 +1,21 @@
 package com.example.account.receivable.ArCalculation.Controller;
 
 import java.time.YearMonth;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.account.receivable.ArCalculation.DTO.CompanyBalanceSeriesDto;
 import com.example.account.receivable.ArCalculation.DTO.CompanyMonthEndBalanceDto;
+import com.example.account.receivable.ArCalculation.DTO.CompanyMonthEndBalanceFullDto;
 import com.example.account.receivable.ArCalculation.DTO.CustomerMonthEndBalanceDto;
+import com.example.account.receivable.ArCalculation.DTO.MonthEndRequest;
 import com.example.account.receivable.ArCalculation.Service.CompanyBalanceCalculator;
 import com.example.account.receivable.ArCalculation.Service.CustomerBalanceCalculator;
 import com.example.account.receivable.Common.ApiResponse;
@@ -28,6 +32,7 @@ public class ArCalculationController {
     private final CustomerBalanceCalculator customerBalanceCalculator;
     private final DashboardService dashboardService;
 
+    //Get Monthend only for one month
     @GetMapping("/company/month-end")
     public  ResponseEntity<ApiResponse<CompanyMonthEndBalanceDto>> getCompanyMonthEnd(
             @RequestParam Long companyId,
@@ -40,6 +45,25 @@ public class ArCalculationController {
             companyBalanceCalculator.calculate(companyId, yearMonth)
         );
         return ResponseEntity.status(200).body(body);
+    }
+
+    //Get Monthend for one Year
+    @GetMapping("/company/year-full")
+    public ResponseEntity<ApiResponse<List<CompanyMonthEndBalanceFullDto>>> getFullYearData(
+            @RequestBody MonthEndRequest request
+
+    ) {
+
+        List<CompanyMonthEndBalanceFullDto> data =
+                companyBalanceCalculator.getYearlyBalances(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.successResponse(
+                        200,
+                        "Full yearly data retrieved",
+                        data
+                )
+        );
     }
 
     
