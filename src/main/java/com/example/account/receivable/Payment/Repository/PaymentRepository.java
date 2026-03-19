@@ -140,4 +140,42 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     );
 
 
+    //Get Unmatched Payments Query
+        @Query("""
+            SELECT COALESCE(SUM(p.paymentAmount), 0)
+            FROM Payment p
+            JOIN p.customer c
+            JOIN c.companyCompanies cc
+            WHERE cc.company.id = :companyId
+            AND p.status = 'CREATED'
+        """)
+        BigDecimal sumManualUnmatched(Long companyId);
+
+
+        @Query("""
+            SELECT COUNT(p)
+            FROM Payment p
+            JOIN p.customer c
+            JOIN c.companyCompanies cc
+            WHERE cc.company.id = :companyId
+            AND p.status = 'CREATED'
+        """)
+        Long countManualUnmatched(Long companyId);
+
+        @Query("""
+            SELECT COALESCE(SUM(bt.amount), 0)
+            FROM BankTransaction bt
+            WHERE bt.company.id = :companyId
+            AND bt.status = 'CREATED'
+        """)
+        BigDecimal sumUnmatchedBankTransactions(Long companyId);
+
+        @Query("""
+            SELECT COUNT(bt)
+            FROM BankTransaction bt
+            WHERE bt.company.id = :companyId
+            AND bt.status = 'CREATED'
+        """)
+        Long countUnmatchedBankTransactions(Long companyId);
+
 }

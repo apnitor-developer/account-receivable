@@ -14,6 +14,7 @@ import com.example.account.receivable.Common.ApiResponse;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -67,6 +68,22 @@ public class PaymentController {
                                             "Payment approved and applied successfully",
                                             payment));
     }
+
+    //Get Unmatched Payments
+        @GetMapping("/company/{companyId}/unmatched-summary")
+        public ResponseEntity<ApiResponse<Map<String, Object>>> getUnmatchedSummary(
+                @PathVariable Long companyId) {
+
+                Map<String, Object> data = paymentService.getUnmatchedSummary(companyId);
+
+                return ResponseEntity.ok(
+                        ApiResponse.successResponse(
+                                200,
+                                "Unmatched payment summary fetched",
+                                data
+                        )
+                );
+        }
 
 
     // Get CREATED Manual Payments

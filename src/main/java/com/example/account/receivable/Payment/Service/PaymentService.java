@@ -184,6 +184,34 @@ public class PaymentService {
     }
 
 
+    //Get unmatched payments
+    public Map<String, Object> getUnmatchedSummary(Long companyId) {
+
+        // 1️⃣ Manual unmatched (PAYMENTS)
+        BigDecimal manualUnmatched = paymentRepository
+                .sumManualUnmatched(companyId); // we'll define this
+
+        Long manualCount = paymentRepository
+                .countManualUnmatched(companyId);
+
+        // 2️⃣ BAI unmatched (BANK_TRANSACTION)
+        BigDecimal baiUnmatched = paymentRepository
+                .sumUnmatchedBankTransactions(companyId);
+
+        Long baiCount = paymentRepository
+                .countUnmatchedBankTransactions(companyId);
+
+        BigDecimal totalAmount = manualUnmatched.add(baiUnmatched);
+        Long totalCount = manualCount + baiCount;
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalAmount", totalAmount);
+        result.put("totalCount", totalCount);
+
+        return result;
+    }
+
+
 
     // Get only the DRAFT Payments
     public Page<ManualPaymentResponseDto> getCreatedPayments(
