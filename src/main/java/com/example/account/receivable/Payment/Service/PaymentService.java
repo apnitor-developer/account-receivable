@@ -21,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Sort;
 
+import com.example.account.receivable.BankReconciliation.Entity.BankTransaction;
 import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
+import com.example.account.receivable.BankReconciliation.Repository.BankTransactionRepository;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
 import com.example.account.receivable.Invoice.Entity.Invoice;
@@ -50,6 +52,7 @@ public class PaymentService {
     private final InvoiceRepository invoiceRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentApplicationRepository paymentApplicationRepository;
+    private final BankTransactionRepository bankTransactionRepository;
 
 
     //Create Payment
@@ -107,26 +110,70 @@ public class PaymentService {
     }
 
 
-    // Approve payment and Apply on the Invoice
+    // // Approve payment and Apply on the Invoice
+    // @Transactional
+    // public Payment approveAndApplyPayment(Long paymentId, List<Long> invoiceIds) {
+
+    //     Payment payment = paymentRepository.findById(paymentId)
+    //             .orElseThrow(() ->
+    //                     new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+
+    //     if (payment.getStatus() != PaymentStatus.CREATED) {
+    //         throw new IllegalStateException("Payment already processed");
+    //     }
+
+    //     // Apply invoices
+    //     applyInvoices(payment, invoiceIds);
+
+    //     // Final status
+    //     payment.setStatus(PaymentStatus.APPROVED);
+
+    //     return paymentRepository.save(payment);
+        
+    // }
+
+
+    //Approve Payment
     @Transactional
-    public Payment approveAndApplyPayment(Long paymentId, List<Long> invoiceIds) {
+    public Payment approvePayment(Long paymentId) {
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
 
         if (payment.getStatus() != PaymentStatus.CREATED) {
-            throw new IllegalStateException("Payment already processed");
+            throw new IllegalStateException("Only CREATED payments can be approved");
         }
 
-        // Apply invoices
-        applyInvoices(payment, invoiceIds);
-
-        // 2️⃣ Final status
         payment.setStatus(PaymentStatus.APPROVED);
 
         return paymentRepository.save(payment);
+    }
+
+
+    //Apply Payment
+    @Transactional
+    public Payment applyPayment(Long paymentId, List<Long> invoiceIds) {
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+
+        if (payment.getStatus() != PaymentStatus.APPROVED) {
+            throw new IllegalStateException("Payment must be APPROVED before applying");
+        }
+
+        applyInvoices(payment, invoiceIds);
+        payment.setStatus(PaymentStatus.APPLIED);
         
+        // IMPORTANT: Update BankTransaction ONLY if exists
+        if (payment.getSource() == PaymentSource.BANK && payment.getBankTransaction() != null) {
+            BankTransaction bt = payment.getBankTransaction();
+            bt.setStatus(PaymentStatus.APPLIED);
+            bankTransactionRepository.save(bt);
+        }
+
+        return paymentRepository.save(payment);
     }
 
 
@@ -414,7 +461,8 @@ public class PaymentService {
             int size,
             LocalDate fromDate,
             LocalDate toDate,
-            Integer months
+            Integer months,
+            PaymentStatus status
     ) {
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
             throw new ResponseStatusException(
@@ -437,7 +485,7 @@ public class PaymentService {
 
         return paymentRepository.findPaymentsByCompanyIdFilteredAndStatus(
                 companyId,
-                PaymentStatus.APPROVED,
+                status,
                 resolvedFrom,
                 resolvedTo,
                 pageable

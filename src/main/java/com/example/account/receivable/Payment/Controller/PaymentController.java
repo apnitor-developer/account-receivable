@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
 import com.example.account.receivable.Common.ApiResponse;
 
 import java.time.LocalDate;
@@ -53,23 +54,57 @@ public class PaymentController {
 
 
 
-    // Approve & Apply Payment
-    @PostMapping("/{paymentId}/approve-apply")
-    public ResponseEntity<ApiResponse<Payment>> approveAndApplyPayment(
-                    @PathVariable Long paymentId,
-                    @RequestBody ApplyPaymentRequest request) {
-            Payment payment = paymentService.approveAndApplyPayment(
-                            paymentId,
-                            request.getInvoiceIds());
+//     // Approve & Apply Payment
+//     @PostMapping("/{paymentId}/approve-apply")
+//     public ResponseEntity<ApiResponse<Payment>> approveAndApplyPayment(
+//                     @PathVariable Long paymentId,
+//                     @RequestBody ApplyPaymentRequest request) {
+//             Payment payment = paymentService.approveAndApplyPayment(
+//                             paymentId,
+//                             request.getInvoiceIds());
 
-            return ResponseEntity.ok(
-                            ApiResponse.successResponse(
-                                            HttpStatus.OK.value(),
-                                            "Payment approved and applied successfully",
-                                            payment));
-    }
+//             return ResponseEntity.ok(
+//                             ApiResponse.successResponse(
+//                                             HttpStatus.OK.value(),
+//                                             "Payment approved and applied successfully",
+//                                             payment));
+//     }
 
-    //Get Unmatched Payments
+
+        //Approve Payment
+        @PostMapping("/{paymentId}/approve")
+        public ResponseEntity<ApiResponse<Payment>> approvePayment(
+                @PathVariable Long paymentId) {
+
+                Payment payment = paymentService.approvePayment(paymentId);
+
+                return ResponseEntity.ok(
+                        ApiResponse.successResponse(
+                                HttpStatus.OK.value(),
+                                "Payment approved successfully",
+                                payment));
+        }
+
+
+        //Apply Payment
+        @PostMapping("/{paymentId}/apply")
+        public ResponseEntity<ApiResponse<Payment>> applyPayment(
+                @PathVariable Long paymentId,
+                @RequestBody ApplyPaymentRequest request) {
+
+                Payment payment = paymentService.applyPayment(
+                        paymentId,
+                        request.getInvoiceIds());
+
+                return ResponseEntity.ok(
+                        ApiResponse.successResponse(
+                                HttpStatus.OK.value(),
+                                "Payment applied successfully",
+                                payment));
+        }
+
+        
+        //Get Unmatched Payments
         @GetMapping("/company/{companyId}/unmatched-summary")
         public ResponseEntity<ApiResponse<Map<String, Object>>> getUnmatchedSummary(
                 @PathVariable Long companyId) {
@@ -171,9 +206,10 @@ public class PaymentController {
             @RequestParam(required = false)
             @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
             LocalDate toDate,
-            @RequestParam(required = false) Integer months
+            @RequestParam(required = false) Integer months,
+            @RequestParam(required = false) PaymentStatus status
     ) {
-        Page<Payment> payments = paymentService.getPaymentsByCompanyId(companyId, page, size, fromDate, toDate , months);
+        Page<Payment> payments = paymentService.getPaymentsByCompanyId(companyId, page, size, fromDate, toDate , months , status);
 
         ApiResponse<Page<Payment>> response = ApiResponse.successResponse(
                 200,

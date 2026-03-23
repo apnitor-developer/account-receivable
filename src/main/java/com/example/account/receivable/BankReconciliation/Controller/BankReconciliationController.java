@@ -14,8 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.example.account.receivable.BankReconciliation.Dto.BankApproveApplyRequest;
+import com.example.account.receivable.BankReconciliation.Dto.BankApproveRequest;
 import com.example.account.receivable.BankReconciliation.Entity.BankTransaction;
 import com.example.account.receivable.BankReconciliation.Service.BankReconciliationService;
 import com.example.account.receivable.Common.ApiResponse;
@@ -51,22 +50,39 @@ public class BankReconciliationController {
     }
 
 
-    // Approve and Apply on Invoice
-    @PostMapping("/transaction/{bankTransactionId}/approve-apply")
-    public ResponseEntity<ApiResponse<Payment>> approveAndApply(
-                    @PathVariable Long bankTransactionId,
-                    @RequestBody BankApproveApplyRequest request) {
-            Payment payment = bankReconciliationService.approveAndApplyBankTransaction(
-                            bankTransactionId,
-                            request.getCustomerId(),
-                            request.getInvoiceIds());
+//     // Approve and Apply on Invoice
+//     @PostMapping("/transaction/{bankTransactionId}/approve-apply")
+//     public ResponseEntity<ApiResponse<Payment>> approveAndApply(
+//                     @PathVariable Long bankTransactionId,
+//                     @RequestBody BankApproveApplyRequest request) {
+//             Payment payment = bankReconciliationService.approveAndApplyBankTransaction(
+//                             bankTransactionId,
+//                             request.getCustomerId(),
+//                             request.getInvoiceIds());
 
-            return ResponseEntity.ok(
-                            ApiResponse.successResponse(
-                                            200,
-                                            "Bank transaction approved and applied",
-                                            payment));
-    }
+//             return ResponseEntity.ok(
+//                             ApiResponse.successResponse(
+//                                             200,
+//                                             "Bank transaction approved and applied",
+//                                             payment));
+//     }
+
+        //Approve BankTransaction Payment
+        @PostMapping("/transaction/{bankTransactionId}/approve")
+        public ResponseEntity<ApiResponse<Payment>> approveBankTransaction(
+                @PathVariable Long bankTransactionId,
+                @RequestBody BankApproveRequest request) {
+
+        Payment payment = bankReconciliationService.approveBankTransaction(
+                bankTransactionId,
+                request.getCustomerId());
+
+        return ResponseEntity.ok(
+                ApiResponse.successResponse(
+                        200,
+                        "Bank transaction approved",
+                        payment));
+        }
 
 
     @PostMapping("/company/{companyId}/transaction/{bankTransactionId}/approve-with-era")

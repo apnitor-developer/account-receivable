@@ -82,7 +82,7 @@ public class Payment {
     private Instant updatedAt;
 
     @ManyToOne
-    @JsonIgnore
+    // @JsonIgnore
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 

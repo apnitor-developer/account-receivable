@@ -150,27 +150,74 @@ public class BankReconciliationService {
 
 
 
-    // Approve Bank Transaction and Apply on the Invoice 
-    @Transactional
-    public Payment approveAndApplyBankTransaction(
-            Long bankTransactionId,
-            Long customerId,
-            List<Long> invoiceIds
-    ) {
+//     // Approve Bank Transaction and Apply on the Invoice 
+//     @Transactional
+//     public Payment approveAndApplyBankTransaction(
+//             Long bankTransactionId,
+//             Long customerId,
+//             List<Long> invoiceIds
+//     ) {
+//         BankTransaction bt = bankTransactionRepository.findById(bankTransactionId)
+//                 .orElseThrow(() ->
+//                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Bank transaction not found"));
+
+//         if (bt.getStatus() != PaymentStatus.CREATED) {
+//             throw new IllegalStateException("Bank transaction already processed");
+//         }
+
+//         // Customer is explicitly selected by user
+//         Customer customer = customerRepository.findById(customerId)
+//                 .orElseThrow(() ->
+//                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+
+//         // Create Payment
+//         Payment payment = Payment.builder()
+//                 .customer(customer)
+//                 .bankDeposit(bt.getAmount())
+//                 .paymentAmount(bt.getAmount())
+//                 .paymentMethod(PaymentMethod.BANK_TRANSFER)
+//                 .paymentDate(bt.getTransactionDate())
+//                 .source(PaymentSource.BANK)
+//                 .status(PaymentStatus.CREATED)
+//                 .notes(bt.getDescription())
+//                 .bankTransaction(bt)
+//                 .build();
+
+//         payment = paymentRepository.save(payment);
+
+//         // Apply invoices
+//         paymentService.applyInvoices(payment, invoiceIds);
+
+//         // Final statuses
+//         payment.setStatus(PaymentStatus.APPROVED);
+//         bt.setStatus(PaymentStatus.APPLIED);
+
+//         paymentRepository.save(payment);
+//         bankTransactionRepository.save(bt);
+
+//         return payment;
+//     }
+
+
+
+
+        //Approve BankTransaction
+        @Transactional
+        public Payment approveBankTransaction(Long bankTransactionId, Long customerId) {
+
         BankTransaction bt = bankTransactionRepository.findById(bankTransactionId)
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Bank transaction not found"));
 
         if (bt.getStatus() != PaymentStatus.CREATED) {
-            throw new IllegalStateException("Bank transaction already processed");
+                throw new IllegalStateException("Bank transaction already processed");
         }
 
-        // Customer is explicitly selected by user
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-        // Create Payment
+        // Create Payment (ONLY creation here)
         Payment payment = Payment.builder()
                 .customer(customer)
                 .bankDeposit(bt.getAmount())
@@ -178,119 +225,19 @@ public class BankReconciliationService {
                 .paymentMethod(PaymentMethod.BANK_TRANSFER)
                 .paymentDate(bt.getTransactionDate())
                 .source(PaymentSource.BANK)
-                .status(PaymentStatus.CREATED)
+                .status(PaymentStatus.APPROVED) // directly approved
                 .notes(bt.getDescription())
                 .bankTransaction(bt)
                 .build();
 
         payment = paymentRepository.save(payment);
 
-        // Apply invoices
-        paymentService.applyInvoices(payment, invoiceIds);
-
-        // Final statuses
-        payment.setStatus(PaymentStatus.APPROVED);
-        bt.setStatus(PaymentStatus.APPLIED);
-
-        paymentRepository.save(payment);
+        // Mark BT as APPROVED (not APPLIED yet)
+        bt.setStatus(PaymentStatus.APPROVED);
         bankTransactionRepository.save(bt);
 
         return payment;
-    }
-
-
-//     //Approve ERA Payment
-//     @Transactional
-//     public void approveWithEra(Long bankTransactionId, Long companyId) {
-
-//             BankTransaction bt = bankTransactionRepository.findById(bankTransactionId)
-//                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-//                                             "Bank transaction not found"));
-
-//             if (bt.getStatus() != PaymentStatus.CREATED) {
-//                     throw new IllegalStateException("Bank transaction already processed");
-//             }
-
-//             EraBatch batch = eraBatchRepository
-//                             .findByPayerNameAndTotalPayment(
-//                                             bt.getCustomerName(),
-//                                             bt.getAmount())
-//                             .orElseThrow(() -> new RuntimeException("No matching ERA found"));
-
-//             if (batch.getStatus() == EraStatus.FUNDED) {
-//                     throw new RuntimeException("ERA already funded");
-//             }
-
-//             List<EraClaim> claims = eraClaimRepository.findByBatch_Id(batch.getId());
-
-//             BigDecimal totalApplied = BigDecimal.ZERO;
-
-//             for (EraClaim claim : claims) {
-
-//                     Invoice invoice = invoiceRepository
-//                                     .findByInvoiceNumber(claim.getInvoiceNumber())
-//                                     .orElseThrow(() -> new RuntimeException("Invoice not found"));
-
-//                     Customer customer = invoice.getCustomer();
-
-//                     BigDecimal paidAmount = claim.getPaidAmount();
-
-//                     System.err.println("Paid Amount" + paidAmount);
-
-//                     if (paidAmount == null || paidAmount.compareTo(BigDecimal.ZERO) <= 0) {
-//                             continue;
-//                     }
-
-//                     totalApplied = totalApplied.add(paidAmount);
-
-//                     // Create one Payment per invoice
-//                     Payment payment = Payment.builder()
-//                                     .customer(customer)
-//                                     .bankDeposit(paidAmount)
-//                                     .paymentAmount(paidAmount)
-//                                     .paymentMethod(PaymentMethod.BANK_TRANSFER)
-//                                     .paymentDate(bt.getTransactionDate())
-//                                     .source(PaymentSource.BANK)
-//                                     .payerType(PayerType.INSURANCE)
-//                                     .payerName(batch.getPayerName())
-//                                     .status(PaymentStatus.CREATED)
-//                                     .bankTransaction(bt)
-//                                     .build();
-
-//                     payment = paymentRepository.save(payment);
-
-//                     // Apply contractual adjustment
-//                     invoice.setBalanceDue(
-//                                     invoice.getBalanceDue()
-//                                                     .subtract(claim.getContractualAmount()));
-
-//                     paymentService.applyExactAmount(
-//                                     payment,
-//                                     invoice,
-//                                     paidAmount);
-
-//                     invoiceRepository.save(invoice);
-
-//                     payment.setStatus(PaymentStatus.APPROVED);
-//                     paymentRepository.save(payment);
-
-//                     // Save ERA mapping
-//                     EraClaimApplication app = new EraClaimApplication();
-//                     app.setEraClaim(claim);
-//                     app.setInvoice(invoice);
-//                     eraClaimApplicationRepository.save(app);
-//             }
-
-//             if (totalApplied.compareTo(bt.getAmount()) != 0) {
-//                     throw new RuntimeException("ERA total does not match bank amount");
-//             }
-
-//             bt.setStatus(PaymentStatus.APPLIED);
-//             batch.setStatus(EraStatus.FUNDED);
-
-//             bankTransactionRepository.save(bt);
-//             eraBatchRepository.save(batch);
-//     }
+        }
 
 
 
@@ -312,13 +259,68 @@ public void approveWithEraAndCreatePatientInvoice(
     }
 
     // 2️⃣ Find matching ERA batch
-    EraBatch batch = eraBatchRepository
-            .findByPayerNameAndTotalPayment(
-                    bt.getCustomerName(),
-                    bt.getAmount()
-            )
-            .orElseThrow(() ->
-                    new RuntimeException("No matching ERA found"));
+    Optional<EraBatch> batchOpt = Optional.empty();
+
+    // 2.1 try trace number match (exact)
+    if (bt.getReference() != null && !bt.getReference().isBlank()) {
+        batchOpt = eraBatchRepository.findByTraceNumber(bt.getReference().trim());
+    }
+
+    // 2.2 try payer name + amount (case-insensitive, trimmed)
+    if (batchOpt.isEmpty() && bt.getCustomerName() != null) {
+        batchOpt = eraBatchRepository.findByPayerNameIgnoreCaseAndTotalPayment(
+                bt.getCustomerName(),
+                bt.getAmount()
+        );
+    }
+
+    // 2.3 fallback: payer name + amount (original method)
+    if (batchOpt.isEmpty()) {
+        batchOpt = eraBatchRepository.findByPayerNameAndTotalPayment(
+                bt.getCustomerName(),
+                bt.getAmount()
+        );
+    }
+
+    // 2.4 last resort: scan all batches and match by amount (compareTo==0 after scale normalization)
+    if (batchOpt.isEmpty()) {
+        List<EraBatch> all = eraBatchRepository.findAll();
+
+        // normalize amounts (handle sign and scale)
+        BigDecimal txnAmountAbs = bt.getAmount() != null
+                ? bt.getAmount().abs().stripTrailingZeros()
+                : null;
+
+        batchOpt = all.stream()
+                .filter(b -> b.getTotalPayment() != null && txnAmountAbs != null)
+                .filter(b ->
+                        b.getTotalPayment().stripTrailingZeros().compareTo(txnAmountAbs) == 0
+                        || b.getTotalPayment().stripTrailingZeros().compareTo(txnAmountAbs.negate()) == 0
+                )
+                .filter(b -> b.getStatus() != EraStatus.FUNDED)
+                .findFirst();
+
+        // if only funded matches exist, allow idempotent apply: pick funded match
+        if (batchOpt.isEmpty()) {
+            batchOpt = all.stream()
+                    .filter(b -> b.getTotalPayment() != null && txnAmountAbs != null)
+                    .filter(b ->
+                            b.getTotalPayment().stripTrailingZeros().compareTo(txnAmountAbs) == 0
+                            || b.getTotalPayment().stripTrailingZeros().compareTo(txnAmountAbs.negate()) == 0
+                    )
+                    .findFirst();
+        }
+    }
+
+    EraBatch batch = batchOpt.orElseThrow(() ->
+            new RuntimeException("No matching ERA found"));
+
+    // If ERA already funded, treat as idempotent: mark bank txn applied and exit
+    if (batch.getStatus() == EraStatus.FUNDED) {
+        bt.setStatus(PaymentStatus.APPLIED);
+        bankTransactionRepository.save(bt);
+        return;
+    }
 
     if (batch.getStatus() == EraStatus.FUNDED) {
         throw new RuntimeException("ERA already funded");
@@ -591,7 +593,7 @@ public void approveWithEraAndCreatePatientInvoice(
                 .paymentDate(bt.getTransactionDate())
                 .source(PaymentSource.BANK)
                 .status(PaymentStatus.CREATED)
-                .notes("Auto-applied from BAI upload")
+                .notes("Auto-approved from BAI upload")
                 .bankTransaction(bt)
                 .build();
 
