@@ -3,7 +3,11 @@ package com.example.account.receivable.Auth.service;
 import com.example.account.receivable.Auth.dto.ChangePasswordDto;
 import com.example.account.receivable.Auth.dto.LoginDto;
 import com.example.account.receivable.Auth.dto.LoginResponseDto;
+import com.example.account.receivable.Auth.dto.LoginSecurityReportDTO;
 import com.example.account.receivable.Auth.dto.MfaLoginDto;
+import com.example.account.receivable.Auth.dto.MfaSecurityReportDTO;
+import com.example.account.receivable.Auth.entity.UserLoginAudit;
+import com.example.account.receivable.Auth.repo.UserLoginAuditRepository;
 import com.example.account.receivable.User.Enum.UserStatus;
 import com.example.account.receivable.User.entity.Users;
 import com.example.account.receivable.User.repository.UsersRepository;
@@ -33,6 +37,7 @@ public class LoginService {
     private final PasswordEncoder passwordEncoder;
     private final MfaService mfaService;
     private final SystemSettingService systemSettingService;
+    private final UserLoginAuditRepository userLoginAuditRepository;
 
     @Value("${app.mfa.token-expiration-ms:300000}")
     private long mfaTokenExpirationMs;
@@ -95,7 +100,27 @@ public class LoginService {
             );
         }
 
+        UserLoginAudit audit = UserLoginAudit.builder()
+                .user(user)
+                .loginAt(Instant.now())
+                // .ipAddress(request.getRemoteAddr())
+                // .userAgent(request.getHeader("User-Agent"))
+                .status("SUCCESS")
+                .build();
+
+        userLoginAuditRepository.save(audit);
+
         return buildAuthenticatedResponse(user, daysRemaining);
+    }
+
+    //Get Login Security Report
+    public List<LoginSecurityReportDTO> getLoginReportByCompany(Long companyId) {
+        return userLoginAuditRepository.getLoginSecurityReportByCompany(companyId);
+    }
+
+    //Get MFA Security Report
+    public List<MfaSecurityReportDTO> getMfaReportByCompany(Long companyId) {
+        return userLoginAuditRepository.getMfaSecurityReportByCompany(companyId);
     }
 
     public LoginResponseDto loginWithMfa(MfaLoginDto dto) {

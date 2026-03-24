@@ -73,6 +73,7 @@ public class MfaService {
         }
 
         user.setMfaSecret(encryptedSecret);
+        user.setMfaEnabledAt(Instant.now());
         user.setMfaSecretTemp(null);
         user.setMfaEnabled(true);
         usersRepository.save(user);
