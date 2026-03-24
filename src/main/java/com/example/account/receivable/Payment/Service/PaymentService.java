@@ -24,8 +24,13 @@ import org.springframework.data.domain.Sort;
 import com.example.account.receivable.BankReconciliation.Entity.BankTransaction;
 import com.example.account.receivable.BankReconciliation.Enum.PaymentStatus;
 import com.example.account.receivable.BankReconciliation.Repository.BankTransactionRepository;
+import com.example.account.receivable.Company.Entity.Company;
 import com.example.account.receivable.Customer.Entity.Customer;
 import com.example.account.receivable.Customer.Repository.CustomerRepository;
+import com.example.account.receivable.GL.Dto.GlTransactionCreateRequest;
+import com.example.account.receivable.GL.Enum.GlReferenceType;
+import com.example.account.receivable.GL.Service.GlTransactionService;
+import com.example.account.receivable.HelperMethods.CompanyResolver;
 import com.example.account.receivable.Invoice.Entity.Invoice;
 import com.example.account.receivable.Invoice.Enum.InvoiceStatus;
 import com.example.account.receivable.Invoice.Repository.InvoiceRepository;
@@ -53,6 +58,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentApplicationRepository paymentApplicationRepository;
     private final BankTransactionRepository bankTransactionRepository;
+    private final GlTransactionService glTransactionService;
 
 
     //Create Payment
@@ -172,6 +178,20 @@ public class PaymentService {
             bt.setStatus(PaymentStatus.APPLIED);
             bankTransactionRepository.save(bt);
         }
+
+        Company company = CompanyResolver.resolveCompanyForCustomer(payment.getCustomer());
+
+        glTransactionService.createTransaction(
+            company.getId(),
+            GlTransactionCreateRequest.builder()
+                .referenceType(GlReferenceType.PAYMENT)
+                .referenceId(payment.getId())
+                .referenceNumber("PAY-" + payment.getId())
+                .amount(payment.getPaymentAmount())
+                .transactionDate(payment.getPaymentDate())
+                .description("Payment " + payment.getId())
+                .build()
+        );
 
         return paymentRepository.save(payment);
     }

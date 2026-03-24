@@ -23,6 +23,9 @@ import com.example.account.receivable.GL.Enum.GlEntryType;
 import com.example.account.receivable.GL.Enum.GlReferenceType;
 import com.example.account.receivable.GL.Enum.GlTransactionStatus;
 import com.example.account.receivable.GL.Repository.GlTransactionRepository;
+// import com.example.account.receivable.GLCodes.Entity.GlCode;
+// import com.example.account.receivable.GLCodes.Enum.GlAccountType;
+// import com.example.account.receivable.GLCodes.Repository.GlCodeRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -36,6 +39,7 @@ public class GlTransactionService {
     // private final ArCodeRepository arCodeRepository;
     // private final ArGlMappingRepository arGlMappingRepository;
     private final GlTransactionRepository glTransactionRepository;
+    // private final GlCodeRepository glCodeRepository;
 
 @Transactional
 public GlTransactionResponse createTransaction(
@@ -78,6 +82,102 @@ public GlTransactionResponse createTransaction(
 
     return toResponse(glTransactionRepository.save(transaction));
 }
+
+
+    // @Transactional
+    // public GlTransactionResponse createTransaction(
+    //     Long companyId,
+    //     GlTransactionCreateRequest request
+    // ) {
+
+    //     Company company = companyRepository.findById(companyId)
+    //         .orElseThrow(() ->
+    //             new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
+
+    //     // 🔥 Step 1: Fetch required GL accounts
+    //     GlCode ar = glCodeRepository.findByCompanyIdAndAccountType(companyId, GlAccountType.AR)
+    //         .orElseThrow(() -> new RuntimeException("AR GL Code not configured"));
+
+    //     GlCode revenue = glCodeRepository
+    //         .findByCompanyIdAndAccountType(companyId, GlAccountType.REVENUE)
+    //         .orElse(null);
+
+    //     System.out.println("Revenue" + revenue);
+
+    //     GlCode bank = glCodeRepository
+    //         .findByCompanyIdAndAccountType(companyId, GlAccountType.CASH)
+    //         .orElse(null);
+
+    //     // 🔥 Step 2: Decide accounts based on transaction type
+    //     GlCode debitAccount;
+    //     GlCode creditAccount;
+
+    //     if (request.getReferenceType() == GlReferenceType.INVOICE) {
+
+    //         if (revenue == null) {
+    //             throw new ResponseStatusException(
+    //                     HttpStatus.NOT_FOUND,
+    //                     "Revenue GL Code not configured"
+    //             );
+    //         }
+
+    //         debitAccount = ar;        // Customer owes → AR
+    //         creditAccount = revenue; // Income → Revenue
+
+    //     } else if (request.getReferenceType() == GlReferenceType.PAYMENT) {
+
+    //         // ✅ Validation
+    //         if (bank == null) {
+    //             throw new RuntimeException("Bank GL Code not configured");
+    //         }
+
+    //         debitAccount = bank; // Money received → Bank
+    //         creditAccount = ar;  // Reduce receivable
+
+    //     } else {
+    //         throw new RuntimeException("Unsupported transaction type");
+    //     }
+
+    //     // 🔥 Step 3: Create transaction
+    //     GlTransaction transaction = GlTransaction.builder()
+    //         .company(company)
+    //         .referenceType(request.getReferenceType())
+    //         .referenceId(request.getReferenceId())
+    //         .referenceNumber(request.getReferenceNumber())
+    //         .transactionDate(
+    //             request.getTransactionDate() != null
+    //                 ? request.getTransactionDate()
+    //                 : LocalDate.now()
+    //         )
+    //         .amount(request.getAmount())
+    //         .description(request.getDescription())
+    //         .status(GlTransactionStatus.POSTED)
+    //         .build();
+
+    //     // 🔥 Step 4: Create DEBIT line
+    //     GlTransactionLine debitLine = GlTransactionLine.builder()
+    //         .transaction(transaction)
+    //         .glCode(debitAccount)
+    //         .entryType(GlEntryType.DEBIT)
+    //         .amount(request.getAmount())
+    //         .narration(request.getDescription())
+    //         .build();
+
+    //     // 🔥 Step 5: Create CREDIT line
+    //     GlTransactionLine creditLine = GlTransactionLine.builder()
+    //         .transaction(transaction)
+    //         .glCode(creditAccount)
+    //         .entryType(GlEntryType.CREDIT)
+    //         .amount(request.getAmount())
+    //         .narration(request.getDescription())
+    //         .build();
+
+    //     // 🔥 Step 6: Attach both lines
+    //     transaction.setLines(List.of(debitLine, creditLine));
+
+    //     // 🔥 Step 7: Save
+    //     return toResponse(glTransactionRepository.save(transaction));
+    // }
 
     @Transactional(readOnly = true)
     public Page<GlTransactionResponse> getCompanyTransactions(

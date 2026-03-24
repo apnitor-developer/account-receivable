@@ -6,6 +6,7 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.account.receivable.ArCalculation.Repository.CompanyMonthEndBalanceRepository;
 import com.example.account.receivable.Common.EmailService;
 import com.example.account.receivable.Common.InvoiceTemplateService;
 import com.example.account.receivable.Common.PdfGeneratorService;
@@ -82,6 +84,7 @@ public class InvoiceService {
     private final EmailService emailService;
     private final InvoiceTemplateService invoiceTemplateService;
     private final PdfGeneratorService pdfGeneratorService;
+    private final CompanyMonthEndBalanceRepository monthEndRepo;
 
     
     public void sendInvoiceEmail(Long invoiceId , Long companyId) {
@@ -190,6 +193,21 @@ public class InvoiceService {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
+        Company getcompany = CompanyResolver.resolveCompanyForCustomer(customer);
+
+        YearMonth ym = YearMonth.from(dto.getInvoiceDate());
+
+        boolean locked = monthEndRepo.existsByCompanyIdAndYearMonthAndLockedTrue(
+                getcompany.getId(),
+                ym.toString()
+        );
+
+        if (locked) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Accounting period is closed for " + ym
+            );
+        }
 
         // Resolve invoice number
         String invoiceNumber;

@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.account.receivable.GLCodes.Entity.GlCode;
+import com.example.account.receivable.GLCodes.Enum.GlAccountType;
 
 public interface GlCodeRepository extends JpaRepository<GlCode, Long> {
 
@@ -14,4 +15,6 @@ public interface GlCodeRepository extends JpaRepository<GlCode, Long> {
     Optional<GlCode> findByIdAndCompanyId(Long id, Long companyId);
 
     boolean existsByCompanyIdAndGlCode(Long companyId, String glCode);
+
+    Optional<GlCode> findByCompanyIdAndAccountType(Long companyId, GlAccountType accountType);
 }
