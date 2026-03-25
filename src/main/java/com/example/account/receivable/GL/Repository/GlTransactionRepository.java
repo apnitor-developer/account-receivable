@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import com.example.account.receivable.GL.Entity.GlTransaction;
 import com.example.account.receivable.GL.Enum.GlReferenceType;
+import com.example.account.receivable.GL.Enum.GlTransactionStatus;
 
 public interface GlTransactionRepository extends JpaRepository<GlTransaction, Long> {
 
@@ -21,6 +21,7 @@ public interface GlTransactionRepository extends JpaRepository<GlTransaction, Lo
         AND (:referenceType IS NULL OR t.referenceType = :referenceType)
         AND (:fromDate IS NULL OR t.transactionDate >= :fromDate)
         AND (:toDate IS NULL OR t.transactionDate <= :toDate)
+        AND (:status IS NULL OR t.status = :status)
         ORDER BY t.transactionDate DESC, t.id DESC
     """)
     Page<GlTransaction> findCompanyTransactions(
@@ -28,7 +29,9 @@ public interface GlTransactionRepository extends JpaRepository<GlTransaction, Lo
         @Param("referenceType") GlReferenceType referenceType,
         @Param("fromDate") LocalDate fromDate,
         @Param("toDate") LocalDate toDate,
-        Pageable pageable
+        Pageable pageable,
+        @Param("status") GlTransactionStatus status
+        
     );
 
     Optional<GlTransaction> findByIdAndCompany_Id(Long id, Long companyId);

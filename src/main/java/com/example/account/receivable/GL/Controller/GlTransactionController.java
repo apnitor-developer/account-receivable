@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.account.receivable.ArCodes.GlMappingStatus;
 import com.example.account.receivable.Common.ApiResponse;
 import com.example.account.receivable.GL.Dto.GlTransactionCreateRequest;
 import com.example.account.receivable.GL.Dto.GlTransactionResponse;
 import com.example.account.receivable.GL.Enum.GlReferenceType;
+import com.example.account.receivable.GL.Enum.GlTransactionStatus;
 import com.example.account.receivable.GL.Service.GlTransactionService;
 
 import jakarta.validation.Valid;
@@ -30,6 +32,7 @@ public class GlTransactionController {
 
     private final GlTransactionService glTransactionService;
 
+    //Create Transaction
     @PostMapping("/company/{companyId}/user/{userId}")
     public ResponseEntity<ApiResponse<GlTransactionResponse>> createTransaction(
         @PathVariable Long companyId,
@@ -42,6 +45,22 @@ public class GlTransactionController {
             .body(ApiResponse.successResponse(201, "GL transaction posted", response));
     }
 
+
+    //Change status RELEASED -> POSTED
+    @PostMapping("/{transactionId}/post")
+    public ResponseEntity<ApiResponse<GlTransactionResponse>> postTransaction(
+        @PathVariable Long transactionId
+    ) {
+        return ResponseEntity.ok(
+            ApiResponse.successResponse(
+                200,
+                "Transaction posted successfully",
+                glTransactionService.postTransaction(transactionId)
+            )
+        );
+    }
+
+    //Get Company transaction
     @GetMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<Page<GlTransactionResponse>>> getCompanyTransactions(
         @PathVariable Long companyId,
@@ -49,7 +68,8 @@ public class GlTransactionController {
         @RequestParam(defaultValue = "20") int size,
         @RequestParam(required = false) GlReferenceType referenceType,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+        @RequestParam(required = false) GlTransactionStatus status
     ) {
         Page<GlTransactionResponse> transactions = glTransactionService.getCompanyTransactions(
             companyId,
@@ -57,7 +77,8 @@ public class GlTransactionController {
             size,
             referenceType,
             fromDate,
-            toDate
+            toDate,
+            status
         );
 
         return ResponseEntity.ok(

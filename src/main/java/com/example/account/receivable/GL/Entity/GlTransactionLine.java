@@ -3,6 +3,7 @@ package com.example.account.receivable.GL.Entity;
 import java.math.BigDecimal;
 
 import com.example.account.receivable.GL.Enum.GlEntryType;
+import com.example.account.receivable.GLCodes.Entity.GlCode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
@@ -38,9 +39,9 @@ public class GlTransactionLine {
     @JoinColumn(name = "transaction_id", nullable = false)
     private GlTransaction transaction;
 
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "gl_code_id", nullable = false)
-    // private GlCode glCode;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gl_code_id", nullable = false)
+    private GlCode glCode;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "entry_type", nullable = false)

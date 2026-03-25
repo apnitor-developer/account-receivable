@@ -310,21 +310,6 @@ public class InvoiceService {
         }
         invoiceItemRepo.saveAll(items);
 
-        Company company =
-            CompanyResolver.resolveCompanyForCustomer(invoice.getCustomer());
-
-        glTransactionService.createTransaction(
-            company.getId(),
-            GlTransactionCreateRequest.builder()
-                .referenceType(GlReferenceType.INVOICE)
-                .referenceId(invoice.getId())
-                .referenceNumber(invoice.getInvoiceNumber())
-                .amount(invoice.getTotalAmount())
-                .transactionDate(invoice.getInvoiceDate())
-                .description("Invoice " + invoice.getInvoiceNumber())
-                .build()
-        );
-
 
         try {
             return invoice;
@@ -354,6 +339,20 @@ public class InvoiceService {
         }
 
         invoice.setStatus(InvoiceStatus.OPEN);
+
+        Company company = CompanyResolver.resolveCompanyForCustomer(invoice.getCustomer());
+
+        glTransactionService.createTransaction(
+            company.getId(),
+            GlTransactionCreateRequest.builder()
+                .referenceType(GlReferenceType.INVOICE)
+                .referenceId(invoice.getId())
+                .referenceNumber(invoice.getInvoiceNumber())
+                .amount(invoice.getTotalAmount())
+                .transactionDate(invoice.getInvoiceDate())
+                .description("Invoice " + invoice.getInvoiceNumber())
+                .build()
+        )   ;
         return invoiceRepository.save(invoice);
     }
 

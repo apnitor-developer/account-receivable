@@ -38,6 +38,15 @@ public class GlCodeService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "GL Code already exists for this company");
         }
 
+        boolean existsActiveType = glCodeRepository.existsByCompanyIdAndAccountTypeAndIsActiveTrue(companyId, dto.getAccountType());
+
+        if (existsActiveType) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Active GL Code already exists for account type: " + dto.getAccountType()
+            );
+        }
+
         GlCode glCode = GlCode.builder()
             .company(company)
             .createdBy(user)

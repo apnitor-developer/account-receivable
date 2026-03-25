@@ -17,4 +17,6 @@ public interface GlCodeRepository extends JpaRepository<GlCode, Long> {
     boolean existsByCompanyIdAndGlCode(Long companyId, String glCode);
 
     Optional<GlCode> findByCompanyIdAndAccountType(Long companyId, GlAccountType accountType);
+
+    boolean existsByCompanyIdAndAccountTypeAndIsActiveTrue(Long companyId, GlAccountType accountType);
 }

@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GlTransactionLineDto {
     // private Long glCodeId;
-    // private String glCode;
+    private String glCode;
     private String glCodeDescription;
     private GlEntryType entryType;
     private BigDecimal amount;
