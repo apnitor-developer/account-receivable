@@ -495,7 +495,7 @@ public void approveWithEraAndCreatePatientInvoice(
         }
 
         // Approve this customer's payment
-        payment.setStatus(PaymentStatus.APPROVED);
+        payment.setStatus(PaymentStatus.APPLIED);
         paymentRepository.save(payment);
     }
 
@@ -606,7 +606,7 @@ public void approveWithEraAndCreatePatientInvoice(
 
         paymentService.applyInvoices(payment, invoiceIds);
 
-        payment.setStatus(PaymentStatus.APPROVED);
+        payment.setStatus(PaymentStatus.APPLIED);
         bt.setStatus(PaymentStatus.APPLIED);
 
         paymentRepository.save(payment);
